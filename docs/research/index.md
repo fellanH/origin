@@ -28,7 +28,7 @@
 
 ### 1. Replace from-scratch Divider with `react-resizable-panels` v4
 
-**Finding:** `react-resizable-panels` v4.6.5 (updated Feb 21, 2026) is actively maintained, React 19 compatible, and handles drag/resize/keyboard/collapse. It supports arbitrary nesting depth via `PanelGroup > Panel > PanelGroup`. shadcn/ui's `Resizable` wraps it.
+**Finding:** `react-resizable-panels` v4.6.5 (updated Feb 21, 2026) is actively maintained, React 19 compatible, and handles drag/resize/keyboard/collapse. It supports arbitrary nesting depth via `Group > Panel > Group`. shadcn/ui's `Resizable` wraps it. Note: v4 renames `PanelGroup` → `Group`, `PanelResizeHandle` → `Separator`, `direction` → `orientation`, `onLayout` → `onLayoutChanged` — shadcn CLI generates v3 code, patch manually.
 
 **Spec impact:** Replace the from-scratch `Divider` component with `react-resizable-panels`. Keep the Zustand binary tree store for topology (split/close). The library has no split/close API — that stays in the store.
 
@@ -62,7 +62,7 @@
 
 **Better solution:** `@tauri-store/zustand` — writes to disk via Tauri file system, bypasses origin issues, supports cross-window sync. Zero extra design required.
 
-**Migration path to SQLite (v2):** Zustand `persist` accepts any `PersistStorage<T>` adapter. Implement one wrapping `tauri-plugin-sql` with a `kv` table.
+**Migration path to SQLite (v2):** Replace `@tauri-store/zustand` with a direct `tauri-plugin-sql` integration. The `PersistStorage<T>` adapter pattern does not apply here — this project does not use standard `persist` middleware.
 
 **Spec impact:** Update "Persistence" section and Implementation Steps to use `@tauri-store/zustand` instead of `localStorage persist`. Update Critical Files to list `tauri-plugin-zustand`.
 
@@ -74,21 +74,20 @@
 
 - Named imports only (`import { create }`)
 - `useShallow` required for selectors returning derived objects (avoids infinite loops)
-- `persist` middleware: must use `partialize` to exclude action functions, and a custom `merge` for nested state
+- `@tauri-store/zustand` replaces `persist` middleware — use `filterKeys`/`filterKeysStrategy: "omit"` instead of `partialize`, and `beforeFrontendSync` hook instead of custom `merge`
 
-**Critical for recursive tree state:**
+**Flat `NodeMap` simplifies hydration:**
 
-- Default shallow merge on hydration silently corrupts nested trees — must provide custom `merge`
-- Use `partialize` to exclude all functions from persistence
-- Normalize the tree to a flat `{ [id: string]: PanelNode }` map with a `rootId` to simplify TypeScript recursive type issues
+- Flat map serializes as a plain JSON object — no recursive deserialization in `beforeFrontendSync` needed
+- See `research/flat-map-vs-recursive-tree.md` for `splitPanel`/`closePanel` implementations
 
-**Middleware order (required):**
+**Middleware order:**
 
 ```
-devtools( persist( immer( ...store ) ) )
+devtools( immer( ...store ) )
 ```
 
-**Spec impact:** Add implementation notes for Zustand v5, custom merge, partialize, and flat node map consideration.
+**Spec impact:** Spec updated with correct middleware order, `filterKeys` usage, and flat NodeMap types.
 
 ---
 
@@ -123,7 +122,7 @@ devtools( persist( immer( ...store ) ) )
 | Resize handles        | From-scratch `Divider`            | `react-resizable-panels` v4                                         |
 | Keyboard shortcuts    | `tauri-plugin-global-shortcut`    | Webview `keydown` + `preventDefault`                                |
 | State persistence     | Zustand + localStorage            | `@tauri-store/zustand` (file-backed)                                |
-| Zustand version       | Not specified                     | v5.0.11, named imports, `useShallow`, `partialize`                  |
+| Zustand version       | Not specified                     | v5.0.11, named imports, `useShallow`, `filterKeys`                  |
 | v2 plugin loading     | "requires different architecture" | Import maps + embedded axum + per-plugin lib builds                 |
 | Tauri target          | Not specified                     | 2.10.2                                                              |
 | Panel state structure | Recursive `PanelNode` tree        | **Flat `NodeMap` + `parentId`** (see flat-map-vs-recursive-tree.md) |

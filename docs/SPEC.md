@@ -76,6 +76,21 @@ System dark/light mode via `prefers-color-scheme`. No manual toggle in v1. Theme
 | Focus ring        | 1px, subtle accent — present but not loud       |
 | Panel background  | Transparent / inherits window bg                |
 
+### Typography
+
+Use the OS system font stack — zero dependencies, native macOS fidelity (SF Pro + SF Mono), consistent with the Zed/Arc aesthetic. Define in `@theme inline` in `index.css`:
+
+```css
+@theme inline {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", sans-serif;
+  --font-mono:
+    ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", monospace;
+}
+```
+
+Apply `font-sans` to `body` in `@layer base`. If cross-platform font consistency becomes a concern (e.g. a Windows port), revisit with `@fontsource/geist-sans` at that point.
+
 ---
 
 ## UX Behaviour
@@ -409,13 +424,32 @@ shadcn/ui's `Resizable` component wraps this library and can be used as the styl
 
 ### Error Boundaries
 
-`PluginHost` must be wrapped in a React Error Boundary. A plugin that throws during import or render must not propagate errors up the `PanelBranch` tree. On error, the panel shows an inline error state (plugin name + error message) — the rest of the layout remains functional.
+Use [`react-error-boundary`](https://github.com/bvaughn/react-error-boundary) v6 — `npm i react-error-boundary`. ESM-only; Vite 7 handles this natively. It eliminates the need for a class component and provides `fallbackRender`, `onError`, and `resetErrorBoundary`.
+
+`PluginHost` must wrap its rendered plugin in an `ErrorBoundary`. A plugin that throws during import or render must not propagate errors up the `PanelBranch` tree. On error, the panel shows an inline error state — the rest of the layout remains functional.
+
+```tsx
+import { ErrorBoundary } from "react-error-boundary";
+
+// Inside PluginHost.tsx:
+<ErrorBoundary
+  fallbackRender={({ error }) => (
+    <div className="flex h-full items-center justify-center p-4 text-sm text-destructive">
+      Plugin error: {String(error?.message ?? error)}
+    </div>
+  )}
+>
+  {PluginComponent && <PluginComponent context={context} />}
+</ErrorBoundary>;
+```
 
 ### Persistence — `@tauri-store/zustand`
 
 State is persisted using [`@tauri-store/zustand`](https://tb.dev.br/tauri-store/plugin-zustand/guide/getting-started) (npm) + `tauri-plugin-zustand` (Rust crate). This writes to disk via the Tauri file system, bypasses localStorage's origin-instability issues, and works correctly across dev and prod.
 
 **Why not localStorage:** Tauri dev (`http://localhost:1420`) and prod (`tauri://localhost`) use different origins — localStorage data does not carry over. Dev server port instability can blank the store on every restart. See `research/tauri2.md`.
+
+> **Dependency risk:** `@tauri-store/zustand` is a third-party package by a solo maintainer (`ferreira-tb`). It is actively maintained (14 releases, Zustand v5 native) but carries higher bus-factor risk than a first-party plugin. Spike it as the first concrete task before building on top of it. The fallback is `@tauri-apps/plugin-store` (official, lower-level KV API requiring manual serialization and debouncing). See `research/tauri-store-zustand.md`.
 
 **Zustand v5 requirements (current version: v5.0.11):**
 
@@ -428,7 +462,7 @@ State is persisted using [`@tauri-store/zustand`](https://tb.dev.br/tauri-store/
 ```ts
 // store.ts
 import { create } from "zustand";
-import { useShallow } from "zustand/react/shallow";
+import { useShallow } from "zustand/shallow"; // canonical v5 import path
 import { immer } from "zustand/middleware/immer";
 import { devtools } from "zustand/middleware";
 import { createTauriStore } from "@tauri-store/zustand";
@@ -483,6 +517,28 @@ Workspace and plugin registry are slices within one combined store. Middleware i
 - The tab bar's empty/draggable areas must have `data-tauri-drag-region` so the window is still draggable.
 - Keyboard shortcuts (`CMD+D`, `CMD+W`, etc.) are handled via a global `keydown` listener in `App.tsx` with `event.preventDefault()`. `tauri-plugin-global-shortcut` is **not** needed and **not used**. Register `onCloseRequested` on the Tauri window to prevent macOS from closing it when CMD+W is pressed while panels are present.
 
+**`onCloseRequested` — implementation (add to `App.tsx`):**
+
+```ts
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useEffect } from "react";
+
+useEffect(() => {
+  const appWindow = getCurrentWindow();
+  let unlisten: (() => void) | undefined;
+  appWindow
+    .onCloseRequested((e) => e.preventDefault())
+    .then((u) => {
+      unlisten = u;
+    });
+  return () => unlisten?.();
+}, []);
+```
+
+This intercepts the native close triggered by the × traffic light button. The window closes via `CMD+Q` or system shutdown only. Do NOT call `window.setTitle()` at any point — it resets `trafficLightPosition` to the OS default (Tauri #13044). Use `document.title` instead.
+
+**`tauri-plugin-window-state`** — add `@tauri-apps/plugin-window-state` (npm) + `tauri-plugin-window-state = "1"` (Cargo) to persist window position and size across restarts. Install via `npm run tauri add window-state`. Register in `lib.rs`: `.plugin(tauri_plugin_window_state::Builder::new().build())`. Set `"visible": false` on the window in `tauri.conf.json` to prevent a flash of the default position before the saved position is restored. No conflict with `@tauri-store/zustand` — they persist separate concerns.
+
 **CSP:** Since plugins are bundled at build time (no runtime remote fetching), a restrictive policy is appropriate:
 
 ```json
@@ -497,14 +553,15 @@ Do not use `unsafe-eval`. Adjust if first-party plugins load remote assets.
 
 ## Tech Stack
 
-| Layer    | Choice                                                                     |
-| -------- | -------------------------------------------------------------------------- |
-| Desktop  | Tauri 2.10.2                                                               |
-| Frontend | React 19 + Vite 7 + TypeScript                                             |
-| Styling  | Tailwind CSS 4 + shadcn/ui                                                 |
-| Layout   | `react-resizable-panels` v4 (resize handles) + Zustand tree (topology)     |
-| State    | Zustand v5 + `@tauri-store/zustand` (file-backed; upgrade to SQLite in v2) |
-| Build    | Vite 7, npm workspaces                                                     |
+| Layer     | Choice                                                                         |
+| --------- | ------------------------------------------------------------------------------ |
+| Desktop   | Tauri 2.10.2 + `@tauri-apps/plugin-window-state` (window geometry persistence) |
+| Frontend  | React 19 + Vite 7 + TypeScript                                                 |
+| Styling   | Tailwind CSS 4 + shadcn/ui                                                     |
+| Layout    | `react-resizable-panels` v4 (resize handles) + Zustand tree (topology)         |
+| State     | Zustand v5 + `@tauri-store/zustand` (file-backed; upgrade to SQLite in v2)     |
+| Build     | Vite 7 + `@tailwindcss/vite`, npm workspaces                                   |
+| Utilities | `react-error-boundary` v6 (plugin isolation)                                   |
 
 ---
 
@@ -542,19 +599,20 @@ Do not use `unsafe-eval`. Adjust if first-party plugins load remote assets.
 
 ## Critical Files
 
-| File                                 | Purpose                                                                           |
-| ------------------------------------ | --------------------------------------------------------------------------------- |
-| `package.json`                       | Root — workspaces, scripts (`tauri dev`, `tauri build`)                           |
-| `src-tauri/tauri.conf.json`          | Tauri config — app identifier, window (frameless + overlay), CSP                  |
-| `src-tauri/Cargo.toml`               | Rust deps (tauri 2, tauri-plugin-shell, tauri-plugin-fs, tauri-plugin-zustand)    |
-| `src/store/workspaceStore.ts`        | All state — workspaces, panel ops, saved configs (`@tauri-store/zustand` + immer) |
-| `src/plugins/registry.ts`            | Maps plugin IDs → dynamic import factories                                        |
-| `src/components/TabBar.tsx`          | Tab strip — workspace switching + new/close tab                                   |
-| `src/components/SavedConfigMenu.tsx` | Save/load/delete named layout configs                                             |
-| `src/components/PanelGrid.tsx`       | Root component — starts the render tree                                           |
-| `src/components/EmptyState.tsx`      | Initial fullscreen view                                                           |
-| `plugins/hello/src/index.tsx`        | PoC plugin — verifies the plugin system works                                     |
-| `note.plugins.json`                  | Plugin config — single source of truth for registered plugins                     |
+| File                                  | Purpose                                                                           |
+| ------------------------------------- | --------------------------------------------------------------------------------- |
+| `package.json`                        | Root — workspaces, scripts (`tauri dev`, `tauri build`)                           |
+| `src-tauri/tauri.conf.json`           | Tauri config — app identifier, window (frameless + overlay), CSP                  |
+| `src-tauri/Cargo.toml`                | Rust deps (tauri 2, tauri-plugin-zustand, tauri-plugin-window-state)              |
+| `src-tauri/capabilities/default.json` | Tauri permissions — required for IPC (`core:default`, `zustand:default`)          |
+| `src/store/workspaceStore.ts`         | All state — workspaces, panel ops, saved configs (`@tauri-store/zustand` + immer) |
+| `src/plugins/registry.ts`             | Maps plugin IDs → dynamic import factories                                        |
+| `src/components/TabBar.tsx`           | Tab strip — workspace switching + new/close tab                                   |
+| `src/components/SavedConfigMenu.tsx`  | Save/load/delete named layout configs                                             |
+| `src/components/PanelGrid.tsx`        | Root component — starts the render tree                                           |
+| `src/components/EmptyState.tsx`       | Initial fullscreen view                                                           |
+| `plugins/hello/src/index.tsx`         | PoC plugin — verifies the plugin system works                                     |
+| `note.plugins.json`                   | Plugin config — single source of truth for registered plugins                     |
 
 ---
 

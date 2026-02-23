@@ -47,22 +47,24 @@ The PoC code is **not throwaway** — it becomes the foundation for issues #1–
 The workspace store for the PoC only needs:
 
 ```typescript
+type NodeId = string;
+type NodeMap = Record<NodeId, PanelNode>;
+
 interface PoCStore {
-  // One implicit workspace (no tabs yet)
-  root: PanelNode | null;
-  focusedPanelId: string | null;
+  // One implicit workspace (no tabs yet) — flat map shape
+  rootId: NodeId | null;
+  nodes: NodeMap;
+  focusedPanelId: NodeId | null;
 
   // Panel ops
-  splitPanel(panelId: string, direction: "horizontal" | "vertical"): void;
-  closePanel(panelId: string): void;
-  setFocus(panelId: string | null): void;
-  resizeSplit(splitId: string, sizes: [number, number]): void;
+  splitPanel(panelId: NodeId, direction: "horizontal" | "vertical"): void;
+  closePanel(panelId: NodeId): void;
+  setFocus(panelId: NodeId | null): void;
+  resizeSplit(splitId: NodeId, sizes: [number, number]): void;
 }
 ```
 
-Tree traversal helpers needed: `findNode`, `findParent`, `replaceNode` — keep these unexported local functions.
-
-**On the flat map vs recursive tree decision:** Use the recursive `PanelNode` tree (as per SPEC.md). The persistence concern (shallow merge corrupting nested trees) doesn't apply without `@tauri-store`. When persistence is added in issue #3, use the custom `merge` function documented in SPEC.md — no need to change the tree shape.
+**Flat map — decided.** All nodes live in `nodes: NodeMap` with `parentId` on each. Every store operation is O(1). No tree traversal helpers needed. See `research/flat-map-vs-recursive-tree.md` for `splitPanel`/`closePanel` implementations (they transfer directly into the PoC store).
 
 ---
 
@@ -73,14 +75,20 @@ Tree traversal helpers needed: `findNode`, `findParent`, `replaceNode` — keep 
 ```json
 {
   "identifier": "com.klarhimmel.note",
+  "build": {
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
   "app": {
     "windows": [
       {
         "title": "note",
         "width": 1200,
         "height": 800,
-        "decorations": false,
-        "titleBarStyle": "overlay"
+        "decorations": true,
+        "titleBarStyle": "Overlay"
       }
     ]
   },
@@ -90,9 +98,20 @@ Tree traversal helpers needed: `findNode`, `findParent`, `replaceNode` — keep 
 }
 ```
 
-- Tab bar needs `pl-[72px]` to clear macOS traffic lights
+- `decorations: true` + `titleBarStyle: "Overlay"` (capital O — Tauri is case-sensitive). `decorations: false` removes traffic lights entirely.
+- Tab bar needs `pl-[80px]` to clear macOS traffic lights
 - Empty space in tab bar (or a spacer div) needs `data-tauri-drag-region`
 - `onCloseRequested` in `App.tsx` must call `e.preventDefault()` — prevents CMD+W from closing the window
+
+`src-tauri/capabilities/default.json` — required even for the PoC. Without it `onCloseRequested` and other IPC fails silently:
+
+```json
+{
+  "identifier": "default",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}
+```
 
 For the PoC, the "tab bar" is just a simple `<div>` with drag region and the app name — no actual tabs yet.
 
@@ -100,7 +119,7 @@ For the PoC, the "tab bar" is just a simple `<div>` with drag region and the app
 
 ## Panel Components
 
-`react-resizable-panels` v4 note: the roadmap uses `PanelGroup`/`PanelResizeHandle` names — verify actual v4 exports at install time (the spec doc noted the library uses `Group`/`Separator`; check `node_modules` after install).
+`react-resizable-panels` v4 confirmed exports: `Group` (was `PanelGroup`), `Panel` (unchanged), `Separator` (was `PanelResizeHandle`). Prop `direction` → `orientation`. Selector `data-[panel-group-direction=...]` → `aria-[orientation=...]`. **These are verified against v4.6.5** — do not use v3 names. After `npx shadcn@latest add resizable`, the generated `resizable.tsx` still uses v3 names — patch it immediately.
 
 The divider starts minimal: `w-px bg-border/30 hover:bg-border` — iterate after testing.
 
@@ -127,14 +146,15 @@ Defer CMD+T, CMD+Shift+W, CMD+1–9, CMD+S — those require tabs/plugins.
 ## Files to Create
 
 ```
-src-tauri/tauri.conf.json          # frameless window, identifier, CSP
+src-tauri/tauri.conf.json          # frameless window, identifier, CSP, build.devUrl
+src-tauri/capabilities/default.json  # required for IPC — even PoC needs this for onCloseRequested
 src-tauri/Cargo.toml               # tauri 2.10.2, NO tauri-plugin-zustand yet
 src-tauri/src/main.rs              # minimal
 package.json                       # workspaces: ["plugins/*"], scripts
 vite.config.ts                     # @tailwindcss/vite plugin, path alias @/*
 tsconfig.json                      # strict: true, paths
 src/types/panel.ts                 # PanelLeaf, PanelSplit, PanelNode
-src/types/workspace.ts             # PoC-scoped: just root + focusedPanelId
+src/types/workspace.ts             # PoC-scoped: rootId, nodes (NodeMap), focusedPanelId
 src/store/workspaceStore.ts        # plain Zustand (no @tauri-store)
 src/hooks/useKeyboardShortcuts.ts  # CMD+D/Shift+D/W only
 src/components/EmptyState.tsx
@@ -169,7 +189,7 @@ src/index.css                      # Tailwind 4 @import
 
 Once the PoC passes its checklist, implement the remaining issues in order:
 
-1. **#3 upgrade** — Add `@tauri-store/zustand` persistence (expand the minimal PoC store)
+1. **#3 upgrade** — Add `@tauri-store/zustand` persistence and lift the PoC store into the full multi-workspace model. **Note:** this refactor touches every panel component — the PoC store has `rootId`/`nodes`/`focusedPanelId` at the top level, but the full store nests them inside `Workspace` objects. Every component reading those keys will need updating to target `activeWorkspace.nodes` etc. Plan for this scope upfront.
 2. **#5 TabBar** — Multiple workspaces
 3. **#9 + #12** — Plugin registry + hello plugin
 4. **#8 Launcher** — Plugin selection UI

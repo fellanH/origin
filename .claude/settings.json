@@ -9,6 +9,28 @@
     ]
   },
   "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_FILE_PATH\" | grep -qE '\\.(ts|tsx)$'; then cd \"$CLAUDE_PROJECT_DIR\" && npx eslint \"$CLAUDE_FILE_PATH\" --fix 2>&1 | tail -8; fi; exit 0",
+            "timeout": 30
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_FILE_PATH\" | grep -qE '\\.rs$'; then cd \"$CLAUDE_PROJECT_DIR/src-tauri\" && cargo clippy --message-format=short 2>&1 | grep -E '(warning|error)' | head -15; fi; exit 0",
+            "timeout": 90
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "matcher": "startup|resume",

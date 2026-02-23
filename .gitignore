@@ -1,5 +1,26 @@
+# Node
+node_modules/
+dist/
+.env
+.env.local
+
+# Rust / Cargo
+src-tauri/target/
+*.pdb
+
+# Tauri generated (some are committed, some not)
+src-tauri/gen/schemas/
+!src-tauri/gen/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dev artifacts
+*.log
+
+# Project-local config (not committed)
 .claude/settings.local.json
 .mcp.json
-.DS_Store
 MEMORY.local.md
 .obsidian/
