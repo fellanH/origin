@@ -94,7 +94,7 @@ export default function TabBar() {
       </button>
 
       <SavedConfigMenu />
-      <div className="flex-1" data-tauri-drag-region />
+      <div className="flex-1 self-stretch" data-tauri-drag-region />
     </div>
   );
 }
