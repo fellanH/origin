@@ -1,6 +1,6 @@
 function App() {
   return (
-    <div style={{ padding: "2rem" }}>
+    <div className="pt-12 px-8">
       <p>note</p>
     </div>
   );

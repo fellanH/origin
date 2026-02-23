@@ -51,6 +51,7 @@ No code written. GitHub issues created (14 issues — MVP v1 + spike — at `fel
 - Do NOT use `unstable` Cargo feature — breaks `trafficLightPosition` (Tauri #14072)
 - `onCloseRequested` must `e.preventDefault()` to prevent CMD+W closing the native window
 - Dev builds use `.dev.json` file suffix by default — dev/prod state is intentionally separate
+- `createTauriStore` type gotcha: expects `StoreApi<State>` where `State` requires `[key: string]: unknown` index signature — immer middleware overloads `setState` with a `WritableDraft` type that clashes. Runtime is fine; use `useSpikeStore as any` cast. For real stores, either declare state with `[key: string]: unknown` or cast.
 
 ## Cross-Domain Tools
 
