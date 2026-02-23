@@ -21,6 +21,7 @@ Use **`react-resizable-panels` v4** for the resize/drag affordance. Keep your Zu
 
 **v4 breaking changes from v2/v3:**
 
+- `PanelGroup` → `Group`, `PanelResizeHandle` → `Separator`, `direction` → `orientation`, `onLayout` → `onLayoutChanged`
 - Flexible sizing units: px, %, rem/em (not just %)
 - shadcn/ui `Resizable` broke on v4 upgrade — check shadcn compatibility
 

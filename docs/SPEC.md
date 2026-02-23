@@ -200,7 +200,7 @@ The snapshot captures the full `PanelNode` tree including `pluginId` assignments
 
 ### Workspace & Tab State Model
 
-The core state is a list of **workspaces** (tabs). Each workspace owns its own `PanelNode` tree. All panel operations target the currently active workspace.
+The core state is a list of **workspaces** (tabs). Each workspace owns its own flat node map (`NodeMap`). All panel operations target the currently active workspace.
 
 ```typescript
 // src/types/workspace.ts
@@ -208,14 +208,15 @@ The core state is a list of **workspaces** (tabs). Each workspace owns its own `
 interface Workspace {
   id: string;
   name: string;
-  root: PanelNode | null; // null = empty state
-  focusedPanelId: string | null;
+  rootId: NodeId | null; // null = empty state
+  nodes: NodeMap; // flat map: all PanelNodes indexed by id
+  focusedPanelId: NodeId | null;
 }
 
 interface SavedConfig {
   id: string;
   name: string;
-  snapshot: PanelNode | null; // full tree snapshot
+  snapshot: { rootId: NodeId | null; nodes: NodeMap } | null;
   savedAt: string; // ISO-8601
 }
 
@@ -248,23 +249,29 @@ interface WorkspaceStore {
 ```typescript
 // src/types/panel.ts
 
+type NodeId = string; // crypto.randomUUID() at creation time
+
 type PanelLeaf = {
   type: "leaf";
-  id: string;
+  id: NodeId;
+  parentId: NodeId | null; // null = this node is the root
   pluginId: string | null;
 };
 
 type PanelSplit = {
   type: "split";
-  id: string; // required — used by resizeSplit and parent traversal
+  id: NodeId;
+  parentId: NodeId | null; // null = this node is the root
   direction: "horizontal" | "vertical";
   sizes: [number, number]; // percentages, sum = 100
-  children: [PanelNode, PanelNode];
+  childIds: [NodeId, NodeId]; // replaces children: [PanelNode, PanelNode]
 };
 
 type PanelNode = PanelLeaf | PanelSplit;
+type NodeMap = Record<NodeId, PanelNode>;
 
-// IDs: both PanelLeaf and PanelSplit generate IDs at creation time via crypto.randomUUID()
+// All nodes live in Workspace.nodes. Parent context is O(1): nodes[node.parentId].
+// See research/flat-map-vs-recursive-tree.md for the splitPanel/closePanel implementations.
 ```
 
 ### Plugin API Contract
@@ -366,23 +373,26 @@ Resize handles are provided by [`react-resizable-panels`](https://github.com/bva
 ```tsx
 // PanelBranch.tsx (simplified)
 import { Group, Panel, Separator } from "react-resizable-panels";
+import type { NodeId, NodeMap, PanelSplit } from "@/types/panel";
 
-function PanelBranch({ node }: { node: PanelTreeNode }) {
-  if (node.type === "leaf") return <LeafPanel node={node} />;
+function PanelBranch({ nodeId, nodes }: { nodeId: NodeId; nodes: NodeMap }) {
+  const node = nodes[nodeId];
+  if (!node || node.type === "leaf") return <LeafPanel nodeId={nodeId} />;
+  const split = node as PanelSplit;
   return (
     <Group
-      id={node.id}
-      orientation={node.direction}
+      id={split.id}
+      orientation={split.direction}
       onLayoutChanged={(sizes) =>
-        resizeSplit(node.id, sizes as [number, number])
+        resizeSplit(split.id, sizes as [number, number])
       }
     >
-      <Panel id={node.children[0].id} defaultSize={node.sizes[0]} minSize={5}>
-        <PanelBranch node={node.children[0]} />
+      <Panel id={split.childIds[0]} defaultSize={split.sizes[0]} minSize={5}>
+        <PanelBranch nodeId={split.childIds[0]} nodes={nodes} />
       </Panel>
       <Separator />
-      <Panel id={node.children[1].id} defaultSize={node.sizes[1]} minSize={5}>
-        <PanelBranch node={node.children[1]} />
+      <Panel id={split.childIds[1]} defaultSize={split.sizes[1]} minSize={5}>
+        <PanelBranch nodeId={split.childIds[1]} nodes={nodes} />
       </Panel>
     </Group>
   );

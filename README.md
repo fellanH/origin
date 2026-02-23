@@ -23,6 +23,11 @@ npm run tauri dev
 npm run tauri build
 ```
 
-## Project Context
+## Documentation
 
-See `prompt.md` for product vision, plugin API contract, and MVP scope.
+| Doc                                      | Description                                                         |
+| ---------------------------------------- | ------------------------------------------------------------------- |
+| [`docs/SPEC.md`](docs/SPEC.md)           | Full product spec (v1.2) — architecture, UX, plugin API, tech stack |
+| [`docs/plans/`](docs/plans/)             | PoC plan and development roadmap                                    |
+| [`docs/research/`](docs/research/)       | Architecture research notes                                         |
+| [`docs/corrections/`](docs/corrections/) | Corrections log — spec and research errata                          |
