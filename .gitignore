@@ -1,7 +1,6 @@
 .claude/settings.local.json
 CLAUDE.local.md
 .mcp.json
-.context/logs/*.json
 .DS_Store
 MEMORY.local.md
 .obsidian/

@@ -11,28 +11,6 @@ Add local overrides in `CLAUDE.local.md` (auto-loaded by Claude Code, not overwr
 Read `prompt.md` at session start for project-specific context (client info, tools, patterns).
 This file is written by the agent that created this bucket and is never overwritten by updates.
 
-## Your State
-
-- Tasks: `.context/tasks/` — task queue (task-NNN.md files)
-
-## Task Format
-
-```markdown
-# Task: <title>
-
-Status: PENDING | ACTIVE | COMPLETE
-Priority: 1-5
-Created: <ISO-8601>
-
-## Description
-
-What to do.
-
-## Done When
-
-Concrete completion criteria.
-```
-
 ## Cross-Domain Tools
 
 ### Write tools
