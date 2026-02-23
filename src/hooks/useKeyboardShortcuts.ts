@@ -42,10 +42,7 @@ export function useKeyboardShortcuts(): void {
         if (target) useWorkspaceStore.getState().setActiveWorkspace(target.id);
       } else if (e.key === "s") {
         e.preventDefault();
-        const name = window.prompt("Name this config:");
-        if (name?.trim()) {
-          useWorkspaceStore.getState().saveConfig(name.trim());
-        }
+        useWorkspaceStore.getState().setPendingSaveName(true);
       }
     }
 

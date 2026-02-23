@@ -11,6 +11,7 @@ type WorkspaceState = {
   workspaces: Workspace[];
   activeWorkspaceId: WorkspaceId;
   savedConfigs: SavedConfig[];
+  pendingSaveName: boolean;
 };
 
 type WorkspaceActions = {
@@ -27,6 +28,7 @@ type WorkspaceActions = {
   saveConfig: (name: string) => void;
   loadConfig: (configId: string) => void;
   deleteConfig: (configId: string) => void;
+  setPendingSaveName: (v: boolean) => void;
 };
 
 export type WorkspaceStore = WorkspaceState & WorkspaceActions;
@@ -52,6 +54,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
       workspaces: [emptyWorkspace(INITIAL_ID, "Workspace 1")],
       activeWorkspaceId: INITIAL_ID,
       savedConfigs: [],
+      pendingSaveName: false,
 
       // ── Tab actions ──────────────────────────────────────────────────────
 
@@ -262,6 +265,11 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
             (c) => c.id !== configId,
           );
         }),
+
+      setPendingSaveName: (v) =>
+        set((draft) => {
+          draft.pendingSaveName = v;
+        }),
     })),
     { name: "WorkspaceStore" },
   ),
@@ -288,6 +296,8 @@ export const tauriHandler = createTauriStore(
       "saveConfig",
       "loadConfig",
       "deleteConfig",
+      "setPendingSaveName",
+      "pendingSaveName",
     ],
     filterKeysStrategy: "omit",
     saveOnChange: true,
