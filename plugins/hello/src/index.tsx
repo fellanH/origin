@@ -1,4 +1,4 @@
-import type { PluginContext } from "@/types/plugin";
+import type { PluginContext } from "@note/api";
 export { manifest } from "./manifest";
 
 interface Props {

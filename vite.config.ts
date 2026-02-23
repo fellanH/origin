@@ -10,6 +10,8 @@ export default defineConfig({
 
   resolve: {
     alias: {
+      // Plugin API type contract
+      "@note/api": path.resolve(__dirname, "plugins/api/src"),
       // Plugin workspace packages — activated in issue #12
       "@note/hello": path.resolve(__dirname, "plugins/hello/src"),
       // Internal path alias

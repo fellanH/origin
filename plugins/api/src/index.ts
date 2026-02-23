@@ -3,4 +3,4 @@ export type {
   PluginContext,
   PluginComponent,
   PluginModule,
-} from "@note/api";
+} from "./plugin";
