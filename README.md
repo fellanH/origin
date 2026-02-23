@@ -4,13 +4,19 @@ Dynamic dashboard desktop app with a panel manager and developer plugin API.
 
 Built with Tauri 2, React 19, Vite 7, Tailwind CSS 4, and Zustand.
 
+## Vision
+
+note is a keyboard-driven split-panel workspace where every panel runs a plugin. The shell provides layout, persistence, and a plugin API — all functionality comes from the community.
+
+It is free, open source (MIT), and will always be. See [docs/GOALS.md](docs/GOALS.md) for the full project commitment and roadmap.
+
 ## Prerequisites
 
 - [Rust toolchain](https://rustup.rs/) (required by Tauri)
 - Node.js 20+
 - macOS (primary target; Tauri 2 desktop)
 
-## Development (once app is scaffolded)
+## Development
 
 ```bash
 # Install dependencies
@@ -29,6 +35,9 @@ npm run tauri build
 src/          React 19 frontend (components, store, plugins, types)
 src-tauri/    Rust/Tauri backend (commands, capabilities, config)
 plugins/      @note/* plugin packages (npm workspaces)
+  api/        @note/api — plugin type contract (PluginManifest, PluginContext)
+  hello/      @note/hello — reference plugin implementation
+  template/   @note/template — scaffold for new plugin authors
 docs/         Spec, research, SOPs, standards
 ```
 
@@ -61,7 +70,128 @@ Note is a developer-focused tiling window manager as a desktop app. The shell pr
 
 ## Plugin System
 
-v1 plugins are npm workspace packages in `plugins/`. Loading is build-time only — all plugins must be present at build time via Vite dynamic import. `@note/hello` is the canonical reference implementation. Runtime loading (v2) is documented in `docs/research/vite-plugin-loading.md`.
+v1 plugins are npm workspace packages in `plugins/`. Each plugin:
+
+- Depends on `@note/api` for type contracts (`PluginManifest`, `PluginContext`)
+- Exports a `manifest` and a default React component
+- Is registered in `note.plugins.json` and `src/plugins/registry.ts`
+
+Loading is build-time only in v1 — all plugins must be present at build time via Vite dynamic import. `@note/hello` is the canonical reference implementation. See `plugins/template/` to scaffold a new plugin, and `docs/SOP/add-plugin.md` for the registration walkthrough. Runtime loading (v2) is documented in `docs/research/vite-plugin-loading.md`.
+
+---
+
+## Working with Claude Code
+
+This project uses Claude Code as its primary development agent. `CLAUDE.md` is the agent's entry point — it contains architecture decisions, critical gotchas, and SOPs that every agent session loads automatically.
+
+### Starting an agent session
+
+```bash
+npm run claude
+# expands to: claude --plugin-dir .claude/plugin --dangerously-skip-permissions
+```
+
+The `--plugin-dir` flag loads project-scoped slash commands:
+
+| Command                 | When to use                                    |
+| ----------------------- | ---------------------------------------------- |
+| `/note:pre-code`        | Before writing any component, hook, or command |
+| `/note:issue-lifecycle` | Before picking up a GitHub issue               |
+| `/note:git-workflow`    | Branching, commits, PR workflow                |
+| `/note:complete-work`   | After finishing a task — closes the loop       |
+
+### Supervisor / worker pattern
+
+For longer sprints, run a **supervisor** Claude session alongside a **worker** session. The supervisor reads the project state, writes scoped prompts, and monitors progress — the worker executes tasks one at a time with a fresh context per issue.
+
+```
+tmux sessions:
+  admin      ← supervisor Claude (reads state, writes prompts, monitors)
+  agent-1    ← worker Claude (executes tasks, commits)
+```
+
+---
+
+## tmux Workflow
+
+### Recommended `.tmux.conf`
+
+```conf
+set -s escape-time 0                     # fixes Esc lag in Claude's TUI
+set -g default-terminal "tmux-256color"
+set -ga terminal-overrides ",xterm-256color:Tc"
+set -g history-limit 50000               # Claude sessions produce high output
+set -g mouse on
+set -g allow-passthrough on              # OSC 52 clipboard + OSC 8 hyperlinks
+setw -q -g utf8 on
+set -g pane-base-index 0                 # required for Claude Agent Teams routing
+set -g base-index 0
+```
+
+### Session setup
+
+```bash
+# Create worker session
+tmux new-session -s agent-1
+# In the agent-1 pane:
+cd /path/to/note && npm run claude
+
+# In a separate terminal, create supervisor session
+tmux new-session -s admin
+```
+
+### `send-agent` — reliable prompt delivery
+
+Add to `~/.zshrc`. Uses `tmux load-buffer` + `paste-buffer` instead of `send-keys` to avoid Claude Code's paste-truncation bug (#1490):
+
+```bash
+send-agent() {
+  local target="${1:-agent-1:0.0}"
+  cat > /tmp/agent-prompt.txt
+  tmux send-keys -t "$target" "/clear" Enter
+  sleep 4
+  tmux send-keys -t "$target" "" Enter   # dismiss autocomplete confirm
+  sleep 1
+  tmux load-buffer /tmp/agent-prompt.txt
+  tmux paste-buffer -t "$target"
+  sleep 1
+  tmux send-keys -t "$target" "" Enter
+}
+```
+
+Usage:
+
+```bash
+send-agent << 'EOF'
+Read CLAUDE.md first. [current state in one sentence].
+
+[Scoped task steps]
+
+Done when:
+- [concrete criteria]
+- npx tsc --noEmit passes
+
+Commit as: type(#issue): description
+Do not move on to any other task after this commit.
+EOF
+```
+
+### Checking on the agent
+
+```bash
+tmux capture-pane -t agent-1:0.0 -p -S -50
+```
+
+### Known tmux + Claude Code issues
+
+| Issue                                                   | Impact                    | Workaround                                                   |
+| ------------------------------------------------------- | ------------------------- | ------------------------------------------------------------ |
+| `/clear` wipes tmux scrollback (#16310)                 | History lost on each task | Keep a separate shell pane                                   |
+| Flickering at 4k–6k scroll events/sec (#9935)           | Visual jitter             | Use Ghostty terminal (DEC 2026 native)                       |
+| Large paste freeze (#1490)                              | Terminal hangs            | Use `load-buffer` + `paste-buffer` (handled by `send-agent`) |
+| `pane-base-index 1` breaks Agent Teams routing (#23527) | Teammates idle            | Keep `pane-base-index 0`                                     |
+
+---
 
 ## Documentation
 
@@ -70,6 +200,7 @@ v1 plugins are npm workspace packages in `plugins/`. Loading is build-time only 
 | [`docs/SPEC.md`](docs/SPEC.md)                     | Full product spec v1.2 — authoritative             |
 | [`docs/STANDARDS.md`](docs/STANDARDS.md)           | Coding standards — TypeScript, React, Zustand, CSS |
 | [`docs/SOP/index.md`](docs/SOP/index.md)           | Standard operating procedures (SOPs)               |
+| [`docs/SOP/add-plugin.md`](docs/SOP/add-plugin.md) | Adding a new plugin — step-by-step                 |
 | [`docs/plans/poc.md`](docs/plans/poc.md)           | PoC plan (complete — for reference)                |
 | [`docs/research/index.md`](docs/research/index.md) | Research index + key findings                      |
 | [`docs/research/risks.md`](docs/research/risks.md) | Pre-build risk register                            |

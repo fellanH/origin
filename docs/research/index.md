@@ -7,20 +7,21 @@
 
 ## Files
 
-| File                                                                     | Topic                                                                                    |
-| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| [`ux-interview.md`](ux-interview.md)                                     | UX interview — product goals, aesthetic, window chrome, v1 success criteria              |
-| [`tauri2.md`](tauri2.md)                                                 | Tauri 2 version, keyboard shortcuts, SQLite, localStorage issues, runtime plugin loading |
-| [`tauri2-frameless-window.md`](tauri2-frameless-window.md)               | Frameless window, `titleBarStyle: "Overlay"`, traffic lights, drag region, known bugs    |
-| [`vite-plugin-loading.md`](vite-plugin-loading.md)                       | Module Federation, import maps, Tauri-specific plugin loading patterns                   |
-| [`react-panel-libraries.md`](react-panel-libraries.md)                   | react-resizable-panels, allotment, react-mosaic, FlexLayout comparison                   |
-| [`react-resizable-panels-zustand.md`](react-resizable-panels-zustand.md) | v4 API changes, Zustand sync pattern, keying strategy, `onLayoutChanged`, close panel    |
-| [`zustand.md`](zustand.md)                                               | Zustand v5 breaking changes, persist pitfalls, localStorage issues, @tauri-store/zustand |
-| [`tauri-store-zustand.md`](tauri-store-zustand.md)                       | `@tauri-store/zustand` v1.2.0 setup, Zustand v5 compat, filterKeys, beforeFrontendSync   |
-| [`tailwind-v4-dark-mode.md`](tailwind-v4-dark-mode.md)                   | Tailwind v4 system dark mode, shadcn/ui, WKWebView `color-scheme`, upgrade path          |
-| [`flat-map-vs-recursive-tree.md`](flat-map-vs-recursive-tree.md)         | Decision: flat NodeMap + parentId vs recursive PanelNode tree — updated types + ops      |
-| [`capabilities-config.md`](capabilities-config.md)                       | Complete `src-tauri/capabilities/` JSON for all v1 plugins (fs, zustand, core)           |
-| [`vite-config.md`](vite-config.md)                                       | Complete `vite.config.ts` — workspace aliases, `optimizeDeps`, Tauri dev server settings |
+| File                                                                     | Topic                                                                                         |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| [`ux-interview.md`](ux-interview.md)                                     | UX interview — product goals, aesthetic, window chrome, v1 success criteria                   |
+| [`tauri2.md`](tauri2.md)                                                 | Tauri 2 version, keyboard shortcuts, SQLite, localStorage issues, runtime plugin loading      |
+| [`tauri2-frameless-window.md`](tauri2-frameless-window.md)               | Frameless window, `titleBarStyle: "Overlay"`, traffic lights, drag region, known bugs         |
+| [`vite-plugin-loading.md`](vite-plugin-loading.md)                       | Module Federation, import maps, Tauri-specific plugin loading patterns                        |
+| [`react-panel-libraries.md`](react-panel-libraries.md)                   | react-resizable-panels, allotment, react-mosaic, FlexLayout comparison                        |
+| [`react-resizable-panels-zustand.md`](react-resizable-panels-zustand.md) | v4 API changes, Zustand sync pattern, keying strategy, `onLayoutChanged`, close panel         |
+| [`zustand.md`](zustand.md)                                               | Zustand v5 breaking changes, persist pitfalls, localStorage issues, @tauri-store/zustand      |
+| [`tauri-store-zustand.md`](tauri-store-zustand.md)                       | `@tauri-store/zustand` v1.2.0 setup, Zustand v5 compat, filterKeys, beforeFrontendSync        |
+| [`tailwind-v4-dark-mode.md`](tailwind-v4-dark-mode.md)                   | Tailwind v4 system dark mode, shadcn/ui, WKWebView `color-scheme`, upgrade path               |
+| [`flat-map-vs-recursive-tree.md`](flat-map-vs-recursive-tree.md)         | Decision: flat NodeMap + parentId vs recursive PanelNode tree — updated types + ops           |
+| [`capabilities-config.md`](capabilities-config.md)                       | Complete `src-tauri/capabilities/` JSON for all v1 plugins (fs, zustand, core)                |
+| [`vite-config.md`](vite-config.md)                                       | Complete `vite.config.ts` — workspace aliases, `optimizeDeps`, Tauri dev server settings      |
+| [`roadmap-research.md`](roadmap-research.md)                             | Long-term roadmap: runtime plugin loading, sync, auto-update, marketplace, inter-plugin comms |
 
 ---
 

@@ -1,17 +1,6 @@
 # note
 
-Isolated project bucket. You work within this project only.
-
-## Starting Claude
-
-```bash
-npm run claude
-# expands to: claude --plugin-dir .claude/plugin --dangerously-skip-permissions
-```
-
-Before `package.json` exists (pre-scaffold): `claude --plugin-dir .claude/plugin --dangerously-skip-permissions`
-
-The `--plugin-dir` flag loads `/note:pre-code`, `/note:complete-work`, `/note:issue-lifecycle`, and `/note:git-workflow` as slash commands.
+You are a Claude Code agent working within this project. `README.md` is the human-facing introduction — this file is yours. Read it before writing any code.
 
 ## Navigation
 
