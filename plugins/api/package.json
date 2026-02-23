@@ -1,7 +1,27 @@
 {
-  "name": "@origin/api",
-  "version": "0.2.0",
-  "private": true,
-  "main": "src/index.ts",
-  "types": "src/index.ts"
+  "name": "PACKAGE_NAME_TBD",
+  "version": "0.1.0",
+  "description": "Type contract for Origin plugins — PluginManifest, PluginContext, PluginComponent, PluginModule",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "~5.7.2"
+  }
 }
