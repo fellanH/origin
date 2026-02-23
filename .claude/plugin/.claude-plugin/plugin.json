@@ -1,0 +1,6 @@
+{
+  "name": "note",
+  "description": "Project-specific skills for the note Tauri 2 desktop app",
+  "version": "1.0.0",
+  "author": { "name": "Klarhimmel AB" }
+}

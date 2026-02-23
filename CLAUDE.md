@@ -2,11 +2,24 @@
 
 Isolated project bucket. You work within this project only.
 
+## Starting Claude
+
+```bash
+npm run claude
+# expands to: claude --plugin-dir .claude/plugin --dangerously-skip-permissions
+```
+
+Before `package.json` exists (pre-scaffold): `claude --plugin-dir .claude/plugin --dangerously-skip-permissions`
+
+The `--plugin-dir` flag loads `/note:pre-code`, `/note:complete-work`, `/note:issue-lifecycle`, and `/note:git-workflow` as slash commands.
+
 ## Project Context
 
 Read the Architecture Decisions and Critical Gotchas below before writing any code. Consult `docs/SPEC.md` for deep context (UX, full types, verification checklist). Start with `docs/plans/poc.md`.
 
-No code written. GitHub issues created (13 issues, MVP v1 at `fellanH/note`). Next: PoC (#1 scaffold, partial #2 types, partial #3 store, #4 EmptyState, partial #7 panels, partial #11 shortcuts).
+**Coding standards and SOPs:** `docs/STANDARDS.md` — TypeScript, React, Zustand, Tauri IPC, CSS, file naming, import order, git commits, and per-feature SOPs (adding commands, adding plugins).
+
+No code written. GitHub issues created (14 issues — MVP v1 + spike — at `fellanH/note`). PoC milestone created. Next: #24 spike → #1 scaffold → partial #2/#3 → #4 → partial #7/#11.
 
 ## Architecture Decisions
 
@@ -18,6 +31,7 @@ No code written. GitHub issues created (13 issues, MVP v1 at `fellanH/note`). Ne
 | Resize handles     | `react-resizable-panels` v4                         | From-scratch divider                                                               | `research/react-resizable-panels-zustand.md` |
 | Frameless window   | `decorations: true` + `titleBarStyle: "Overlay"`    | `decorations: false` (removes traffic lights)                                      | `research/tauri2-frameless-window.md`        |
 | Plugin loading v1  | Build-time Vite dynamic import                      | Runtime install                                                                    | `research/vite-plugin-loading.md`            |
+| Directory layout   | `src/` for React source, `src-tauri/` for Rust      | Flat root, `packages/app/` monorepo indirection                                    | —                                            |
 
 ## Critical Gotchas
 
@@ -56,15 +70,28 @@ No code written. GitHub issues created (13 issues, MVP v1 at `fellanH/note`). Ne
 | `list_projects`     | List all project bucket names |
 | `get_project_tasks` | Read tasks from any project   |
 
+## SOPs
+
+See `docs/SOP/index.md` for the full navigation hub. Quick reference:
+
+| SOP                             | When to use                                                     |
+| ------------------------------- | --------------------------------------------------------------- |
+| `docs/SOP/issue-lifecycle.md`   | Before picking up any issue (definition of ready, sprint order) |
+| `docs/SOP/pre-code.md`          | Before writing any component, hook, store slice, or command     |
+| `docs/SOP/git-workflow.md`      | Branching, commits, PR workflow, merge strategy                 |
+| `docs/SOP/testing.md`           | What to test, Vitest setup, merge gates                         |
+| `docs/SOP/add-tauri-command.md` | Adding a new Rust-backed IPC command                            |
+| `docs/SOP/add-plugin.md`        | Adding a new `@note/*` plugin package                           |
+| `docs/SOP/complete-work.md`     | When finishing a task — closes the loop with admin              |
+| `docs/SOP/release.md`           | Versioning, build, distribution, GitHub release                 |
+
 ## Completing Work
 
-When a task is finished:
+See `docs/SOP/complete-work.md` for the full procedure. Summary:
 
-1. `update_project_task` — mark the task as COMPLETE with a summary of what was done
-2. `update_queue_item` — if the task originated from a queue item, mark that item as COMPLETED so admin knows the work is done
-3. `log_to_memory` — log the completion with type "status" so admin can track progress
-
-This closes the loop: admin dispatches work, project executes, admin is notified of completion.
+1. `update_project_task` — mark COMPLETE with a summary
+2. `update_queue_item` — if task was dispatched from the admin queue
+3. `log_to_memory` — type "status", one-sentence summary
 
 ## Rules
 
