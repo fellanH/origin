@@ -2,6 +2,7 @@ import {
   useWorkspaceStore,
   selectActiveWorkspace,
 } from "@/store/workspaceStore";
+import EmptyState from "@/components/EmptyState";
 
 interface Props {
   nodeId: string;
@@ -24,11 +25,7 @@ function LeafPanel({ nodeId }: Props) {
       onClick={() => setFocus(nodeId)}
     >
       {pluginId === null ? (
-        <div className="flex h-full w-full items-center justify-center">
-          <span className="text-2xl font-light text-muted-foreground/40 select-none">
-            +
-          </span>
-        </div>
+        <EmptyState />
       ) : (
         <div className="p-4 text-sm text-muted-foreground">{pluginId}</div>
       )}
