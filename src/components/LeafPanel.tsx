@@ -17,6 +17,7 @@ function LeafPanel({ nodeId }: Props) {
   const node = useWorkspaceStore((s) => selectActiveWorkspace(s).nodes[nodeId]);
   const setFocus = useWorkspaceStore((s) => s.setFocus);
   const closePanel = useWorkspaceStore((s) => s.closePanel);
+  const appDataDir = useWorkspaceStore((s) => s.appDataDir);
 
   const isFocused = focusedPanelId === nodeId;
   const pluginId = node?.type === "leaf" ? node.pluginId : null;
@@ -34,7 +35,7 @@ function LeafPanel({ nodeId }: Props) {
           context={
             {
               panelId: nodeId,
-              workspacePath: "",
+              workspacePath: appDataDir,
               theme: window.matchMedia("(prefers-color-scheme: dark)").matches
                 ? "dark"
                 : "light",

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { appDataDir } from "@tauri-apps/api/path";
 import {
   useWorkspaceStore,
   selectActiveWorkspace,
@@ -10,8 +11,13 @@ import TabBar from "@/components/TabBar";
 
 function App() {
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
+  const setAppDataDir = useWorkspaceStore((s) => s.setAppDataDir);
 
   useKeyboardShortcuts();
+
+  useEffect(() => {
+    appDataDir().then(setAppDataDir);
+  }, [setAppDataDir]);
 
   useEffect(() => {
     const win = getCurrentWindow();

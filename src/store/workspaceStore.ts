@@ -12,6 +12,8 @@ type WorkspaceState = {
   activeWorkspaceId: WorkspaceId;
   savedConfigs: SavedConfig[];
   pendingSaveName: boolean;
+  /** Resolved at startup via appDataDir() — never persisted */
+  appDataDir: string;
 };
 
 type WorkspaceActions = {
@@ -29,6 +31,7 @@ type WorkspaceActions = {
   loadConfig: (configId: string) => void;
   deleteConfig: (configId: string) => void;
   setPendingSaveName: (v: boolean) => void;
+  setAppDataDir: (path: string) => void;
 };
 
 export type WorkspaceStore = WorkspaceState & WorkspaceActions;
@@ -55,6 +58,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
       activeWorkspaceId: INITIAL_ID,
       savedConfigs: [],
       pendingSaveName: false,
+      appDataDir: "",
 
       // ── Tab actions ──────────────────────────────────────────────────────
 
@@ -270,6 +274,11 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
         set((draft) => {
           draft.pendingSaveName = v;
         }),
+
+      setAppDataDir: (path) =>
+        set((draft) => {
+          draft.appDataDir = path;
+        }),
     })),
     { name: "WorkspaceStore" },
   ),
@@ -298,6 +307,8 @@ export const tauriHandler = createTauriStore(
       "deleteConfig",
       "setPendingSaveName",
       "pendingSaveName",
+      "setAppDataDir",
+      "appDataDir",
     ],
     filterKeysStrategy: "omit",
     saveOnChange: true,
