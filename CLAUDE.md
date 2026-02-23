@@ -47,6 +47,7 @@ No code written. GitHub issues created (14 issues — MVP v1 + spike — at `fel
 - `titleBarStyle: "Overlay"` — capital O, Tauri is case-sensitive
 - `key={activeWorkspaceId}` on root `PanelGrid` element — forces remount on tab switch
 - Do NOT call `window.setTitle()` — resets `trafficLightPosition` (Tauri #13044); use `document.title`
+- **Traffic light alignment** — `trafficLightPosition.y` controls title bar container HEIGHT (`container = button_height + y`), NOT the button's CSS y. Native button frame = **16px** (12px dot + 2px margin each side). Button is centered in container: `button_center_CSS = (button_height + y) / 2`. Correct pattern: `trafficLightPosition: { x: 14, y: 22 }` + title bar `h-[38px] items-center` (38 = 16+22, button center = text center = 19px). Do NOT use `pt-[]` for this — it requires knowing cap-height. Do NOT use CSS `env(titlebar-area-*)` — not implemented in WKWebView (Tauri #6030, open since 2022).
 - `security.csp` belongs inside `app` in `tauri.conf.json` — NOT at top level (top-level `security` is a Tauri 1 pattern)
 - Do NOT use `unstable` Cargo feature — breaks `trafficLightPosition` (Tauri #14072)
 - `onCloseRequested` must `e.preventDefault()` to prevent CMD+W closing the native window
