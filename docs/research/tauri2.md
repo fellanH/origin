@@ -51,7 +51,7 @@ If you need to intercept CMD+W before macOS can act on it at all: `tauri-plugin-
 - `sqlite:` prefix required; path resolves relative to AppConfig, not project dir
 - JS bridge overhead vs raw `sqlx` in Rust (use Rust-side if performance matters)
 
-**Recommendation for note:**
+**Recommendation for origin:**
 
 - localStorage → ephemeral UI state only (3-5 MB cap, origin-volatile in Tauri)
 - `tauri-plugin-store` → key-value preferences, API keys, per-user settings

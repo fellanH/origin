@@ -1,13 +1,13 @@
 [package]
-name = "note"
+name = "origin"
 version = "0.0.1"
-description = "note — dynamic dashboard + plugin API"
+description = "origin — dynamic dashboard + plugin API"
 authors = []
 edition = "2021"
 rust-version = "1.77.2"
 
 [lib]
-name = "note_lib"
+name = "origin_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

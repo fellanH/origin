@@ -1,11 +1,11 @@
 # Goals
 
-note is free. It will always be free. There is no paid tier, no Pro plan,
+Origin is free. It will always be free. There is no paid tier, no Pro plan,
 no plugin marketplace cut. This is a commitment, not a policy.
 
 ## Why
 
-The value of note is its plugin ecosystem — the community of developers
+The value of Origin is its plugin ecosystem — the community of developers
 who build tools on top of it. Charging for that would undermine the reason
 it exists. A thriving plugin library benefits everyone.
 
@@ -19,16 +19,16 @@ where it matters. Plugins do the work; the shell stays out of the way.
 **2. A plugin ecosystem that covers the tools developers actually use**
 GitHub, Linear, terminal output, system stats, timers, notes, build status,
 database viewers. If a developer checks something more than twice a day, it
-should be a note plugin. The goal is 50+ quality community plugins.
+should be an Origin plugin. The goal is 50+ quality community plugins.
 
 **3. Exceptional plugin author DX**
 Writing a plugin should feel like writing a React component — because it is.
-`@note/api` provides the contract. `plugins/template` provides the scaffold.
+`@origin/api` provides the contract. `plugins/template` provides the scaffold.
 The SOP gets you from zero to running in under 10 minutes. If that's not
 true, it's a bug.
 
 **4. Full platform support**
-note targets macOS, Windows, and Linux. Tauri 2 supports all three.
+Origin targets macOS, Windows, and Linux. Tauri 2 supports all three.
 Platform-specific UI (window chrome, traffic lights) is handled per-platform.
 No user should be excluded because of their OS.
 
@@ -39,7 +39,7 @@ implementation. Plugin authors won't wake up to a breaking API change without
 warning and a migration path.
 
 **6. MIT licensed, forever**
-The core, the plugin API (`@note/api`), the template, and all first-party
+The core, the plugin API (`@origin/api`), the template, and all first-party
 plugins are MIT. No contributor license agreement required. You own what you
 build.
 

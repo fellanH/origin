@@ -1,8 +1,8 @@
-# Tauri 2 Capabilities Config — note app
+# Tauri 2 Capabilities Config — origin app
 
 **Researched:** 2026-02-23
 **Target:** Tauri 2.10.2
-**Scope:** All plugin permissions for the note app
+**Scope:** All plugin permissions for the origin app
 
 ---
 
@@ -10,11 +10,11 @@
 
 Capabilities live in `src-tauri/capabilities/`. Each JSON file is a separate capability group. Tauri merges them at compile time. Split by plugin for clarity — easier to audit and disable individually.
 
-For note app, three capability files:
+For origin app, three capability files:
 
 1. `default.json` — core window permissions + deny rules
 2. `zustand.json` — `tauri-plugin-zustand` (from `@tauri-store/zustand` docs)
-3. `fs.json` — `tauri-plugin-fs` for reading `note.plugins.json` at startup
+3. `fs.json` — `tauri-plugin-fs` for reading `origin.plugins.json` at startup
 
 `tauri-plugin-shell` is **not needed in v1** — no subprocess execution, no `shell:open` calls. Add in v2 if implementing `npm install` for runtime plugin loading.
 
@@ -71,7 +71,7 @@ From `research/tauri-store-zustand.md` — provided by `@tauri-store/zustand` do
 
 ## `src-tauri/capabilities/fs.json`
 
-`tauri-plugin-fs` is used for **one operation in v1**: reading `note.plugins.json` at startup to build the plugin registry. Scope to `$RESOURCE` (bundled app files) + `$APPCONFIG` (user config dir, for future plugin config).
+`tauri-plugin-fs` is used for **one operation in v1**: reading `origin.plugins.json` at startup to build the plugin registry. Scope to `$RESOURCE` (bundled app files) + `$APPCONFIG` (user config dir, for future plugin config).
 
 ```json
 {
@@ -96,11 +96,11 @@ From `research/tauri-store-zustand.md` — provided by `@tauri-store/zustand` do
 }
 ```
 
-**Why `$RESOURCE`:** `note.plugins.json` is bundled with the app as a resource file. The Rust resolver maps it to the app bundle's resources directory.
+**Why `$RESOURCE`:** `origin.plugins.json` is bundled with the app as a resource file. The Rust resolver maps it to the app bundle's resources directory.
 
 **Why `$APPCONFIG`:** Future: user-managed plugin list could live in `$APPCONFIG/note/plugins.json` alongside `tauri-store` state. Not needed v1 but cheap to include now.
 
-> **Note:** `fs:default` grants read access to `$APPDATA`, `$APPLOCALDATA`, `$APPCACHE`, `$APPLOG`, and `$APPCONFIG` but NOT `$RESOURCE`. Since `note.plugins.json` is a bundled resource, the scoped `$RESOURCE` permission is required explicitly.
+> **Note:** `fs:default` grants read access to `$APPDATA`, `$APPLOCALDATA`, `$APPCACHE`, `$APPLOG`, and `$APPCONFIG` but NOT `$RESOURCE`. Since `origin.plugins.json` is a bundled resource, the scoped `$RESOURCE` permission is required explicitly.
 
 ---
 

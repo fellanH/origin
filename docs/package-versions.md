@@ -114,13 +114,13 @@ Add to `src-tauri/Cargo.toml` manually (not via `tauri add`):
 tauri-plugin-zustand = "1"
 ```
 
-| Package                 | Pinned version          | Notes                                                           |
-| ----------------------- | ----------------------- | --------------------------------------------------------------- |
-| `@tauri-store/zustand`  | **1.2.0**               | Published 2026-02-22. Use `"^1.2.0"` to accept patches.         |
-| `@tauri-store/shared`   | installed automatically | Peer of `@tauri-store/zustand` — do not install manually.       |
-| `tauri-plugin-zustand`  | `"1"` semver            | Crates.io. Must match the npm package major version.            |
-| `@tauri-apps/plugin-fs` | 2.x                     | npm — added by `tauri add fs`. For reading `note.plugins.json`. |
-| `tauri-plugin-fs`       | `"2"`                   | Cargo — added by `tauri add fs`.                                |
+| Package                 | Pinned version          | Notes                                                             |
+| ----------------------- | ----------------------- | ----------------------------------------------------------------- |
+| `@tauri-store/zustand`  | **1.2.0**               | Published 2026-02-22. Use `"^1.2.0"` to accept patches.           |
+| `@tauri-store/shared`   | installed automatically | Peer of `@tauri-store/zustand` — do not install manually.         |
+| `tauri-plugin-zustand`  | `"1"` semver            | Crates.io. Must match the npm package major version.              |
+| `@tauri-apps/plugin-fs` | 2.x                     | npm — added by `tauri add fs`. For reading `origin.plugins.json`. |
+| `tauri-plugin-fs`       | `"2"`                   | Cargo — added by `tauri add fs`.                                  |
 
 ---
 
@@ -155,7 +155,7 @@ npm list zustand react-resizable-panels react-error-boundary immer
 Expected:
 
 ```
-note@0.0.1
+origin@0.0.1
 ├── immer@10.x.x
 ├── react-error-boundary@6.x.x
 ├── react-resizable-panels@4.x.x

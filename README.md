@@ -1,4 +1,4 @@
-# Note
+# Origin
 
 Dynamic dashboard desktop app with a panel manager and developer plugin API.
 
@@ -6,7 +6,7 @@ Built with Tauri 2, React 19, Vite 7, Tailwind CSS 4, and Zustand.
 
 ## Vision
 
-note is a keyboard-driven split-panel workspace where every panel runs a plugin. The shell provides layout, persistence, and a plugin API — all functionality comes from the community.
+Origin is a keyboard-driven split-panel workspace where every panel runs a plugin. The shell provides layout, persistence, and a plugin API — all functionality comes from the community.
 
 It is free, open source (MIT), and will always be. See [docs/GOALS.md](docs/GOALS.md) for the full project commitment and roadmap.
 
@@ -34,16 +34,16 @@ npm run tauri build
 ```
 src/          React 19 frontend (components, store, plugins, types)
 src-tauri/    Rust/Tauri backend (commands, capabilities, config)
-plugins/      @note/* plugin packages (npm workspaces)
-  api/        @note/api — plugin type contract (PluginManifest, PluginContext)
-  hello/      @note/hello — reference plugin implementation
-  template/   @note/template — scaffold for new plugin authors
+plugins/      @origin/* plugin packages (npm workspaces)
+  api/        @origin/api — plugin type contract (PluginManifest, PluginContext)
+  hello/      @origin/hello — reference plugin implementation
+  template/   @origin/template — scaffold for new plugin authors
 docs/         Spec, research, SOPs, standards
 ```
 
 ## What It Is
 
-Note is a developer-focused tiling window manager as a desktop app. The shell provides only panel layout and plugin slots — all functionality comes from plugins. v1 proves the core: keyboard-driven split panels and a working plugin API. Built as a personal tool first, designed to be extensible for other developers.
+Origin is a developer-focused tiling window manager as a desktop app. The shell provides only panel layout and plugin slots — all functionality comes from plugins. v1 proves the core: keyboard-driven split panels and a working plugin API. Built as a personal tool first, designed to be extensible for other developers.
 
 ## Architecture at a Glance
 
@@ -72,11 +72,11 @@ Note is a developer-focused tiling window manager as a desktop app. The shell pr
 
 v1 plugins are npm workspace packages in `plugins/`. Each plugin:
 
-- Depends on `@note/api` for type contracts (`PluginManifest`, `PluginContext`)
+- Depends on `@origin/api` for type contracts (`PluginManifest`, `PluginContext`)
 - Exports a `manifest` and a default React component
-- Is registered in `note.plugins.json` and `src/plugins/registry.ts`
+- Is registered in `origin.plugins.json` and `src/plugins/registry.ts`
 
-Loading is build-time only in v1 — all plugins must be present at build time via Vite dynamic import. `@note/hello` is the canonical reference implementation. See `plugins/template/` to scaffold a new plugin, and `docs/SOP/add-plugin.md` for the registration walkthrough. Runtime loading (v2) is documented in `docs/research/vite-plugin-loading.md`.
+Loading is build-time only in v1 — all plugins must be present at build time via Vite dynamic import. `@origin/hello` is the canonical reference implementation. See `plugins/template/` to scaffold a new plugin, and `docs/SOP/add-plugin.md` for the registration walkthrough. Runtime loading (v2) is documented in `docs/research/vite-plugin-loading.md`.
 
 ---
 
@@ -93,12 +93,12 @@ npm run claude
 
 The `--plugin-dir` flag loads project-scoped slash commands:
 
-| Command                 | When to use                                    |
-| ----------------------- | ---------------------------------------------- |
-| `/note:pre-code`        | Before writing any component, hook, or command |
-| `/note:issue-lifecycle` | Before picking up a GitHub issue               |
-| `/note:git-workflow`    | Branching, commits, PR workflow                |
-| `/note:complete-work`   | After finishing a task — closes the loop       |
+| Command                   | When to use                                    |
+| ------------------------- | ---------------------------------------------- |
+| `/origin:pre-code`        | Before writing any component, hook, or command |
+| `/origin:issue-lifecycle` | Before picking up a GitHub issue               |
+| `/origin:git-workflow`    | Branching, commits, PR workflow                |
+| `/origin:complete-work`   | After finishing a task — closes the loop       |
 
 ### Supervisor / worker pattern
 
@@ -134,7 +134,7 @@ set -g base-index 0
 # Create worker session
 tmux new-session -s agent-1
 # In the agent-1 pane:
-cd /path/to/note && npm run claude
+cd /path/to/origin && npm run claude
 
 # In a separate terminal, create supervisor session
 tmux new-session -s admin

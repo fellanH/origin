@@ -18,10 +18,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@note/api": ["./plugins/api/src"],
-      "@note/api/*": ["./plugins/api/src/*"],
-      "@note/hello": ["./plugins/hello/src"],
-      "@note/hello/*": ["./plugins/hello/src/*"]
+      "@origin/api": ["./plugins/api/src"],
+      "@origin/api/*": ["./plugins/api/src/*"],
+      "@origin/hello": ["./plugins/hello/src"],
+      "@origin/hello/*": ["./plugins/hello/src/*"]
     }
   },
   "include": ["src"],

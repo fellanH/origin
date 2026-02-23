@@ -1,7 +1,7 @@
-import type { PluginManifest } from "@note/api";
+import type { PluginManifest } from "@origin/api";
 
 export const manifest: PluginManifest = {
-  id: "com.note.hello",
+  id: "com.origin.hello",
   name: "Hello",
   version: "0.1.0",
   description: "Reference plugin — minimal hello world for plugin authors.",

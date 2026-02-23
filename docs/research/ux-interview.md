@@ -1,4 +1,4 @@
-# note — UX Interview
+# origin — UX Interview
 
 **Date:** 2026-02-23
 **Purpose:** Clarify user experience goals and product direction before build
@@ -35,7 +35,7 @@
 
 ---
 
-## Q4: The `@note/hello` proof-of-concept plugin
+## Q4: The `@origin/hello` proof-of-concept plugin
 
 **Q:** Should the hello plugin be literally hello world, or something slightly useful (clock, notepad, system info) that gives a better feel for the panel as a workspace?
 
@@ -47,7 +47,7 @@
 
 ## Q5: What does "done" feel like for v1?
 
-**Q:** What's the moment you'd switch from your current workflow to actually using note day-to-day? Is it when splitting/shortcuts work, or do you need a specific plugin first?
+**Q:** What's the moment you'd switch from your current workflow to actually using origin day-to-day? Is it when splitting/shortcuts work, or do you need a specific plugin first?
 
 **A:** As soon as panel splitting and keyboard shortcuts work reliably and I'm happy with the UX and styling.
 

@@ -1,4 +1,4 @@
-# note — Manual Verification Checklist
+# origin — Manual Verification Checklist
 
 Run through this after `npm run tauri:dev` is open. These items cannot be verified by the build process alone.
 
@@ -42,8 +42,8 @@ Run through this after `npm run tauri:dev` is open. These items cannot be verifi
 
 ## Plugins
 
-- [x] Empty panel shows EmptyState with `@note/hello` listed (name + icon visible)
-- [x] Clicking `@note/hello` in EmptyState mounts the Hello component in that panel
+- [x] Empty panel shows EmptyState with `@origin/hello` listed (name + icon visible)
+- [x] Clicking `@origin/hello` in EmptyState mounts the Hello component in that panel
 - [x] Hello component shows the panel ID
 - [x] Plugin assignments survive tab switching (plugin still mounted when you return)
 - [x] Splitting a panel that has a plugin: original panel keeps the plugin, new panel shows EmptyState

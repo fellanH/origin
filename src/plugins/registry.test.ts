@@ -17,8 +17,8 @@ describe("pluginRegistry", () => {
     expect(pluginRegistry).not.toBeNull();
   });
 
-  it("has an entry for 'com.note.hello'", () => {
-    expect("com.note.hello" in pluginRegistry).toBe(true);
+  it("has an entry for 'com.origin.hello'", () => {
+    expect("com.origin.hello" in pluginRegistry).toBe(true);
   });
 
   it("all keys match reverse-domain format", () => {
@@ -42,8 +42,8 @@ describe("pluginRegistry", () => {
     }
   });
 
-  it("calling com.note.hello factory returns a thenable", () => {
-    const result = pluginRegistry["com.note.hello"]();
+  it("calling com.origin.hello factory returns a thenable", () => {
+    const result = pluginRegistry["com.origin.hello"]();
     expect(typeof result.then).toBe("function");
   });
 });

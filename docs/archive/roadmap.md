@@ -1,8 +1,8 @@
-> Archived 2026-02-23. GitHub issues are authoritative: https://github.com/fellanH/note/issues
+> Archived 2026-02-23. GitHub issues are authoritative: https://github.com/fellanH/origin/issues
 
-# note — MVP v1 Roadmap
+# origin — MVP v1 Roadmap
 
-> GitHub issues source of truth. All issues target the `fellanH/note` repo, milestone `MVP v1`.
+> GitHub issues source of truth. All issues target the `fellanH/origin` repo, milestone `MVP v1`.
 
 ---
 
@@ -52,7 +52,7 @@ Bootstrap the project using `npm create tauri@latest` (React + TypeScript templa
 
 - [ ] `npm create tauri@latest` run with React + TypeScript template
 - [ ] Tauri pinned to `2.10.2` in `Cargo.toml`
-- [ ] App identifier set to `com.klarhimmel.note` in `tauri.conf.json`
+- [ ] App identifier set to `com.klarhimmel.origin` in `tauri.conf.json`
 - [ ] Frameless window with native traffic lights:
   ```json
   "windows": [{ "decorations": true, "titleBarStyle": "Overlay" }]
@@ -69,7 +69,7 @@ Bootstrap the project using `npm create tauri@latest` (React + TypeScript templa
 - [ ] npm workspaces in root `package.json`: `"workspaces": ["plugins/*"]`
 - [ ] Root scripts: `"tauri:dev": "tauri dev"`, `"tauri:build": "tauri build"`
 - [ ] `tsconfig.json`: `"strict": true`, path alias `"@/*": ["./src/*"]`
-- [ ] `App.tsx` renders a visible "note" heading — confirms stack boots
+- [ ] `App.tsx` renders a visible "origin" heading — confirms stack boots
 - [ ] `npm run tauri:dev` starts without errors
 
 ### Technical notes
@@ -265,7 +265,7 @@ Fullscreen centered component shown when a workspace has no panels (`root === nu
 
 - [ ] `src/components/EmptyState.tsx` — no props
 - [ ] Fills container: `h-full w-full flex items-center justify-center`
-- [ ] Shows app name "note" + keyboard hints:
+- [ ] Shows app name "origin" + keyboard hints:
 ````
 
 ⌘D Split →
@@ -432,9 +432,9 @@ Static plugin registry + caching loader. V1 is build-time only — all plugins m
 
 ### Acceptance criteria
 
-- [ ] `note.plugins.json` at project root:
+- [ ] `origin.plugins.json` at project root:
   ```json
-  { "plugins": [{ "id": "com.note.hello", "package": "@note/hello" }] }
+  { "plugins": [{ "id": "com.origin.hello", "package": "@origin/hello" }] }
   ```
 ````
 
@@ -442,20 +442,23 @@ Static plugin registry + caching loader. V1 is build-time only — all plugins m
 
   ```ts
   export const pluginRegistry = new Map([
-    ["com.note.hello", () => import("@note/hello") as Promise<PluginModule>],
+    [
+      "com.origin.hello",
+      () => import("@origin/hello") as Promise<PluginModule>,
+    ],
   ]);
   ```
 
   - `getPluginManifests()` helper for startup pre-warming
 
 - [ ] `src/plugins/loader.ts`: in-memory cache, `loadPlugin(id)` with `PluginNotFoundError`
-- [ ] `vite.config.ts` alias: `"@note/hello": path.resolve(__dirname, "plugins/hello/src/index.tsx")`
+- [ ] `vite.config.ts` alias: `"@origin/hello": path.resolve(__dirname, "plugins/hello/src/index.tsx")`
 - [ ] On startup: pre-warm manifests → call `registerPlugin` on store → Launcher lists them synchronously
 
 ### Technical notes
 
-- V1 limitation: Vite statically analyses `import("@note/hello")` at build time — all plugins must be in the registry at build time. Adding a plugin requires a rebuild.
-- `note.plugins.json` is the human-editable source of truth; `registry.ts` must be kept in sync manually in v1.
+- V1 limitation: Vite statically analyses `import("@origin/hello")` at build time — all plugins must be in the registry at build time. Adding a plugin requires a rebuild.
+- `origin.plugins.json` is the human-editable source of truth; `registry.ts` must be kept in sync manually in v1.
 - V2 runtime loading architecture researched: import maps + embedded axum server — see `research/vite-plugin-loading.md`
 
 ````
@@ -533,7 +536,7 @@ Prevents OS/traffic light from closing the window
 
 ---
 
-## Issue #12 — Hello plugin: @note/hello reference implementation
+## Issue #12 — Hello plugin: @origin/hello reference implementation
 
 **Labels:** `plugin-system`, `dx` | **Size:** S | **Blocked by:** #2, #9
 
@@ -544,8 +547,8 @@ Minimal plugin in `plugins/hello/`. The component is trivial — the extensive i
 
 ### Acceptance criteria
 
-- [ ] `plugins/hello/package.json`: `{ "name": "@note/hello", "version": "1.0.0", "main": "src/index.tsx", "private": true }`
-- [ ] `plugins/hello/src/manifest.ts`: `PluginManifest` with `id: "com.note.hello"`, `icon: "👋"`
+- [ ] `plugins/hello/package.json`: `{ "name": "@origin/hello", "version": "1.0.0", "main": "src/index.tsx", "private": true }`
+- [ ] `plugins/hello/src/manifest.ts`: `PluginManifest` with `id: "com.origin.hello"`, `icon: "👋"`
 - [ ] `plugins/hello/src/index.tsx`:
   - Re-exports `manifest`
   - Default exports React component displaying `panelId`, `theme`, `workspacePath` from context
@@ -573,7 +576,7 @@ Final integration pass. Verify everything works end-to-end against the full SPEC
 
 #### Integration
 
-- [ ] `npm list @note/hello` confirms workspace resolution
+- [ ] `npm list @origin/hello` confirms workspace resolution
 - [ ] Vite alias in `vite.config.ts` confirmed
 - [ ] `App.tsx` final composition:
   ```tsx
@@ -620,8 +623,8 @@ Final integration pass. Verify everything works end-to-end against the full SPEC
 
 **Plugins**
 
-- [ ] Empty panel shows Launcher with `@note/hello` listed
-- [ ] Clicking `@note/hello` mounts the Hello World component
+- [ ] Empty panel shows Launcher with `@origin/hello` listed
+- [ ] Clicking `@origin/hello` mounts the Hello World component
 - [ ] Plugin assignments survive tab switching
 - [ ] Crashing plugin shows inline error; other panels unaffected
 - [ ] CMD+W does NOT close the window when panels are open
@@ -651,15 +654,15 @@ Failing items → create follow-up bug issues; do not block closing this issue.
 
 ```bash
 # Labels
-gh label create foundation --color 0075ca --repo fellanH/note --description "Scaffold, types, infrastructure"
-gh label create ui --color e4e669 --repo fellanH/note --description "Visual components"
-gh label create core --color d73a4a --repo fellanH/note --description "Core functionality"
-gh label create state --color 0052cc --repo fellanH/note --description "State management"
-gh label create plugin-system --color 5319e7 --repo fellanH/note --description "Plugin infrastructure"
-gh label create dx --color f9d0c4 --repo fellanH/note --description "Developer experience"
+gh label create foundation --color 0075ca --repo fellanH/origin --description "Scaffold, types, infrastructure"
+gh label create ui --color e4e669 --repo fellanH/origin --description "Visual components"
+gh label create core --color d73a4a --repo fellanH/origin --description "Core functionality"
+gh label create state --color 0052cc --repo fellanH/origin --description "State management"
+gh label create plugin-system --color 5319e7 --repo fellanH/origin --description "Plugin infrastructure"
+gh label create dx --color f9d0c4 --repo fellanH/origin --description "Developer experience"
 
 # Milestone
-gh api repos/fellanH/note/milestones -f title="MVP v1" -f state=open
+gh api repos/fellanH/origin/milestones -f title="MVP v1" -f state=open
 
 # Issues created sequentially with gh issue create (see individual bodies above)
 ````

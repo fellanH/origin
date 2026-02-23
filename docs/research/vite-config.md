@@ -1,7 +1,7 @@
-# Vite 7 Config — note app (Tauri 2 + npm workspaces)
+# Vite 7 Config — origin app (Tauri 2 + npm workspaces)
 
 **Researched:** 2026-02-23 (updated 2026-02-23 — deep-dive into dynamic imports, workspace resolution, Vite 7 changes, @tauri-apps/vite-plugin, chunk splitting)
-**Target:** Vite 7, Tauri 2.10.2, npm workspaces, dynamic import of `@note/hello`
+**Target:** Vite 7, Tauri 2.10.2, npm workspaces, dynamic import of `@origin/hello`
 
 ---
 
@@ -23,7 +23,7 @@ export default defineConfig({
   // Resolve workspace packages
   resolve: {
     alias: {
-      "@note/hello": path.resolve(__dirname, "plugins/hello/src"),
+      "@origin/hello": path.resolve(__dirname, "plugins/hello/src"),
       "@": path.resolve(__dirname, "src"),
     },
     // Prevent two copies of React when a plugin package also lists React as a dep.
@@ -34,7 +34,7 @@ export default defineConfig({
   // Pre-bundle dynamically imported workspace packages
   // Without this, first import() in dev triggers a full re-crawl + page reload
   optimizeDeps: {
-    include: ["@note/hello"],
+    include: ["@origin/hello"],
   },
 
   // --- Tauri-specific settings (do not change) ---
@@ -74,14 +74,14 @@ For desktop-only v1 with no special asset handling, the plugin adds no meaningfu
 
 ### `resolve.alias` for workspace packages
 
-npm workspaces symlinks `@note/hello` → `plugins/hello/` in `node_modules/@note/hello`. Vite will resolve it correctly without an alias IF the package has a valid `main` or `exports` field in its `package.json`.
+npm workspaces symlinks `@origin/hello` → `plugins/hello/` in `node_modules/@origin/hello`. Vite will resolve it correctly without an alias IF the package has a valid `main` or `exports` field in its `package.json`.
 
 The alias is belt-and-suspenders — it bypasses `node_modules` entirely and points directly at the source. This is faster in dev (no symlink hop) and avoids the `package.json#exports` dance. **Use the alias.**
 
 ```json
 // plugins/hello/package.json
 {
-  "name": "@note/hello",
+  "name": "@origin/hello",
   "version": "0.1.0",
   "main": "src/index.tsx",
   "types": "src/index.tsx"
@@ -92,15 +92,15 @@ The alias in `vite.config.ts` makes this the source of truth regardless of `pack
 
 ### `optimizeDeps.include` — critical for dev
 
-Vite pre-bundles dependencies at dev server start. Without `include: ["@note/hello"]`, the first call to `import("@note/hello")` triggers a **runtime dependency discovery** — Vite re-crawls and re-bundles, causing a full page reload mid-operation.
+Vite pre-bundles dependencies at dev server start. Without `include: ["@origin/hello"]`, the first call to `import("@origin/hello")` triggers a **runtime dependency discovery** — Vite re-crawls and re-bundles, causing a full page reload mid-operation.
 
-`include` tells Vite to pre-bundle `@note/hello` at startup so dynamic imports work immediately. This is especially important because the plugin loader calls `import(pluginId)` lazily when a user opens the launcher — any reload would be jarring.
+`include` tells Vite to pre-bundle `@origin/hello` at startup so dynamic imports work immediately. This is especially important because the plugin loader calls `import(pluginId)` lazily when a user opens the launcher — any reload would be jarring.
 
-**For production builds:** Dynamic imports are standard Rollup code-splitting. `@note/hello` gets emitted as a separate chunk (e.g., `dist/assets/@note-hello-[hash].js`). No issues — `optimizeDeps` is dev-only.
+**For production builds:** Dynamic imports are standard Rollup code-splitting. `@origin/hello` gets emitted as a separate chunk (e.g., `dist/assets/@note-hello-[hash].js`). No issues — `optimizeDeps` is dev-only.
 
 ### Add plugins to `optimizeDeps.include` as you add them
 
-When adding a second plugin (e.g., `@note/clock`):
+When adding a second plugin (e.g., `@origin/clock`):
 
 1. Add its alias to `resolve.alias`
 2. Add it to `optimizeDeps.include`
@@ -118,7 +118,7 @@ Mirror the Vite alias in TypeScript so the IDE resolves imports correctly:
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@note/hello": ["./plugins/hello/src"]
+      "@origin/hello": ["./plugins/hello/src"]
     }
   }
 }
@@ -169,18 +169,18 @@ Vite 7 is stable and released. Key changes from Vite 5/6 relevant to this projec
 
 ---
 
-### 2. How `import('@note/hello')` works at runtime — the full picture
+### 2. How `import('@origin/hello')` works at runtime — the full picture
 
-The note plugin system uses this pattern in `registry.ts`:
+The origin plugin system uses this pattern in `registry.ts`:
 
 ```typescript
 // src/plugins/registry.ts
 export const pluginRegistry: Record<string, () => Promise<PluginModule>> = {
-  "com.note.hello": () => import("@note/hello"),
+  "com.origin.hello": () => import("@origin/hello"),
 };
 ```
 
-This is a **static string literal dynamic import**. Vite's static analysis at build time can see the literal string `'@note/hello'` and knows exactly what to bundle. This is the only pattern that works reliably. Here is why variable-based imports do not work:
+This is a **static string literal dynamic import**. Vite's static analysis at build time can see the literal string `'@origin/hello'` and knows exactly what to bundle. This is the only pattern that works reliably. Here is why variable-based imports do not work:
 
 **The fundamental constraint: Vite requires analyzable import specifiers.**
 
@@ -188,7 +188,7 @@ Vite (and Rollup underneath it) must statically analyze `import()` calls at buil
 
 ```typescript
 // Does NOT work — Vite cannot analyze this
-const id = "@note/hello";
+const id = "@origin/hello";
 import(id); // Error: cannot analyze dynamic import with variable specifier
 ```
 
@@ -196,20 +196,20 @@ fails with "The above dynamic import cannot be analyzed by Vite." The result in 
 
 **What works:**
 
-| Pattern                                        | Vite behavior                                    | Works in prod             |
-| ---------------------------------------------- | ------------------------------------------------ | ------------------------- |
-| `import('@note/hello')`                        | Static literal — Vite bundles the chunk          | Yes                       |
-| `import(/* @vite-ignore */ variable)`          | Suppresses error, but chunk not bundled          | No (module missing)       |
-| `import.meta.glob('./plugins/*.tsx')`          | Glob — Vite scans filesystem at build time       | Yes (relative paths only) |
-| `import.meta.glob('node_modules/@note/*.tsx')` | Not supported — glob must start with `./` or `/` | No                        |
+| Pattern                                          | Vite behavior                                    | Works in prod             |
+| ------------------------------------------------ | ------------------------------------------------ | ------------------------- |
+| `import('@origin/hello')`                        | Static literal — Vite bundles the chunk          | Yes                       |
+| `import(/* @vite-ignore */ variable)`            | Suppresses error, but chunk not bundled          | No (module missing)       |
+| `import.meta.glob('./plugins/*.tsx')`            | Glob — Vite scans filesystem at build time       | Yes (relative paths only) |
+| `import.meta.glob('node_modules/@origin/*.tsx')` | Not supported — glob must start with `./` or `/` | No                        |
 
 **The registry pattern is the correct v1 approach.** Each plugin is a string literal in the registry map. Vite sees all of them at build time, emits them as separate chunks, and the lazy-loading at runtime works correctly because the chunks are already on disk.
 
 ```typescript
 // Correct pattern — every import() is a static literal
 export const pluginRegistry: Record<string, () => Promise<PluginModule>> = {
-  "com.note.hello": () => import("@note/hello"),
-  "com.note.clock": () => import("@note/clock"), // add new plugins here
+  "com.origin.hello": () => import("@origin/hello"),
+  "com.origin.clock": () => import("@origin/clock"), // add new plugins here
 };
 ```
 
@@ -237,17 +237,17 @@ This pattern is fully type-safe, Vite-compatible, and produces clean code splitt
 
 ### 3. npm workspaces + Vite — how resolution actually works
 
-npm workspaces creates symlinks: `node_modules/@note/hello` → `plugins/hello/`. Vite's behavior with symlinked workspace packages depends on whether the package is ESM-native:
+npm workspaces creates symlinks: `node_modules/@origin/hello` → `plugins/hello/`. Vite's behavior with symlinked workspace packages depends on whether the package is ESM-native:
 
 **If the workspace package is ESM-native (has `"type": "module"` or exports `.js`/`.ts` with ESM syntax):** Vite detects it as "not from node_modules" and treats it as source code. It does not pre-bundle it. No alias needed — it just works.
 
 **If the workspace package is missing `exports` / has no clear ESM entry:** Resolution may fail or fall back to CommonJS, triggering optimizeDeps issues.
 
-**The `resolve.alias` approach (recommended for this project):** Rather than relying on npm's symlink + Vite's ESM detection, the alias hardwires `@note/hello` → `plugins/hello/src`. This bypasses all of the above. It is faster in dev (no symlink traversal), works regardless of the package.json fields, and makes the mapping explicit and auditable.
+**The `resolve.alias` approach (recommended for this project):** Rather than relying on npm's symlink + Vite's ESM detection, the alias hardwires `@origin/hello` → `plugins/hello/src`. This bypasses all of the above. It is faster in dev (no symlink traversal), works regardless of the package.json fields, and makes the mapping explicit and auditable.
 
-**Why `optimizeDeps.include` is still needed with the alias:** Even with the alias pointing to `plugins/hello/src`, Vite's dev server pre-bundler does not automatically discover modules that are only reached via dynamic import (`import('@note/hello')`). Without `include: ["@note/hello"]`, the first time the user opens the Launcher and a plugin is loaded dynamically, Vite triggers a runtime dependency discovery pass — which causes a **full page reload**. The `include` entry prevents this by telling Vite to pre-bundle it at startup.
+**Why `optimizeDeps.include` is still needed with the alias:** Even with the alias pointing to `plugins/hello/src`, Vite's dev server pre-bundler does not automatically discover modules that are only reached via dynamic import (`import('@origin/hello')`). Without `include: ["@origin/hello"]`, the first time the user opens the Launcher and a plugin is loaded dynamically, Vite triggers a runtime dependency discovery pass — which causes a **full page reload**. The `include` entry prevents this by telling Vite to pre-bundle it at startup.
 
-**One important nuance:** The `optimizeDeps.include` key must match the import specifier as written in source code. If source code uses `import('@note/hello')` and the alias is `'@note/hello'`, the include key must also be `'@note/hello'`. They are string-matched.
+**One important nuance:** The `optimizeDeps.include` key must match the import specifier as written in source code. If source code uses `import('@origin/hello')` and the alias is `'@origin/hello'`, the include key must also be `'@origin/hello'`. They are string-matched.
 
 ---
 
@@ -266,7 +266,7 @@ Updated `vite.config.ts`:
 ```typescript
 resolve: {
   alias: {
-    "@note/hello": path.resolve(__dirname, "plugins/hello/src"),
+    "@origin/hello": path.resolve(__dirname, "plugins/hello/src"),
     "@": path.resolve(__dirname, "src"),
   },
   dedupe: ["react", "react-dom"],
@@ -277,13 +277,13 @@ resolve: {
 
 ### 5. Production build — chunk output for plugins
 
-In production builds, Vite (via Rollup) handles `import('@note/hello')` as a code-split dynamic import. The plugin source is emitted as a separate chunk file. Example output:
+In production builds, Vite (via Rollup) handles `import('@origin/hello')` as a code-split dynamic import. The plugin source is emitted as a separate chunk file. Example output:
 
 ```
 dist/
 ├── assets/
 │   ├── index-[hash].js        # main app bundle
-│   ├── @note_hello-[hash].js  # @note/hello chunk
+│   ├── @note_hello-[hash].js  # @origin/hello chunk
 │   └── ...
 └── index.html
 ```
@@ -349,8 +349,8 @@ TypeScript's `paths` compiler option is a compile-time-only construct. It tells 
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@note/hello": ["./plugins/hello/src"],
-      "@note/hello/*": ["./plugins/hello/src/*"]
+      "@origin/hello": ["./plugins/hello/src"],
+      "@origin/hello/*": ["./plugins/hello/src/*"]
     }
   }
 }
@@ -361,37 +361,37 @@ TypeScript's `paths` compiler option is a compile-time-only construct. It tells 
 ```typescript
 resolve: {
   alias: {
-    "@note/hello": path.resolve(__dirname, "plugins/hello/src"),
+    "@origin/hello": path.resolve(__dirname, "plugins/hello/src"),
     "@": path.resolve(__dirname, "src"),
   },
 },
 ```
 
-**Adding a new plugin (`@note/clock`):** Add one entry to each:
+**Adding a new plugin (`@origin/clock`):** Add one entry to each:
 
 In `vite.config.ts`:
 
 ```typescript
-"@note/clock": path.resolve(__dirname, "plugins/clock/src"),
+"@origin/clock": path.resolve(__dirname, "plugins/clock/src"),
 ```
 
 In `tsconfig.json`:
 
 ```json
-"@note/clock": ["./plugins/clock/src"],
-"@note/clock/*": ["./plugins/clock/src/*"]
+"@origin/clock": ["./plugins/clock/src"],
+"@origin/clock/*": ["./plugins/clock/src/*"]
 ```
 
 And add to `registry.ts`:
 
 ```typescript
-"com.note.clock": () => import("@note/clock"),
+"com.origin.clock": () => import("@origin/clock"),
 ```
 
 And to `vite.config.ts` `optimizeDeps.include`:
 
 ```typescript
-include: ["@note/hello", "@note/clock"],
+include: ["@origin/hello", "@origin/clock"],
 ```
 
 **Note:** `vite-tsconfig-paths` is a plugin that reads `tsconfig.json` paths and creates Vite aliases automatically, removing the need to maintain both. It is a valid alternative. For this project with a small number of plugins, manual synchronization is simpler and more explicit.

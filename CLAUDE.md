@@ -1,4 +1,4 @@
-# note
+# origin
 
 You are a Claude Code agent working within this project. `README.md` is the human-facing introduction — this file is yours. Read it before writing any code.
 
@@ -63,7 +63,7 @@ See `docs/SOP/index.md` for the full navigation hub. Quick reference:
 | `docs/SOP/git-workflow.md`      | Branching, commits, PR workflow, merge strategy                 |
 | `docs/SOP/testing.md`           | What to test, Vitest setup, merge gates                         |
 | `docs/SOP/add-tauri-command.md` | Adding a new Rust-backed IPC command                            |
-| `docs/SOP/add-plugin.md`        | Adding a new `@note/*` plugin package                           |
+| `docs/SOP/add-plugin.md`        | Adding a new `@origin/*` plugin package                         |
 | `docs/SOP/complete-work.md`     | When finishing a task — closes the loop with admin              |
 | `docs/SOP/release.md`           | Versioning, build, distribution, GitHub release                 |
 

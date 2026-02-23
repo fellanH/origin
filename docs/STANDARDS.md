@@ -1,4 +1,4 @@
-# note — Coding Standards & SOPs
+# origin — Coding Standards & SOPs
 
 Authoritative standards for all code in this project. Read before writing any code.
 Architecture decisions and Tauri-specific gotchas live in `CLAUDE.md`. This document covers how we write code.

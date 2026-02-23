@@ -1,3 +1,0 @@
-{
-  "plugins": [{ "id": "com.note.hello", "package": "@note/hello" }]
-}

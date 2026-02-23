@@ -40,7 +40,7 @@ npm create tauri@latest
 When prompted:
 
 ```
-Project name      → note
+Project name      → origin
 Package manager   → npm
 Frontend language → TypeScript / JavaScript → TypeScript
 Frontend framework → React
@@ -82,9 +82,9 @@ Replace `src-tauri/tauri.conf.json` entirely:
 ```json
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "note",
+  "productName": "origin",
   "version": "0.0.1",
-  "identifier": "com.klarhimmel.note",
+  "identifier": "com.klarhimmel.origin",
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
@@ -95,7 +95,7 @@ Replace `src-tauri/tauri.conf.json` entirely:
     "windows": [
       {
         "label": "main",
-        "title": "note",
+        "title": "origin",
         "width": 1200,
         "height": 800,
         "minWidth": 600,
@@ -120,11 +120,11 @@ Replace `src-tauri/tauri.conf.json` entirely:
 
 **Critical fields — these are the most common mistakes:**
 
-| Field           | Value                   | Why                                                                         |
-| --------------- | ----------------------- | --------------------------------------------------------------------------- |
-| `decorations`   | `true`                  | `false` removes traffic lights entirely                                     |
-| `titleBarStyle` | `"Overlay"`             | Capital O — Tauri is case-sensitive. `"overlay"` fails silently             |
-| `identifier`    | `"com.klarhimmel.note"` | Anchors the app data directory path. Do not change after first prod release |
+| Field           | Value                     | Why                                                                         |
+| --------------- | ------------------------- | --------------------------------------------------------------------------- |
+| `decorations`   | `true`                    | `false` removes traffic lights entirely                                     |
+| `titleBarStyle` | `"Overlay"`               | Capital O — Tauri is case-sensitive. `"overlay"` fails silently             |
+| `identifier`    | `"com.klarhimmel.origin"` | Anchors the app data directory path. Do not change after first prod release |
 
 Replace `src-tauri/capabilities/default.json`:
 
@@ -148,7 +148,7 @@ Replace `src-tauri/capabilities/default.json`:
 Update `index.html` title:
 
 ```html
-<title>note</title>
+<title>origin</title>
 ```
 
 **Checkpoint:**
@@ -302,7 +302,7 @@ export default defineConfig({
   resolve: {
     alias: {
       // Plugin workspace packages — activated in issue #12
-      "@note/hello": path.resolve(__dirname, "plugins/hello/src"),
+      "@origin/hello": path.resolve(__dirname, "plugins/hello/src"),
       // Internal path alias
       "@": path.resolve(__dirname, "src"),
     },
@@ -312,7 +312,7 @@ export default defineConfig({
 
   // Pre-bundle dynamically imported plugins to prevent page reload on first load in dev
   optimizeDeps: {
-    include: ["@note/hello"],
+    include: ["@origin/hello"],
   },
 
   clearScreen: false,
@@ -337,7 +337,7 @@ export default defineConfig({
 
 Notes:
 
-- `@note/hello` alias is included now even though `plugins/hello/src` doesn't exist yet — the alias is a no-op until the directory is created in Phase 6.
+- `@origin/hello` alias is included now even though `plugins/hello/src` doesn't exist yet — the alias is a no-op until the directory is created in Phase 6.
 - No `@tauri-apps/vite-plugin` — desktop-only v1 doesn't need it. See `docs/research/vite-config.md` for the full rationale.
 
 ---
@@ -367,8 +367,8 @@ The generated tsconfig should have `strict: true` — verify it. Replace `compil
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@note/hello": ["./plugins/hello/src"],
-      "@note/hello/*": ["./plugins/hello/src/*"]
+      "@origin/hello": ["./plugins/hello/src"],
+      "@origin/hello/*": ["./plugins/hello/src/*"]
     }
   },
   "include": ["src"],
@@ -402,7 +402,7 @@ Update `package.json` — add `workspaces` and ensure `scripts` includes Tauri c
 
 ```json
 {
-  "name": "note",
+  "name": "origin",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -419,7 +419,7 @@ Update `package.json` — add `workspaces` and ensure `scripts` includes Tauri c
 }
 ```
 
-Create the `@note/hello` workspace stub (full implementation is issue #12):
+Create the `@origin/hello` workspace stub (full implementation is issue #12):
 
 ```bash
 mkdir -p plugins/hello/src
@@ -429,7 +429,7 @@ mkdir -p plugins/hello/src
 
 ```json
 {
-  "name": "@note/hello",
+  "name": "@origin/hello",
   "version": "0.1.0",
   "private": true,
   "main": "src/index.tsx",
@@ -444,11 +444,11 @@ mkdir -p plugins/hello/src
 export default null;
 ```
 
-Create `note.plugins.json` at the project root (sibling of `package.json`):
+Create `origin.plugins.json` at the project root (sibling of `package.json`):
 
 ```json
 {
-  "plugins": [{ "id": "com.note.hello", "package": "@note/hello" }]
+  "plugins": [{ "id": "com.origin.hello", "package": "@origin/hello" }]
 }
 ```
 
@@ -458,7 +458,7 @@ Register the workspace symlink:
 npm install
 ```
 
-**Checkpoint:** `ls -la node_modules/@note/hello` should show a symlink to `../../plugins/hello`.
+**Checkpoint:** `ls -la node_modules/@origin/hello` should show a symlink to `../../plugins/hello`.
 
 ---
 
@@ -527,9 +527,9 @@ Expected:
 - [ ] shadcn `Button` renders with correct theme styling
 - [ ] `src/components/ui/resizable.tsx` uses v4 names (`Group`, `Separator`, `aria-[orientation=...]`)
 - [ ] `npx tsc --noEmit` passes
-- [ ] `node_modules/@note/hello` symlink resolves
+- [ ] `node_modules/@origin/hello` symlink resolves
 - [ ] Window position persists across restarts
-- [ ] `note.plugins.json` exists at project root
+- [ ] `origin.plugins.json` exists at project root
 
 ---
 

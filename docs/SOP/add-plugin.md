@@ -1,12 +1,12 @@
-# SOP: Add a Note Plugin
+# SOP: Add an Origin Plugin
 
 ## When to use
 
-Adding a new `@note/*` plugin to the app — whether a first-party plugin or a third-party contribution.
+Adding a new `@origin/*` plugin to the app — whether a first-party plugin or a third-party contribution.
 
 ## Prerequisites
 
-- `@note/api` (`plugins/api/`) provides the type contract for all plugins. It is already a workspace package and requires no setup steps.
+- `@origin/api` (`plugins/api/`) provides the type contract for all plugins. It is already a workspace package and requires no setup steps.
 - Types are available at `plugins/api/src/plugin.ts`: `PluginManifest`, `PluginContext`, `PluginComponent`, `PluginModule`.
 
 ## Build-time constraint (v1)
@@ -27,12 +27,12 @@ Update `plugins/your-plugin/package.json`:
 
 ```json
 {
-  "name": "@note/your-plugin",
+  "name": "@origin/your-plugin",
   "version": "0.1.0",
   "private": true,
   "main": "src/index.tsx",
   "types": "src/index.tsx",
-  "dependencies": { "@note/api": "*" }
+  "dependencies": { "@origin/api": "*" }
 }
 ```
 
@@ -41,7 +41,7 @@ Update `plugins/your-plugin/package.json`:
 Set a unique reverse-domain `id`, a human-readable `name`, an `icon` (emoji or relative image path), and a `description`:
 
 ```ts
-import type { PluginManifest } from "@note/api";
+import type { PluginManifest } from "@origin/api";
 
 export const manifest: PluginManifest = {
   id: "com.yourco.yourplugin",
@@ -57,7 +57,7 @@ export const manifest: PluginManifest = {
 Default export must be a React component accepting `{ context: PluginContext }`. Re-export `manifest` as a named export so `PluginHost` can read it:
 
 ```tsx
-import type { PluginContext } from "@note/api";
+import type { PluginContext } from "@origin/api";
 export { manifest } from "./manifest";
 
 export default function YourPlugin({ context }: { context: PluginContext }) {
@@ -65,7 +65,7 @@ export default function YourPlugin({ context }: { context: PluginContext }) {
 }
 ```
 
-### 4. Register in `note.plugins.json`
+### 4. Register in `origin.plugins.json`
 
 Add a manifest entry to the plugin registry JSON file so the Launcher can discover and display the plugin.
 
@@ -75,8 +75,8 @@ Use a **static string literal** — Vite must be able to analyze the import spec
 
 ```ts
 export const IMPORT_MAP: Record<string, () => Promise<PluginModule>> = {
-  "com.note.hello": () => import("@note/hello"),
-  "com.yourco.yourplugin": () => import("@note/your-plugin"), // ← add (literal only)
+  "com.origin.hello": () => import("@origin/hello"),
+  "com.yourco.yourplugin": () => import("@origin/your-plugin"), // ← add (literal only)
 };
 ```
 
@@ -84,7 +84,7 @@ Do NOT use a variable as the import specifier:
 
 ```ts
 // ❌ does not work in production — Vite cannot analyze it
-const id = "@note/your-plugin";
+const id = "@origin/your-plugin";
 import(id);
 ```
 
@@ -95,15 +95,15 @@ Two places — both required:
 ```ts
 resolve: {
   alias: {
-    "@note/api": path.resolve(__dirname, "plugins/api/src"),
-    "@note/hello": path.resolve(__dirname, "plugins/hello/src"),
-    "@note/your-plugin": path.resolve(__dirname, "plugins/your-plugin/src"), // ← add
+    "@origin/api": path.resolve(__dirname, "plugins/api/src"),
+    "@origin/hello": path.resolve(__dirname, "plugins/hello/src"),
+    "@origin/your-plugin": path.resolve(__dirname, "plugins/your-plugin/src"), // ← add
   },
 },
 optimizeDeps: {
   include: [
-    "@note/hello",
-    "@note/your-plugin", // ← add
+    "@origin/hello",
+    "@origin/your-plugin", // ← add
   ],
 },
 ```
@@ -118,10 +118,10 @@ Mirror the Vite alias so the IDE resolves imports correctly:
 {
   "compilerOptions": {
     "paths": {
-      "@note/api": ["./plugins/api/src"],
-      "@note/hello": ["./plugins/hello/src"],
-      "@note/your-plugin": ["./plugins/your-plugin/src"],
-      "@note/your-plugin/*": ["./plugins/your-plugin/src/*"]
+      "@origin/api": ["./plugins/api/src"],
+      "@origin/hello": ["./plugins/hello/src"],
+      "@origin/your-plugin": ["./plugins/your-plugin/src"],
+      "@origin/your-plugin/*": ["./plugins/your-plugin/src/*"]
     }
   }
 }
@@ -133,7 +133,7 @@ Mirror the Vite alias so the IDE resolves imports correctly:
 npm install
 ```
 
-This links the new workspace package so Node and Vite can resolve `@note/your-plugin`.
+This links the new workspace package so Node and Vite can resolve `@origin/your-plugin`.
 
 ### 9. Verify in dev
 
@@ -149,7 +149,7 @@ Open the Launcher in an empty panel — the plugin should appear. Click it to co
 
 | Step                          | Missing consequence                             |
 | ----------------------------- | ----------------------------------------------- |
-| `note.plugins.json` entry     | Plugin not shown in Launcher UI                 |
+| `origin.plugins.json` entry   | Plugin not shown in Launcher UI                 |
 | `registry.ts` static import   | Chunk not emitted → runtime error in production |
 | `vite.config.ts` alias        | Module not found in dev                         |
 | `vite.config.ts` optimizeDeps | Full page reload on first dynamic load in dev   |
@@ -171,10 +171,10 @@ See `plugins/api/src/plugin.ts` for the authoritative type definitions:
 
 ## Checklist
 
-- [ ] `plugins/<name>/package.json` created with correct `name` and `@note/api` dependency
+- [ ] `plugins/<name>/package.json` created with correct `name` and `@origin/api` dependency
 - [ ] `src/manifest.ts` — unique reverse-domain `id`, display `name`, `icon`, `description`
 - [ ] `src/index.tsx` — default export satisfies `PluginComponent`; re-exports `manifest`
-- [ ] `note.plugins.json` entry added
+- [ ] `origin.plugins.json` entry added
 - [ ] `src/plugins/registry.ts` entry added with **static literal** import specifier
 - [ ] `vite.config.ts` alias added
 - [ ] `vite.config.ts` `optimizeDeps.include` updated

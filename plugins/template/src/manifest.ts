@@ -1,4 +1,4 @@
-import type { PluginManifest } from "@note/api";
+import type { PluginManifest } from "@origin/api";
 
 export const manifest: PluginManifest = {
   id: "com.example.myplugin", // Change to a unique reverse-domain ID

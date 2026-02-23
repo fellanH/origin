@@ -1,4 +1,4 @@
-# note — Long-Term Roadmap Research Brief
+# origin — Long-Term Roadmap Research Brief
 
 **Researched:** 2026-02-23
 **Scope:** Five strategic topic areas for post-MVP development
@@ -38,13 +38,13 @@ The cleanest approach for a macOS-only solo project.
    ```json
    {
      "imports": {
-       "com.note.clock": "plugin://com.note.clock/index.js",
-       "com.note.todo": "plugin://com.note.todo/index.js"
+       "com.origin.clock": "plugin://com.origin.clock/index.js",
+       "com.origin.todo": "plugin://com.origin.todo/index.js"
      }
    }
    ```
 5. Import map injected into webview HTML via `on_webview_ready` before first load
-6. Webview calls `import("com.note.clock")` — resolved by import map to the `plugin://` scheme
+6. Webview calls `import("com.origin.clock")` — resolved by import map to the `plugin://` scheme
 7. Rust URI scheme handler (`register_uri_scheme_protocol`) reads the plugin JS from AppData and returns it
 
 **Security:** No open network port. The `plugin://` scheme is served exclusively by the Tauri Rust process. CSP update required:
@@ -82,7 +82,7 @@ Alternative to the URI scheme. Run an `axum` Tokio task inside the Tauri Rust pr
 - WIT (WebAssembly Interface Types) defines the API boundary
 - The `wit_bindgen` crate generates type-safe host/guest bindings
 
-**For note specifically:** This model works for non-UI logic (parsers, data processors, background services) but cannot render React components. You would need a hybrid approach: WASM for logic + React host component for rendering. This is significantly more complex than the import map approach.
+**For origin specifically:** This model works for non-UI logic (parsers, data processors, background services) but cannot render React components. You would need a hybrid approach: WASM for logic + React host component for rendering. This is significantly more complex than the import map approach.
 
 **Risk for a solo developer:** HIGH. Requires authoring WIT interfaces, managing Wasmtime, and building a separate plugin compilation toolchain. The payoff — true process isolation — is real but may be premature for a v2 scope.
 
@@ -101,11 +101,11 @@ Alternative to the URI scheme. Run an `axum` Tokio task inside the Tauri Rust pr
 - Memory isolation between plugins in the same window
 - Network isolation per plugin (the `#5755` issue requesting per-webview network sandboxing has been open since 2022 with no resolution)
 
-**Practical architecture for note v2:**
+**Practical architecture for origin v2:**
 
 For trusted first-party or reviewed third-party plugins, the capabilities system is sufficient. For untrusted arbitrary plugins, the only real option is a separate `WebviewWindow` per plugin, each with a scoped capability file. This is architecturally heavier (multiple webviews instead of React components in a shared webview) and complicates the panel layout model.
 
-**Verdict:** Unless note becomes a public extension marketplace with untrusted submissions, JS-in-the-same-webview with `ErrorBoundary` isolation (current v1 approach) is appropriate. Upgrade to per-webview isolation when — and only if — the trust model demands it.
+**Verdict:** Unless origin becomes a public extension marketplace with untrusted submissions, JS-in-the-same-webview with `ErrorBoundary` isolation (current v1 approach) is appropriate. Upgrade to per-webview isolation when — and only if — the trust model demands it.
 
 ### Prior Art and References
 
@@ -238,11 +238,11 @@ The `latest.json` file uploaded to each GitHub Release:
   "pub_date": "2026-03-01T00:00:00Z",
   "platforms": {
     "darwin-aarch64": {
-      "url": "https://github.com/fellanH/note/releases/download/v1.2.0/note_1.2.0_aarch64.app.tar.gz",
+      "url": "https://github.com/fellanH/origin/releases/download/v1.2.0/origin_1.2.0_aarch64.app.tar.gz",
       "signature": "<contents of .sig file>"
     },
     "darwin-x86_64": {
-      "url": "https://github.com/fellanH/note/releases/download/v1.2.0/note_1.2.0_x86_64.app.tar.gz",
+      "url": "https://github.com/fellanH/origin/releases/download/v1.2.0/origin_1.2.0_x86_64.app.tar.gz",
       "signature": "<contents of .sig file>"
     }
   }
@@ -259,7 +259,7 @@ The `latest.json` file uploaded to each GitHub Release:
     "updater": {
       "pubkey": "YOUR_PUBLIC_KEY",
       "endpoints": [
-        "https://github.com/fellanH/note/releases/latest/download/latest.json"
+        "https://github.com/fellanH/origin/releases/latest/download/latest.json"
       ],
       "dialog": true
     }
@@ -317,7 +317,7 @@ Reference `Entitlements.plist` in `tauri.conf.json`:
 
 ### 3C. GitHub Actions Release Pipeline
 
-Recommended workflow for `fellanH/note`:
+Recommended workflow for `fellanH/origin`:
 
 **Trigger:** Push a tag `v*`
 
@@ -359,29 +359,29 @@ Setting `releaseDraft: true` in `tauri-action` lets you review before making it 
 
 **Homebrew Cask:** The developer-first distribution channel on macOS.
 
-1. Create a GitHub repo named `homebrew-note` (your personal tap)
+1. Create a GitHub repo named `homebrew-origin` (your personal tap)
 2. Add a cask formula:
    ```ruby
-   cask "note" do
+   cask "origin" do
      version "1.0.0"
      sha256 arm:   "...",
             intel: "..."
-     url "https://github.com/fellanH/note/releases/download/v#{version}/note_#{version}_aarch64.dmg",
-         verified: "github.com/fellanH/note/"
-     name "note"
+     url "https://github.com/fellanH/origin/releases/download/v#{version}/origin_#{version}_aarch64.dmg",
+         verified: "github.com/fellanH/origin/"
+     name "origin"
      desc "Dynamic split-panel dashboard"
-     homepage "https://github.com/fellanH/note"
-     app "note.app"
+     homepage "https://github.com/fellanH/origin"
+     app "origin.app"
      zap trash: [
-       "~/Library/Application Support/com.klarhimmel.note",
-       "~/Library/Preferences/com.klarhimmel.note.plist",
+       "~/Library/Application Support/com.klarhimmel.origin",
+       "~/Library/Preferences/com.klarhimmel.origin.plist",
      ]
    end
    ```
-3. Users install via: `brew install --cask fellanH/note/note`
+3. Users install via: `brew install --cask fellanH/origin/origin`
 4. Update SHA256 hashes in the formula on each release (automate via GitHub Actions)
 
-For inclusion in `homebrew-cask` (the official repo, enabling `brew install --cask note` without the tap), the app must demonstrate sufficient adoption. Start with a personal tap; submit to Homebrew Core once you have users.
+For inclusion in `homebrew-cask` (the official repo, enabling `brew install --cask origin` without the tap), the app must demonstrate sufficient adoption. Start with a personal tap; submit to Homebrew Core once you have users.
 
 **Certificate expiration:** Developer ID certs are valid for 5 years. Set a calendar reminder before expiry — a lapsed cert will break notarization for any new builds.
 
@@ -389,7 +389,7 @@ For inclusion in `homebrew-cask` (the official repo, enabling `brew install --ca
 
 ## 4. Plugin Marketplace Architecture
 
-### What "Marketplace" Means for note
+### What "Marketplace" Means for origin
 
 Three possible scopes, from minimal to full:
 
@@ -413,9 +413,9 @@ Raycast manages extensions via a centralized GitHub monorepo (`raycast/extension
 
 **Key insight:** Raycast's model is a GitHub-based submission pipeline, not a custom registry. The "marketplace" is a GitHub repo + a CDN.
 
-### Minimal Viable Architecture for note (Scope B)
+### Minimal Viable Architecture for origin (Scope B)
 
-**Discovery:** A `community` branch or subdirectory in `github.com/fellanH/note-plugins` (or a separate `note-community-plugins` org). Each plugin is a directory with a `plugin.json` manifest. A statically-generated JSON index (generated by GitHub Actions on merge) serves as the registry.
+**Discovery:** A `community` branch or subdirectory in `github.com/fellanH/origin-plugins` (or a separate `origin-community-plugins` org). Each plugin is a directory with a `plugin.json` manifest. A statically-generated JSON index (generated by GitHub Actions on merge) serves as the registry.
 
 **Registry format:**
 
@@ -423,13 +423,13 @@ Raycast manages extensions via a centralized GitHub monorepo (`raycast/extension
 {
   "plugins": [
     {
-      "id": "com.note.clock",
+      "id": "com.origin.clock",
       "name": "Clock",
       "description": "Shows current time",
       "author": "fellanH",
       "version": "1.0.0",
-      "npm": "@note/clock",
-      "github": "https://github.com/fellanH/note-clock",
+      "npm": "@origin/clock",
+      "github": "https://github.com/fellanH/origin-clock",
       "icon": "🕐"
     }
   ]
@@ -445,7 +445,7 @@ Raycast manages extensions via a centralized GitHub monorepo (`raycast/extension
 5. Plugin registered in `tauri-plugin-store`
 6. App prompts for restart (or hot-reloads if you implement the import map injection at runtime)
 
-**npm registry approach:** Publish plugins to npm under a `@note-plugin/` scope or a naming convention like `note-plugin-*`. This gives you npm's CDN for distribution without a custom server. The in-app registry JSON simply maps plugin IDs to npm package names.
+**npm registry approach:** Publish plugins to npm under a `@origin-plugin/` scope or a naming convention like `origin-plugin-*`. This gives you npm's CDN for distribution without a custom server. The in-app registry JSON simply maps plugin IDs to npm package names.
 
 **Security consideration for install-time:** Running `npm install` via `tauri-plugin-shell` executes arbitrary code (npm install scripts). This is the same risk as installing any npm package. For a developer-targeted tool, this is acceptable. For a general consumer app, it is not.
 
@@ -456,7 +456,7 @@ Raycast manages extensions via a centralized GitHub monorepo (`raycast/extension
 Modeled on Raycast and VS Code's Open VSX:
 
 1. Plugin author creates a repo with a specific `package.json` structure
-2. Author submits a PR to `note-plugins` adding their `plugin.json` entry
+2. Author submits a PR to `origin-plugins` adding their `plugin.json` entry
 3. CI validates: manifest schema, builds successfully, no obviously malicious code
 4. Merged → registry JSON regenerated and deployed to GitHub Pages
 
@@ -496,8 +496,8 @@ interface PluginBusSlice {
 
 **Pattern:**
 
-- Plugin A publishes: `publish("note:selected-date", { date: "2026-03-01" })`
-- Plugin B subscribes: `const date = useWorkspaceStore(s => s.channels["note:selected-date"])`
+- Plugin A publishes: `publish("origin:selected-date", { date: "2026-03-01" })`
+- Plugin B subscribes: `const date = useWorkspaceStore(s => s.channels["origin:selected-date"])`
 - Plugin B re-renders when the value changes (standard Zustand reactivity)
 
 **Pros:** Zero new infrastructure. Works today. Type-safe if you define channel schemas. Persisted automatically via `@tauri-store/zustand` (though you probably want to exclude ephemeral messages via `filterKeys`).
@@ -558,13 +558,13 @@ Tauri's built-in event system provides `emit()` and `listen()` for Rust↔Fronte
 import { emit, listen } from "@tauri-apps/api/event";
 
 // Plugin A
-await emit("note://plugin-event", {
+await emit("origin://plugin-event", {
   channel: "selected-date",
   payload: "2026-03-01",
 });
 
 // Plugin B
-const unlisten = await listen("note://plugin-event", (event) => {
+const unlisten = await listen("origin://plugin-event", (event) => {
   console.log(event.payload);
 });
 ```
@@ -588,12 +588,12 @@ const unlisten = await listen("note://plugin-event", (event) => {
 Regardless of which pattern, establish a namespaced channel naming convention before any plugins are published:
 
 ```
-note:<domain>/<action>
-com.note.hello:selected-item
-com.klarhimmel.note:workspace-changed
+origin:<domain>/<action>
+com.origin.hello:selected-item
+com.klarhimmel.origin:workspace-changed
 ```
 
-Reserve `note:` for core app events. Plugin authors use their plugin ID as the namespace prefix.
+Reserve `origin:` for core app events. Plugin authors use their plugin ID as the namespace prefix.
 
 ### Summary
 

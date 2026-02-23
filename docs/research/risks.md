@@ -1,4 +1,4 @@
-# note — Pre-Build Risk Register
+# origin — Pre-Build Risk Register
 
 Captured before scaffold begins. Review before each implementation phase.
 
@@ -23,7 +23,7 @@ If the spike fails, fall back to a custom Tauri `store` plugin (read/write JSON 
 
 ## R2 — Plugin system v1 undermines the extensibility value proposition (MEDIUM)
 
-**What:** The spec describes note as a platform "designed to be extensible for other developers," but v1 plugins are bundled at build time via Vite's static dynamic import. Adding a plugin requires editing `note.plugins.json` and rebuilding the app.
+**What:** The spec describes origin as a platform "designed to be extensible for other developers," but v1 plugins are bundled at build time via Vite's static dynamic import. Adding a plugin requires editing `origin.plugins.json` and rebuilding the app.
 
 **Why it worries me:** A developer who reads "plugin API" and then discovers they can't add a plugin without a full rebuild will disengage. The v1 constraint is reasonable for getting to a working shell — but it conflicts with the framing. The v2 runtime loading architecture (axum server + import maps + `plugin://` URI scheme) is researched and documented but explicitly deferred.
 

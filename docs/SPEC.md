@@ -1,4 +1,4 @@
-# note — MVP Specification
+# origin — MVP Specification
 
 **Version:** 1.2
 **Entity:** Klarhimmel AB
@@ -9,7 +9,7 @@
 
 ## Product Vision
 
-A developer-focused dynamic dashboard built around a single insight: context-switching between windows and tabs kills focus. note provides a single, persistent tiling workspace where everything lives in one place — split panels, keyboard-driven, predictable layouts.
+A developer-focused dynamic dashboard built around a single insight: context-switching between windows and tabs kills focus. Origin provides a single, persistent tiling workspace where everything lives in one place — split panels, keyboard-driven, predictable layouts.
 
 The app shell provides only panel layout + plugin slots. All functionality is delivered via plugins. The window management experience _is_ the product. Plugins are content.
 
@@ -37,10 +37,10 @@ Everything else (saved configs, plugin ecosystem) is secondary to getting the co
 - Keyboard shortcuts for tabs: `CMD+T` (new tab), `CMD+Shift+W` (close tab), `CMD+1–9` (switch tab)
 - **Saved configs** — snapshot any tab's layout to a named config; reopen it any time
 - Plugin contract (TypeScript types: PluginManifest, PluginContext)
-- Plugin loading via `note.plugins.json` config file (npm workspaces, Vite dynamic import)
+- Plugin loading via `origin.plugins.json` config file (npm workspaces, Vite dynamic import)
 - Launcher UI: empty panel shows a list of registered plugins to select
 - Full state persistence via `@tauri-store/zustand` (file-backed, origin-independent)
-- A `@note/hello` workspace plugin as proof-of-concept — minimal hello world component, extensively documented as canonical reference for plugin authors
+- A `@origin/hello` workspace plugin as proof-of-concept — minimal hello world component, extensively documented as canonical reference for plugin authors
 
 ### Explicitly NOT in v1
 
@@ -103,7 +103,7 @@ When the app opens, the user sees a **fullscreen empty window**. The window is f
 ┌─[●●●]──[  Workspace 1  ×]──[+]────────────[Saved ▾]───────┐
 │                                                            │
 │                 ┌───────────────────┐                      │
-│                 │    note           │                      │
+│                 │    origin         │                      │
 │                 │                  │                       │
 │                 │  CMD+D   Split →  │                      │
 │                 │  CMD+⇧D  Split ↓  │                      │
@@ -293,7 +293,7 @@ type NodeMap = Record<NodeId, PanelNode>;
 // src/types/plugin.ts
 
 interface PluginManifest {
-  id: string; // e.g., "com.note.hello"
+  id: string; // e.g., "com.origin.hello"
   name: string;
   version: string;
   description: string;
@@ -314,20 +314,20 @@ interface PluginModule {
 }
 ```
 
-**`workspacePath`:** In v1, this is resolved once at startup to the directory containing `note.plugins.json` (i.e., the project root), using Tauri's `path` plugin. It is stored in the workspace store and injected into every `PluginContext`. A user-facing directory-picker UI is deferred to v2.
+**`workspacePath`:** In v1, this is resolved once at startup to the directory containing `origin.plugins.json` (i.e., the project root), using Tauri's `path` plugin. It is stored in the workspace store and injected into every `PluginContext`. A user-facing directory-picker UI is deferred to v2.
 
 ### Plugin Config Format
 
 ```json
-// note.plugins.json (at project root)
+// origin.plugins.json (at project root)
 {
-  "plugins": [{ "id": "com.note.hello", "package": "@note/hello" }]
+  "plugins": [{ "id": "com.origin.hello", "package": "@origin/hello" }]
 }
 ```
 
-Plugins are npm workspace packages. `@note/hello` resolves to `plugins/hello/` via workspaces. Vite dynamic `import('@note/hello')` works in both dev and prod (bundled at build time).
+Plugins are npm workspace packages. `@origin/hello` resolves to `plugins/hello/` via workspaces. Vite dynamic `import('@origin/hello')` works in both dev and prod (bundled at build time).
 
-> **v1 limitation — build-time only:** Plugin loading uses Vite's static dynamic import. All plugins must be present in `note.plugins.json` at build time; Vite bundles them into the app. Adding a new plugin requires a rebuild. Runtime plugin install is architecturally incompatible with this model — it requires a different strategy. This is an intentional v1 constraint.
+> **v1 limitation — build-time only:** Plugin loading uses Vite's static dynamic import. All plugins must be present in `origin.plugins.json` at build time; Vite bundles them into the app. Adding a new plugin requires a rebuild. Runtime plugin install is architecturally incompatible with this model — it requires a different strategy. This is an intentional v1 constraint.
 >
 > **v2 runtime loading architecture (researched):** On plugin install → `npm install` + `vite build --mode lib` → plugin built to AppData dir. An embedded `axum` Tokio server serves all installed plugin dirs on a random port. At startup, Rust reads the plugin registry, generates an import map, and injects it into the webview HTML before load. The webview resolves `import("plugin-id")` against the import map — no app rebuild needed. For maximum security, prefer a custom `plugin://` URI scheme (Rust protocol handler) over an open localhost port. See `research/vite-plugin-loading.md`.
 
@@ -336,7 +336,7 @@ Plugins are npm workspace packages. `@note/hello` resolves to `plugins/hello/` v
 ## Project Structure
 
 ```
-note/
+origin/
 ├── src-tauri/
 │   ├── src/main.rs
 │   ├── Cargo.toml
@@ -351,7 +351,7 @@ note/
 │   ├── store/
 │   │   └── workspaceStore.ts   # Zustand store (tabs + panel ops + saved configs) + @tauri-store/zustand
 │   ├── plugins/
-│   │   ├── registry.ts         # Load note.plugins.json → build plugin registry map
+│   │   ├── registry.ts         # Load origin.plugins.json → build plugin registry map
 │   │   └── loader.ts           # Dynamic import → cache → return PluginModule
 │   └── components/
 │       ├── TabBar.tsx          # Tab strip + [+] button + [Saved ▾] menu
@@ -363,11 +363,11 @@ note/
 │       └── EmptyState.tsx      # Unified empty slot: name + keyboard hints + plugin list; optional panelId prop
 ├── plugins/
 │   └── hello/
-│       ├── package.json        # { "name": "@note/hello", "main": "src/index.tsx" }
+│       ├── package.json        # { "name": "@origin/hello", "main": "src/index.tsx" }
 │       └── src/
 │           ├── manifest.ts     # PluginManifest export
 │           └── index.tsx       # default export: React component
-├── note.plugins.json
+├── origin.plugins.json
 ├── package.json                # workspaces: ["plugins/*"]
 ├── vite.config.ts
 ├── tsconfig.json
@@ -511,7 +511,7 @@ Workspace and plugin registry are slices within one combined store. Middleware i
 
 **`tauri.conf.json`:**
 
-- Set `"identifier"` to a stable reverse-domain ID (e.g., `"com.klarhimmel.note"`) — this anchors the app's data directory path.
+- Set `"identifier"` to a stable reverse-domain ID (e.g., `"com.klarhimmel.origin"`) — this anchors the app's data directory path.
 - Use `"decorations": true` with `"titleBarStyle": "Overlay"` (macOS) to get a frameless window with native traffic lights preserved. The traffic lights overlay the top-left of the webview — the tab bar must leave enough left padding (80px) to clear them. See `research/tauri2-frameless-window.md` for the complete window config including `hiddenTitle`, `trafficLightPosition`, and `acceptFirstMouse`.
 - The tab bar's empty/draggable areas must have `data-tauri-drag-region` so the window is still draggable.
 - Keyboard shortcuts (`CMD+D`, `CMD+W`, etc.) are handled via a global `keydown` listener in `App.tsx` with `event.preventDefault()`. `tauri-plugin-global-shortcut` is **not** needed and **not used**. Register `onCloseRequested` on the Tauri window to prevent macOS from closing it when CMD+W is pressed while panels are present.
@@ -587,11 +587,11 @@ Do not use `unsafe-eval`. Adjust if first-party plugins load remote assets.
 5. **Tab bar** — `TabBar.tsx`: tab list, active indicator, rename, `[+]`, `[×]`
 6. **Saved config menu** — `SavedConfigMenu.tsx`: dropdown, save prompt, list, open, delete
 7. **Panel components** — `PanelGrid` → `PanelBranch` (using `react-resizable-panels` v4 `Group` + `Separator`) → `Panel` (recursive renderer)
-8. **Plugin registry + loader** — reads `note.plugins.json`, dynamic import cache
+8. **Plugin registry + loader** — reads `origin.plugins.json`, dynamic import cache
 9. **PluginHost** — loads module, injects `PluginContext`, renders component inside Error Boundary
 10. **Keyboard shortcuts** — global `keydown` listener in `App.tsx` with `event.preventDefault()`; handlers read `focusedPanelId` from store. `tauri-plugin-global-shortcut` is NOT used (in-window shortcuts work via webview keydown). Register `onCloseRequested` on the Tauri window to prevent accidental window close.
 11. **Hello plugin** — `plugins/hello/` minimal React component with manifest
-12. **Wire it up** — npm workspaces, verify `@note/hello` resolves, end-to-end test
+12. **Wire it up** — npm workspaces, verify `@origin/hello` resolves, end-to-end test
 
 ---
 
@@ -610,7 +610,7 @@ Do not use `unsafe-eval`. Adjust if first-party plugins load remote assets.
 | `src/components/PanelGrid.tsx`        | Root component — starts the render tree                                                  |
 | `src/components/EmptyState.tsx`       | Unified empty slot — rendered at workspace level (no panels) and panel level (no plugin) |
 | `plugins/hello/src/index.tsx`         | PoC plugin — verifies the plugin system works                                            |
-| `note.plugins.json`                   | Plugin config — single source of truth for registered plugins                            |
+| `origin.plugins.json`                 | Plugin config — single source of truth for registered plugins                            |
 
 ---
 
@@ -643,8 +643,8 @@ Do not use `unsafe-eval`. Adjust if first-party plugins load remote assets.
 
 ### Plugins
 
-- [ ] Empty panel shows EmptyState with `@note/hello` listed
-- [ ] Clicking `@note/hello` mounts the Hello World component
+- [ ] Empty panel shows EmptyState with `@origin/hello` listed
+- [ ] Clicking `@origin/hello` mounts the Hello World component
 - [ ] Plugin assignments survive tab switching
 - [ ] A crashing plugin shows an inline error in its panel; other panels are unaffected
 - [ ] `CMD+W` does NOT close the window when panels are open

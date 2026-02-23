@@ -1,4 +1,4 @@
-import type { PluginContext } from "@note/api";
+import type { PluginContext } from "@origin/api";
 export { manifest } from "./manifest";
 
 // PluginContext fields available to your component:

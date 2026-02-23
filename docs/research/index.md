@@ -1,4 +1,4 @@
-# note — Architecture Research Index
+# origin — Architecture Research Index
 
 **Researched:** 2026-02-23
 **Scope:** Validate and improve architecture decisions in SPEC.md v1.2
