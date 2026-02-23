@@ -3,6 +3,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import PanelGrid from "@/components/PanelGrid";
+import TabBar from "@/components/TabBar";
 
 function App() {
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
@@ -24,12 +25,7 @@ function App() {
 
   return (
     <div className="flex h-screen flex-col">
-      <div
-        data-tauri-drag-region
-        className="flex h-[38px] shrink-0 items-center pl-[80px] pr-4"
-      >
-        <span className="select-none text-sm font-medium">note</span>
-      </div>
+      <TabBar />
       <div className="flex-1 overflow-hidden">
         <PanelGrid key={activeWorkspaceId} />
       </div>

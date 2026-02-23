@@ -28,6 +28,18 @@ export function useKeyboardShortcuts(): void {
         const { focusedPanelId } = selectActiveWorkspace(state);
         if (!focusedPanelId) return;
         state.closePanel(focusedPanelId);
+      } else if (e.key === "t") {
+        e.preventDefault();
+        useWorkspaceStore.getState().addWorkspace();
+      } else if (e.key === "W" && e.shiftKey) {
+        e.preventDefault();
+        const { activeWorkspaceId } = useWorkspaceStore.getState();
+        useWorkspaceStore.getState().closeWorkspace(activeWorkspaceId);
+      } else if (/^[1-9]$/.test(e.key)) {
+        e.preventDefault();
+        const { workspaces } = useWorkspaceStore.getState();
+        const target = workspaces[Number(e.key) - 1];
+        if (target) useWorkspaceStore.getState().setActiveWorkspace(target.id);
       }
     }
 

@@ -13,6 +13,10 @@ type WorkspaceState = {
 };
 
 type WorkspaceActions = {
+  addWorkspace: () => void;
+  closeWorkspace: (id: WorkspaceId) => void;
+  setActiveWorkspace: (id: WorkspaceId) => void;
+  renameWorkspace: (id: WorkspaceId, name: string) => void;
   addInitialPanel: () => void;
   splitPanel: (panelId: NodeId, direction: "horizontal" | "vertical") => void;
   closePanel: (panelId: NodeId) => void;
@@ -21,6 +25,12 @@ type WorkspaceActions = {
 };
 
 export type WorkspaceStore = WorkspaceState & WorkspaceActions;
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function emptyWorkspace(id: WorkspaceId, name: string): Workspace {
+  return { id, name, rootId: null, nodes: {}, focusedPanelId: null };
+}
 
 // ─── Selector ────────────────────────────────────────────────────────────────
 
@@ -34,15 +44,54 @@ const INITIAL_ID: WorkspaceId = "default";
 export const useWorkspaceStore = create<WorkspaceStore>()(
   devtools(
     immer((set) => ({
-      workspaces: [
-        {
-          id: INITIAL_ID,
-          rootId: null,
-          nodes: {},
-          focusedPanelId: null,
-        },
-      ],
+      workspaces: [emptyWorkspace(INITIAL_ID, "Workspace 1")],
       activeWorkspaceId: INITIAL_ID,
+
+      // ── Tab actions ──────────────────────────────────────────────────────
+
+      addWorkspace: () =>
+        set((draft) => {
+          const name = `Workspace ${draft.workspaces.length + 1}`;
+          const id = crypto.randomUUID();
+          draft.workspaces.push(emptyWorkspace(id, name));
+          draft.activeWorkspaceId = id;
+        }),
+
+      closeWorkspace: (id) =>
+        set((draft) => {
+          const idx = draft.workspaces.findIndex((w) => w.id === id);
+          if (idx === -1) return;
+
+          if (draft.workspaces.length === 1) {
+            // Last workspace — reset to one empty workspace
+            const newId = crypto.randomUUID();
+            draft.workspaces = [emptyWorkspace(newId, "Workspace 1")];
+            draft.activeWorkspaceId = newId;
+            return;
+          }
+
+          const wasActive = draft.activeWorkspaceId === id;
+          draft.workspaces.splice(idx, 1);
+
+          if (wasActive) {
+            // Prefer previous tab; fall back to the tab now at idx (next)
+            const nextIdx = Math.max(0, idx - 1);
+            draft.activeWorkspaceId = draft.workspaces[nextIdx].id;
+          }
+        }),
+
+      setActiveWorkspace: (id) =>
+        set((draft) => {
+          draft.activeWorkspaceId = id;
+        }),
+
+      renameWorkspace: (id, name) =>
+        set((draft) => {
+          const ws = draft.workspaces.find((w) => w.id === id);
+          if (ws) ws.name = name;
+        }),
+
+      // ── Panel actions ────────────────────────────────────────────────────
 
       addInitialPanel: () =>
         set((draft) => {
@@ -176,6 +225,10 @@ export const tauriHandler = createTauriStore(
   useWorkspaceStore as any,
   {
     filterKeys: [
+      "addWorkspace",
+      "closeWorkspace",
+      "setActiveWorkspace",
+      "renameWorkspace",
       "addInitialPanel",
       "splitPanel",
       "closePanel",
