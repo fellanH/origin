@@ -3,6 +3,8 @@ import {
   selectActiveWorkspace,
 } from "@/store/workspaceStore";
 import Launcher from "@/components/Launcher";
+import PluginHost from "@/components/PluginHost";
+import type { PluginContext } from "@/types/plugin";
 
 interface Props {
   nodeId: string;
@@ -27,9 +29,18 @@ function LeafPanel({ nodeId }: Props) {
       {pluginId === null ? (
         <Launcher panelId={nodeId} />
       ) : (
-        <div className="p-4 text-sm text-muted-foreground">
-          Plugin: {pluginId}
-        </div>
+        <PluginHost
+          pluginId={pluginId}
+          context={
+            {
+              panelId: nodeId,
+              workspacePath: "",
+              theme: window.matchMedia("(prefers-color-scheme: dark)").matches
+                ? "dark"
+                : "light",
+            } satisfies PluginContext
+          }
+        />
       )}
 
       <button
