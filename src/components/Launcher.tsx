@@ -18,7 +18,8 @@ export default function Launcher({ panelId }: Props) {
             className="rounded px-3 py-1.5 text-sm text-foreground hover:bg-muted"
             onClick={() => setPlugin(panelId, entry.id)}
           >
-            {entry.id}
+            {entry.icon && <span className="mr-2">{entry.icon}</span>}
+            {entry.name}
           </button>
         ))}
       </div>
