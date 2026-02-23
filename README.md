@@ -4,11 +4,11 @@ Dynamic dashboard desktop app with a panel manager and developer plugin API.
 
 Built with Tauri 2, React 19, Vite 7, Tailwind CSS 4, and Zustand.
 
-## Quick Start
+## Prerequisites
 
-```bash
-cd agency/projects/note && claude
-```
+- [Rust toolchain](https://rustup.rs/) (required by Tauri)
+- Node.js 20+
+- macOS (primary target; Tauri 2 desktop)
 
 ## Development (once app is scaffolded)
 
@@ -21,6 +21,15 @@ npm run tauri dev
 
 # Build for production
 npm run tauri build
+```
+
+## Project Layout
+
+```
+src/          React 19 frontend (components, store, plugins, types)
+src-tauri/    Rust/Tauri backend (commands, capabilities, config)
+plugins/      @note/* plugin packages (npm workspaces)
+docs/         Spec, research, SOPs, standards
 ```
 
 ## What It Is
@@ -56,9 +65,11 @@ v1 plugins are npm workspace packages in `plugins/`. Loading is build-time only 
 
 ## Documentation
 
-| Doc                                                | Description                            |
-| -------------------------------------------------- | -------------------------------------- |
-| [`docs/SPEC.md`](docs/SPEC.md)                     | Full product spec v1.2 — authoritative |
-| [`docs/plans/poc.md`](docs/plans/poc.md)           | PoC plan — start here                  |
-| [`docs/research/index.md`](docs/research/index.md) | Research index + key findings          |
-| [`docs/research/risks.md`](docs/research/risks.md) | Pre-build risk register                |
+| Doc                                                | Description                                        |
+| -------------------------------------------------- | -------------------------------------------------- |
+| [`docs/SPEC.md`](docs/SPEC.md)                     | Full product spec v1.2 — authoritative             |
+| [`docs/STANDARDS.md`](docs/STANDARDS.md)           | Coding standards — TypeScript, React, Zustand, CSS |
+| [`docs/SOP/index.md`](docs/SOP/index.md)           | Standard operating procedures (SOPs)               |
+| [`docs/plans/poc.md`](docs/plans/poc.md)           | PoC plan (complete — for reference)                |
+| [`docs/research/index.md`](docs/research/index.md) | Research index + key findings                      |
+| [`docs/research/risks.md`](docs/research/risks.md) | Pre-build risk register                            |

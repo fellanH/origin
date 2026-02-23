@@ -62,8 +62,8 @@ Takes 2 minutes. Prevents the most common project-specific bugs.
 
 ## Reference links
 
-- Architecture decisions + gotchas: `CLAUDE.md`
+- Coding standards (TypeScript, React, Zustand, CSS, naming): `docs/STANDARDS.md`
+- Architecture decisions: `CLAUDE.md`
 - Frameless window detail: `docs/research/tauri2-frameless-window.md`
 - Persistence API: `docs/research/tauri-store-zustand.md`
 - Panel library: `docs/research/react-resizable-panels-zustand.md`
-- Coding standards (TypeScript, React, Zustand patterns): `docs/STANDARDS.md`

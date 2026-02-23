@@ -178,6 +178,10 @@ const unlisten = await listen("task-progress", (e) => { ... });
 return () => unlisten();
 ```
 
+### Window events
+
+- `onCloseRequested`: must call `e.preventDefault()` to prevent CMD+W closing the native window
+
 ---
 
 ## CSS / Tailwind
@@ -204,6 +208,12 @@ return () => unlisten();
 - `data-tauri-drag-region` on spacer `<div>` elements only
 - NEVER on: the tab bar container, buttons, inputs, any interactive element
 - Tab bar left padding is `pl-[80px]` — not 72px (clears macOS traffic lights)
+
+---
+
+## Panel Layout
+
+`react-resizable-panels` v4 renames: `Group` (was `PanelGroup`), `Separator` (was `PanelResizeHandle`), `orientation` (was `direction`), `onLayoutChanged` (was `onLayout`)
 
 ---
 

@@ -13,44 +13,34 @@ Before `package.json` exists (pre-scaffold): `claude --plugin-dir .claude/plugin
 
 The `--plugin-dir` flag loads `/note:pre-code`, `/note:complete-work`, `/note:issue-lifecycle`, and `/note:git-workflow` as slash commands.
 
-## Project Context
+## Navigation
 
-Read the Architecture Decisions and Critical Gotchas below before writing any code. Consult `docs/SPEC.md` for deep context (UX, full types, verification checklist). Start with `docs/plans/poc.md`.
-
-**Coding standards and SOPs:** `docs/STANDARDS.md` — TypeScript, React, Zustand, Tauri IPC, CSS, file naming, import order, git commits, and per-feature SOPs (adding commands, adding plugins).
-
-No code written. GitHub issues created (14 issues — MVP v1 + spike — at `fellanH/note`). PoC milestone created. Next: #24 spike → #1 scaffold → partial #2/#3 → #4 → partial #7/#11.
+| What                                         | Where                  |
+| -------------------------------------------- | ---------------------- |
+| Full spec, UX, types, verification checklist | `docs/SPEC.md`         |
+| Coding standards and conventions             | `docs/STANDARDS.md`    |
+| Pre-code checklist (run before every task)   | `docs/SOP/pre-code.md` |
+| Architecture research                        | `docs/research/`       |
 
 ## Architecture Decisions
 
-| Decision           | Choice                                              | Do NOT                                                                             | Research                                     |
-| ------------------ | --------------------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------- |
-| Panel state model  | Flat `NodeMap` + `parentId` (O(1) split/close)      | Recursive tree with `children`                                                     | `research/flat-map-vs-recursive-tree.md`     |
-| Persistence        | `@tauri-store/zustand` (file-backed)                | `localStorage`, standard `persist` middleware                                      | `research/tauri-store-zustand.md`            |
-| Keyboard shortcuts | Webview `keydown` + `preventDefault()` in `App.tsx` | `tauri-plugin-global-shortcut` (fires when backgrounded, macOS double-fire #10025) | `research/tauri2.md`                         |
-| Resize handles     | `react-resizable-panels` v4                         | From-scratch divider                                                               | `research/react-resizable-panels-zustand.md` |
-| Frameless window   | `decorations: true` + `titleBarStyle: "Overlay"`    | `decorations: false` (removes traffic lights)                                      | `research/tauri2-frameless-window.md`        |
-| Plugin loading v1  | Build-time Vite dynamic import                      | Runtime install                                                                    | `research/vite-plugin-loading.md`            |
-| Directory layout   | `src/` for React source, `src-tauri/` for Rust      | Flat root, `packages/app/` monorepo indirection                                    | —                                            |
+| Decision           | Choice                                                                                           | Do NOT                                                                             | Research                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- | -------------------------------------------- |
+| Panel state model  | Flat `NodeMap` + `parentId` (O(1) split/close)                                                   | Recursive tree with `children`                                                     | `research/flat-map-vs-recursive-tree.md`     |
+| Persistence        | `@tauri-store/zustand` (file-backed)                                                             | `localStorage`, standard `persist` middleware                                      | `research/tauri-store-zustand.md`            |
+| Keyboard shortcuts | Webview `keydown` + `preventDefault()` in `App.tsx`                                              | `tauri-plugin-global-shortcut` (fires when backgrounded, macOS double-fire #10025) | `research/tauri2.md`                         |
+| Resize handles     | `react-resizable-panels` v4 — v4 renames: `Group`, `Separator`, `orientation`, `onLayoutChanged` | From-scratch divider                                                               | `research/react-resizable-panels-zustand.md` |
+| Frameless window   | `decorations: true` + `titleBarStyle: "Overlay"`                                                 | `decorations: false` (removes traffic lights)                                      | `research/tauri2-frameless-window.md`        |
+| Plugin loading v1  | Build-time Vite dynamic import                                                                   | Runtime install                                                                    | `research/vite-plugin-loading.md`            |
+| Directory layout   | `src/` for React source, `src-tauri/` for Rust                                                   | Flat root, `packages/app/` monorepo indirection                                    | —                                            |
 
 ## Critical Gotchas
 
-- Tab bar left padding: `pl-[80px]` — NOT 72px
-- `@tauri-store/zustand` API: `createTauriStore()` — `createStore` does not exist
-- Store hydration: `await tauriHandler.start()` before `ReactDOM.createRoot()`
-- `filterKeys` + `filterKeysStrategy: "omit"` replaces `partialize` — do not use `persist` middleware
-- Middleware order: `devtools(immer(...store))` — `persist` is not in the chain
-- Zustand v5: `import { create } from 'zustand'`, `useShallow` for derived selectors
-- `react-resizable-panels` v4 renames: `Group`, `Separator`, `orientation`, `onLayoutChanged`
-- `Panel` name collision: alias with `import { Panel as ResizablePanel }` or name local component `LeafPanel.tsx`
-- `data-tauri-drag-region`: spacer divs only — NOT on interactive elements or the tab bar container
-- `titleBarStyle: "Overlay"` — capital O, Tauri is case-sensitive
 - `key={activeWorkspaceId}` on root `PanelGrid` element — forces remount on tab switch
 - Do NOT call `window.setTitle()` — resets `trafficLightPosition` (Tauri #13044); use `document.title`
-- **Traffic light alignment** — `trafficLightPosition.y` controls title bar container HEIGHT (`container = button_height + y`), NOT the button's CSS y. Native button frame = **16px** (12px dot + 2px margin each side). Button is centered in container: `button_center_CSS = (button_height + y) / 2`. Correct pattern: `trafficLightPosition: { x: 14, y: 22 }` + title bar `h-[38px] items-center` (38 = 16+22, button center = text center = 19px). Do NOT use `pt-[]` for this — it requires knowing cap-height. Do NOT use CSS `env(titlebar-area-*)` — not implemented in WKWebView (Tauri #6030, open since 2022).
+- Traffic light alignment: `trafficLightPosition: {x:14, y:22}` + `h-[38px] items-center`. Derivation: `docs/research/tauri2-frameless-window.md`
 - `security.csp` belongs inside `app` in `tauri.conf.json` — NOT at top level (top-level `security` is a Tauri 1 pattern)
 - Do NOT use `unstable` Cargo feature — breaks `trafficLightPosition` (Tauri #14072)
-- `onCloseRequested` must `e.preventDefault()` to prevent CMD+W closing the native window
 - Dev builds use `.dev.json` file suffix by default — dev/prod state is intentionally separate
 - `createTauriStore` type gotcha: expects `StoreApi<State>` where `State` requires `[key: string]: unknown` index signature — immer middleware overloads `setState` with a `WritableDraft` type that clashes. Runtime is fine; use `useSpikeStore as any` cast. For real stores, either declare state with `[key: string]: unknown` or cast.
 
@@ -87,14 +77,6 @@ See `docs/SOP/index.md` for the full navigation hub. Quick reference:
 | `docs/SOP/add-plugin.md`        | Adding a new `@note/*` plugin package                           |
 | `docs/SOP/complete-work.md`     | When finishing a task — closes the loop with admin              |
 | `docs/SOP/release.md`           | Versioning, build, distribution, GitHub release                 |
-
-## Completing Work
-
-See `docs/SOP/complete-work.md` for the full procedure. Summary:
-
-1. `update_project_task` — mark COMPLETE with a summary
-2. `update_queue_item` — if task was dispatched from the admin queue
-3. `log_to_memory` — type "status", one-sentence summary
 
 ## Rules
 
