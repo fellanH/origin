@@ -1,8 +1,26 @@
+import { useEffect } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useWorkspaceStore } from "@/store/workspaceStore";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import PanelGrid from "@/components/PanelGrid";
 
 function App() {
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
+
+  useKeyboardShortcuts();
+
+  useEffect(() => {
+    const win = getCurrentWindow();
+    let unlisten: (() => void) | undefined;
+    win
+      .onCloseRequested((e) => {
+        e.preventDefault();
+      })
+      .then((fn) => {
+        unlisten = fn;
+      });
+    return () => unlisten?.();
+  }, []);
 
   return (
     <div className="flex h-screen flex-col">
