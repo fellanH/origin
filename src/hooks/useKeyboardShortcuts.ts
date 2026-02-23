@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { listen } from "@tauri-apps/api/event";
 import {
   useWorkspaceStore,
   selectActiveWorkspace,
@@ -31,10 +32,6 @@ export function useKeyboardShortcuts(): void {
       } else if (e.key === "t") {
         e.preventDefault();
         useWorkspaceStore.getState().addWorkspace();
-      } else if (e.key === "W" && e.shiftKey) {
-        e.preventDefault();
-        const { activeWorkspaceId } = useWorkspaceStore.getState();
-        useWorkspaceStore.getState().closeWorkspace(activeWorkspaceId);
       } else if (/^[1-9]$/.test(e.key)) {
         e.preventDefault();
         const { workspaces } = useWorkspaceStore.getState();
@@ -47,6 +44,18 @@ export function useKeyboardShortcuts(): void {
     }
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    let unlistenMenu: (() => void) | undefined;
+    listen("close-workspace", () => {
+      const state = useWorkspaceStore.getState();
+      state.closeWorkspace(state.activeWorkspaceId);
+    }).then((fn) => {
+      unlistenMenu = fn;
+    });
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      unlistenMenu?.();
+    };
   }, []);
 }
