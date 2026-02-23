@@ -1,5 +1,5 @@
 {
-  "name": "PACKAGE_NAME_TBD",
+  "name": "@origin-cards/api",
   "version": "0.1.0",
   "description": "Type contract for Origin plugins — PluginManifest, PluginContext, PluginComponent, PluginModule",
   "type": "module",
