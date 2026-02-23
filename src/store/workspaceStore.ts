@@ -19,7 +19,7 @@ type WorkspaceActions = {
   closeWorkspace: (id: WorkspaceId) => void;
   setActiveWorkspace: (id: WorkspaceId) => void;
   renameWorkspace: (id: WorkspaceId, name: string) => void;
-  addInitialPanel: () => void;
+  addInitialPanel: (pluginId?: string) => void;
   splitPanel: (panelId: NodeId, direction: "horizontal" | "vertical") => void;
   closePanel: (panelId: NodeId) => void;
   setFocus: (panelId: NodeId | null) => void;
@@ -102,7 +102,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
 
       // ── Panel actions ────────────────────────────────────────────────────
 
-      addInitialPanel: () =>
+      addInitialPanel: (pluginId) =>
         set((draft) => {
           const ws = draft.workspaces.find(
             (w) => w.id === draft.activeWorkspaceId,
@@ -113,7 +113,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
             type: "leaf",
             id: leafId,
             parentId: null,
-            pluginId: null,
+            pluginId: pluginId ?? null,
           } satisfies PanelLeaf;
           ws.rootId = leafId;
           ws.focusedPanelId = leafId;

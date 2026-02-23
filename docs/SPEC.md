@@ -358,10 +358,9 @@ note/
 │       ├── SavedConfigMenu.tsx # Dropdown: list/open/delete saved configs + save current
 │       ├── PanelGrid.tsx       # Root: renders active workspace's PanelNode tree OR EmptyState
 │       ├── PanelBranch.tsx     # Recursive: leaf → Panel, split → Group + two PanelBranches (react-resizable-panels v4)
-│       ├── Panel.tsx           # A leaf panel: if pluginId → PluginHost, else → Launcher
+│       ├── Panel.tsx           # A leaf panel: if pluginId → PluginHost, else → EmptyState
 │       ├── PluginHost.tsx      # Loads + mounts a plugin component with PluginContext; wrapped in ErrorBoundary
-│       ├── Launcher.tsx        # Lists registered plugins; onClick → setPlugin
-│       └── EmptyState.tsx      # Centered empty-state block: name + keyboard hints
+│       └── EmptyState.tsx      # Unified empty slot: name + keyboard hints + plugin list; optional panelId prop
 ├── plugins/
 │   └── hello/
 │       ├── package.json        # { "name": "@note/hello", "main": "src/index.tsx" }
@@ -584,35 +583,34 @@ Do not use `unsafe-eval`. Adjust if first-party plugins load remote assets.
 1. **Scaffold** — `npm create tauri@latest` → React + TypeScript template, configure Tailwind 4 + shadcn/ui
 2. **Types** — `src/types/panel.ts` + `src/types/workspace.ts` + `src/types/plugin.ts`
 3. **Workspace store** — `workspaceStore.ts` (Zustand v5 + `@tauri-store/zustand`): workspaces, active tab, panel ops, saved configs; use `immer` for mutations, `useShallow` on derived selectors, `filterKeys` to exclude actions from disk sync
-4. **EmptyState** — fullscreen centered block with keyboard hints
+4. **EmptyState** — unified empty slot: name, keyboard hints, and plugin list; `panelId` prop optional (absent = workspace level, present = panel level)
 5. **Tab bar** — `TabBar.tsx`: tab list, active indicator, rename, `[+]`, `[×]`
 6. **Saved config menu** — `SavedConfigMenu.tsx`: dropdown, save prompt, list, open, delete
 7. **Panel components** — `PanelGrid` → `PanelBranch` (using `react-resizable-panels` v4 `Group` + `Separator`) → `Panel` (recursive renderer)
-8. **Launcher** — reads plugin registry, lists plugins, calls `setPlugin`
-9. **Plugin registry + loader** — reads `note.plugins.json`, dynamic import cache
-10. **PluginHost** — loads module, injects `PluginContext`, renders component inside Error Boundary
-11. **Keyboard shortcuts** — global `keydown` listener in `App.tsx` with `event.preventDefault()`; handlers read `focusedPanelId` from store. `tauri-plugin-global-shortcut` is NOT used (in-window shortcuts work via webview keydown). Register `onCloseRequested` on the Tauri window to prevent accidental window close.
-12. **Hello plugin** — `plugins/hello/` minimal React component with manifest
-13. **Wire it up** — npm workspaces, verify `@note/hello` resolves, end-to-end test
+8. **Plugin registry + loader** — reads `note.plugins.json`, dynamic import cache
+9. **PluginHost** — loads module, injects `PluginContext`, renders component inside Error Boundary
+10. **Keyboard shortcuts** — global `keydown` listener in `App.tsx` with `event.preventDefault()`; handlers read `focusedPanelId` from store. `tauri-plugin-global-shortcut` is NOT used (in-window shortcuts work via webview keydown). Register `onCloseRequested` on the Tauri window to prevent accidental window close.
+11. **Hello plugin** — `plugins/hello/` minimal React component with manifest
+12. **Wire it up** — npm workspaces, verify `@note/hello` resolves, end-to-end test
 
 ---
 
 ## Critical Files
 
-| File                                  | Purpose                                                                           |
-| ------------------------------------- | --------------------------------------------------------------------------------- |
-| `package.json`                        | Root — workspaces, scripts (`tauri dev`, `tauri build`)                           |
-| `src-tauri/tauri.conf.json`           | Tauri config — app identifier, window (frameless + overlay), CSP                  |
-| `src-tauri/Cargo.toml`                | Rust deps (tauri 2, tauri-plugin-zustand, tauri-plugin-window-state)              |
-| `src-tauri/capabilities/default.json` | Tauri permissions — required for IPC (`core:default`, `zustand:default`)          |
-| `src/store/workspaceStore.ts`         | All state — workspaces, panel ops, saved configs (`@tauri-store/zustand` + immer) |
-| `src/plugins/registry.ts`             | Maps plugin IDs → dynamic import factories                                        |
-| `src/components/TabBar.tsx`           | Tab strip — workspace switching + new/close tab                                   |
-| `src/components/SavedConfigMenu.tsx`  | Save/load/delete named layout configs                                             |
-| `src/components/PanelGrid.tsx`        | Root component — starts the render tree                                           |
-| `src/components/EmptyState.tsx`       | Initial fullscreen view                                                           |
-| `plugins/hello/src/index.tsx`         | PoC plugin — verifies the plugin system works                                     |
-| `note.plugins.json`                   | Plugin config — single source of truth for registered plugins                     |
+| File                                  | Purpose                                                                                  |
+| ------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `package.json`                        | Root — workspaces, scripts (`tauri dev`, `tauri build`)                                  |
+| `src-tauri/tauri.conf.json`           | Tauri config — app identifier, window (frameless + overlay), CSP                         |
+| `src-tauri/Cargo.toml`                | Rust deps (tauri 2, tauri-plugin-zustand, tauri-plugin-window-state)                     |
+| `src-tauri/capabilities/default.json` | Tauri permissions — required for IPC (`core:default`, `zustand:default`)                 |
+| `src/store/workspaceStore.ts`         | All state — workspaces, panel ops, saved configs (`@tauri-store/zustand` + immer)        |
+| `src/plugins/registry.ts`             | Maps plugin IDs → dynamic import factories                                               |
+| `src/components/TabBar.tsx`           | Tab strip — workspace switching + new/close tab                                          |
+| `src/components/SavedConfigMenu.tsx`  | Save/load/delete named layout configs                                                    |
+| `src/components/PanelGrid.tsx`        | Root component — starts the render tree                                                  |
+| `src/components/EmptyState.tsx`       | Unified empty slot — rendered at workspace level (no panels) and panel level (no plugin) |
+| `plugins/hello/src/index.tsx`         | PoC plugin — verifies the plugin system works                                            |
+| `note.plugins.json`                   | Plugin config — single source of truth for registered plugins                            |
 
 ---
 
@@ -645,7 +643,7 @@ Do not use `unsafe-eval`. Adjust if first-party plugins load remote assets.
 
 ### Plugins
 
-- [ ] Empty panel shows Launcher with `@note/hello` listed
+- [ ] Empty panel shows EmptyState with `@note/hello` listed
 - [ ] Clicking `@note/hello` mounts the Hello World component
 - [ ] Plugin assignments survive tab switching
 - [ ] A crashing plugin shows an inline error in its panel; other panels are unaffected
@@ -657,6 +655,6 @@ Do not use `unsafe-eval`. Adjust if first-party plugins load remote assets.
 - [ ] Saved config appears in the `[Saved ▾]` dropdown
 - [ ] Clicking a saved config opens its layout in a new tab
 - [ ] Plugin assignments are restored when a config is loaded
-- [ ] A plugin missing from the registry falls back to the Launcher
+- [ ] A plugin missing from the registry falls back to EmptyState
 - [ ] Deleting a saved config removes it from the dropdown
 - [ ] Saved configs persist across app restarts

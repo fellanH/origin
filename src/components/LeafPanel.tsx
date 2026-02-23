@@ -2,7 +2,7 @@ import {
   useWorkspaceStore,
   selectActiveWorkspace,
 } from "@/store/workspaceStore";
-import Launcher from "@/components/Launcher";
+import EmptyState from "@/components/EmptyState";
 import PluginHost from "@/components/PluginHost";
 import type { PluginContext } from "@/types/plugin";
 
@@ -27,7 +27,7 @@ function LeafPanel({ nodeId }: Props) {
       onClick={() => setFocus(nodeId)}
     >
       {pluginId === null ? (
-        <Launcher panelId={nodeId} />
+        <EmptyState panelId={nodeId} />
       ) : (
         <PluginHost
           pluginId={pluginId}
