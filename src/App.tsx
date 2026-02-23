@@ -6,7 +6,7 @@ import {
   selectActiveWorkspace,
 } from "@/store/workspaceStore";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import PanelGrid from "@/components/PanelGrid";
+import CardLayout from "@/components/CardLayout";
 import TabBar from "@/components/TabBar";
 
 function App() {
@@ -41,7 +41,7 @@ function App() {
     <div className="flex h-screen flex-col">
       <TabBar />
       <div className="flex-1 overflow-hidden">
-        <PanelGrid key={activeWorkspaceId} />
+        <CardLayout key={activeWorkspaceId} />
       </div>
     </div>
   );

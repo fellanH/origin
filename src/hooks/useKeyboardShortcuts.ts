@@ -15,20 +15,20 @@ export function useKeyboardShortcuts(): void {
         const state = useWorkspaceStore.getState();
         const ws = selectActiveWorkspace(state);
         if (ws.rootId === null) {
-          state.addInitialPanel();
+          state.addInitialCard();
           return;
         }
-        if (!ws.focusedPanelId) return;
-        state.splitPanel(
-          ws.focusedPanelId,
+        if (!ws.focusedCardId) return;
+        state.splitCard(
+          ws.focusedCardId,
           e.shiftKey ? "vertical" : "horizontal",
         );
       } else if (e.key === "w" && !e.shiftKey) {
         e.preventDefault();
         const state = useWorkspaceStore.getState();
-        const { focusedPanelId } = selectActiveWorkspace(state);
-        if (!focusedPanelId) return;
-        state.closePanel(focusedPanelId);
+        const { focusedCardId } = selectActiveWorkspace(state);
+        if (!focusedCardId) return;
+        state.closeCard(focusedCardId);
       } else if (e.key === "t") {
         e.preventDefault();
         useWorkspaceStore.getState().addWorkspace();

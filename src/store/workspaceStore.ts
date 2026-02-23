@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import { createTauriStore } from "@tauri-store/zustand";
-import type { NodeId, PanelLeaf, PanelSplit } from "@/types/panel";
+import type { CardId, CardLeaf, CardSplit } from "@/types/card";
 import type { Workspace, WorkspaceId, SavedConfig } from "@/types/workspace";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -21,12 +21,12 @@ type WorkspaceActions = {
   closeWorkspace: (id: WorkspaceId) => void;
   setActiveWorkspace: (id: WorkspaceId) => void;
   renameWorkspace: (id: WorkspaceId, name: string) => void;
-  addInitialPanel: (pluginId?: string) => void;
-  splitPanel: (panelId: NodeId, direction: "horizontal" | "vertical") => void;
-  closePanel: (panelId: NodeId) => void;
-  setFocus: (panelId: NodeId | null) => void;
-  resizeSplit: (splitId: NodeId, sizes: [number, number]) => void;
-  setPlugin: (panelId: NodeId, pluginId: string) => void;
+  addInitialCard: (pluginId?: string) => void;
+  splitCard: (cardId: CardId, direction: "horizontal" | "vertical") => void;
+  closeCard: (cardId: CardId) => void;
+  setFocus: (cardId: CardId | null) => void;
+  resizeSplit: (splitId: CardId, sizes: [number, number]) => void;
+  setPlugin: (cardId: CardId, pluginId: string) => void;
   saveConfig: (name: string) => void;
   loadConfig: (configId: string) => void;
   deleteConfig: (configId: string) => void;
@@ -39,7 +39,7 @@ export type WorkspaceStore = WorkspaceState & WorkspaceActions;
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function emptyWorkspace(id: WorkspaceId, name: string): Workspace {
-  return { id, name, rootId: null, nodes: {}, focusedPanelId: null };
+  return { id, name, rootId: null, nodes: {}, focusedCardId: null };
 }
 
 // ─── Selector ────────────────────────────────────────────────────────────────
@@ -104,9 +104,9 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           if (ws) ws.name = name;
         }),
 
-      // ── Panel actions ────────────────────────────────────────────────────
+      // ── Card actions ─────────────────────────────────────────────────────
 
-      addInitialPanel: (pluginId) =>
+      addInitialCard: (pluginId) =>
         set((draft) => {
           const ws = draft.workspaces.find(
             (w) => w.id === draft.activeWorkspaceId,
@@ -118,17 +118,17 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
             id: leafId,
             parentId: null,
             pluginId: pluginId ?? null,
-          } satisfies PanelLeaf;
+          } satisfies CardLeaf;
           ws.rootId = leafId;
-          ws.focusedPanelId = leafId;
+          ws.focusedCardId = leafId;
         }),
 
-      splitPanel: (panelId, direction) =>
+      splitCard: (cardId, direction) =>
         set((draft) => {
           const ws = draft.workspaces.find(
             (w) => w.id === draft.activeWorkspaceId,
           )!;
-          const node = ws.nodes[panelId];
+          const node = ws.nodes[cardId];
           if (!node || node.type !== "leaf") return;
 
           const parentId = node.parentId;
@@ -141,53 +141,53 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
             parentId,
             direction,
             sizes: [50, 50],
-            childIds: [panelId, newLeafId],
-          } satisfies PanelSplit;
+            childIds: [cardId, newLeafId],
+          } satisfies CardSplit;
 
           ws.nodes[newLeafId] = {
             type: "leaf",
             id: newLeafId,
             parentId: newSplitId,
             pluginId: null,
-          } satisfies PanelLeaf;
+          } satisfies CardLeaf;
 
-          ws.nodes[panelId].parentId = newSplitId;
+          ws.nodes[cardId].parentId = newSplitId;
 
           if (parentId === null) {
             ws.rootId = newSplitId;
           } else {
             const parent = ws.nodes[parentId];
             if (parent.type === "split") {
-              const idx = parent.childIds.indexOf(panelId) as 0 | 1;
+              const idx = parent.childIds.indexOf(cardId) as 0 | 1;
               parent.childIds[idx] = newSplitId;
             }
           }
 
-          ws.focusedPanelId = newLeafId;
+          ws.focusedCardId = newLeafId;
         }),
 
-      closePanel: (panelId) =>
+      closeCard: (cardId) =>
         set((draft) => {
           const ws = draft.workspaces.find(
             (w) => w.id === draft.activeWorkspaceId,
           )!;
-          const node = ws.nodes[panelId];
+          const node = ws.nodes[cardId];
           if (!node || node.type !== "leaf") return;
 
           const parentSplitId = node.parentId;
 
           if (parentSplitId === null) {
-            // Last panel — return to empty state
-            delete ws.nodes[panelId];
+            // Last card — return to empty state
+            delete ws.nodes[cardId];
             ws.rootId = null;
-            ws.focusedPanelId = null;
+            ws.focusedCardId = null;
             return;
           }
 
           const parent = ws.nodes[parentSplitId];
           if (!parent || parent.type !== "split") return;
 
-          const siblingId = parent.childIds.find((id) => id !== panelId)!;
+          const siblingId = parent.childIds.find((id) => id !== cardId)!;
           const grandParentId = parent.parentId;
 
           ws.nodes[siblingId].parentId = grandParentId;
@@ -202,17 +202,17 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
             }
           }
 
-          delete ws.nodes[panelId];
+          delete ws.nodes[cardId];
           delete ws.nodes[parentSplitId];
-          ws.focusedPanelId = siblingId;
+          ws.focusedCardId = siblingId;
         }),
 
-      setFocus: (panelId) =>
+      setFocus: (cardId) =>
         set((draft) => {
           const ws = draft.workspaces.find(
             (w) => w.id === draft.activeWorkspaceId,
           )!;
-          ws.focusedPanelId = panelId;
+          ws.focusedCardId = cardId;
         }),
 
       resizeSplit: (splitId, sizes) =>
@@ -226,12 +226,12 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           }
         }),
 
-      setPlugin: (panelId, pluginId) =>
+      setPlugin: (cardId, pluginId) =>
         set((draft) => {
           const ws = draft.workspaces.find(
             (w) => w.id === draft.activeWorkspaceId,
           )!;
-          const node = ws.nodes[panelId];
+          const node = ws.nodes[cardId];
           if (node && node.type === "leaf") node.pluginId = pluginId;
         }),
 
@@ -258,7 +258,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
             name: config.name,
             rootId: config.snapshot.rootId,
             nodes: { ...config.snapshot.nodes },
-            focusedPanelId: null,
+            focusedCardId: null,
           });
           draft.activeWorkspaceId = newId;
         }),
@@ -296,9 +296,9 @@ export const tauriHandler = createTauriStore(
       "closeWorkspace",
       "setActiveWorkspace",
       "renameWorkspace",
-      "addInitialPanel",
-      "splitPanel",
-      "closePanel",
+      "addInitialCard",
+      "splitCard",
+      "closeCard",
       "setFocus",
       "resizeSplit",
       "setPlugin",

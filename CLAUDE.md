@@ -15,7 +15,7 @@ You are a Claude Code agent working within this project. `README.md` is the huma
 
 | Decision           | Choice                                                                                           | Do NOT                                                                             | Research                                     |
 | ------------------ | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- | -------------------------------------------- |
-| Panel state model  | Flat `NodeMap` + `parentId` (O(1) split/close)                                                   | Recursive tree with `children`                                                     | `research/flat-map-vs-recursive-tree.md`     |
+| Panel state model  | Flat `CardMap` + `parentId` (O(1) split/close)                                                   | Recursive tree with `children`                                                     | `research/flat-map-vs-recursive-tree.md`     |
 | Persistence        | `@tauri-store/zustand` (file-backed)                                                             | `localStorage`, standard `persist` middleware                                      | `research/tauri-store-zustand.md`            |
 | Keyboard shortcuts | Webview `keydown` + `preventDefault()` in `App.tsx`                                              | `tauri-plugin-global-shortcut` (fires when backgrounded, macOS double-fire #10025) | `research/tauri2.md`                         |
 | Resize handles     | `react-resizable-panels` v4 — v4 renames: `Group`, `Separator`, `orientation`, `onLayoutChanged` | From-scratch divider                                                               | `research/react-resizable-panels-zustand.md` |
@@ -25,7 +25,7 @@ You are a Claude Code agent working within this project. `README.md` is the huma
 
 ## Critical Gotchas
 
-- `key={activeWorkspaceId}` on root `PanelGrid` element — forces remount on tab switch
+- `key={activeWorkspaceId}` on root `CardLayout` element — forces remount on tab switch
 - Do NOT call `window.setTitle()` — resets `trafficLightPosition` (Tauri #13044); use `document.title`
 - Traffic light alignment: `trafficLightPosition: {x:14, y:22}` + `h-[38px] items-center`. Derivation: `docs/research/tauri2-frameless-window.md`
 - `security.csp` belongs inside `app` in `tauri.conf.json` — NOT at top level (top-level `security` is a Tauri 1 pattern)

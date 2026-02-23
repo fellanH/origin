@@ -14,8 +14,8 @@ export interface PluginManifest {
 
 /** Runtime context injected by PluginHost into every plugin component */
 export interface PluginContext {
-  /** Unique ID of the panel this instance is mounted in */
-  panelId: string;
+  /** Unique ID of the card this instance is mounted in */
+  cardId: string;
   /** Absolute path to the workspace root directory (for file I/O) */
   workspacePath: string;
   /** Current app theme */

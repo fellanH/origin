@@ -7,19 +7,19 @@ import {
   useWorkspaceStore,
   selectActiveWorkspace,
 } from "@/store/workspaceStore";
-import LeafPanel from "./LeafPanel";
+import Card from "./Card";
 
 interface Props {
   nodeId: string;
 }
 
-function PanelBranch({ nodeId }: Props) {
+function CardTree({ nodeId }: Props) {
   const node = useWorkspaceStore((s) => selectActiveWorkspace(s).nodes[nodeId]);
 
   if (!node) return null;
 
   if (node.type === "leaf") {
-    return <LeafPanel nodeId={nodeId} />;
+    return <Card nodeId={nodeId} />;
   }
 
   // node.type === "split"
@@ -34,14 +34,14 @@ function PanelBranch({ nodeId }: Props) {
       className="h-full w-full"
     >
       <ResizablePanel defaultSize={node.sizes[0]}>
-        <PanelBranch nodeId={node.childIds[0]} />
+        <CardTree nodeId={node.childIds[0]} />
       </ResizablePanel>
       <Separator className="w-px bg-border/30 hover:bg-border transition-colors" />
       <ResizablePanel defaultSize={node.sizes[1]}>
-        <PanelBranch nodeId={node.childIds[1]} />
+        <CardTree nodeId={node.childIds[1]} />
       </ResizablePanel>
     </Group>
   );
 }
 
-export default PanelBranch;
+export default CardTree;

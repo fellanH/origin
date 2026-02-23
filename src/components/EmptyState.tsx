@@ -2,18 +2,18 @@ import { pluginRegistry } from "@/plugins/registry";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 
 interface Props {
-  panelId?: string;
+  cardId?: string;
 }
 
-export default function EmptyState({ panelId }: Props) {
+export default function EmptyState({ cardId }: Props) {
   const setPlugin = useWorkspaceStore((s) => s.setPlugin);
-  const addInitialPanel = useWorkspaceStore((s) => s.addInitialPanel);
+  const addInitialCard = useWorkspaceStore((s) => s.addInitialCard);
 
   function handleSelect(pluginId: string) {
-    if (panelId) {
-      setPlugin(panelId, pluginId);
+    if (cardId) {
+      setPlugin(cardId, pluginId);
     } else {
-      addInitialPanel(pluginId);
+      addInitialCard(pluginId);
     }
   }
 

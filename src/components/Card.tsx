@@ -10,16 +10,16 @@ interface Props {
   nodeId: string;
 }
 
-function LeafPanel({ nodeId }: Props) {
-  const focusedPanelId = useWorkspaceStore(
-    (s) => selectActiveWorkspace(s).focusedPanelId,
+function Card({ nodeId }: Props) {
+  const focusedCardId = useWorkspaceStore(
+    (s) => selectActiveWorkspace(s).focusedCardId,
   );
   const node = useWorkspaceStore((s) => selectActiveWorkspace(s).nodes[nodeId]);
   const setFocus = useWorkspaceStore((s) => s.setFocus);
-  const closePanel = useWorkspaceStore((s) => s.closePanel);
+  const closeCard = useWorkspaceStore((s) => s.closeCard);
   const appDataDir = useWorkspaceStore((s) => s.appDataDir);
 
-  const isFocused = focusedPanelId === nodeId;
+  const isFocused = focusedCardId === nodeId;
   const pluginId = node?.type === "leaf" ? node.pluginId : null;
 
   return (
@@ -28,13 +28,13 @@ function LeafPanel({ nodeId }: Props) {
       onClick={() => setFocus(nodeId)}
     >
       {pluginId === null ? (
-        <EmptyState panelId={nodeId} />
+        <EmptyState cardId={nodeId} />
       ) : (
         <PluginHost
           pluginId={pluginId}
           context={
             {
-              panelId: nodeId,
+              cardId: nodeId,
               workspacePath: appDataDir,
               theme: window.matchMedia("(prefers-color-scheme: dark)").matches
                 ? "dark"
@@ -48,9 +48,9 @@ function LeafPanel({ nodeId }: Props) {
         className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded text-xs text-muted-foreground/50 opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100"
         onClick={(e) => {
           e.stopPropagation();
-          closePanel(nodeId);
+          closeCard(nodeId);
         }}
-        aria-label="Close panel"
+        aria-label="Close card"
         tabIndex={-1}
       >
         ×
@@ -59,4 +59,4 @@ function LeafPanel({ nodeId }: Props) {
   );
 }
 
-export default LeafPanel;
+export default Card;

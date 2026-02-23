@@ -1,8 +1,8 @@
 /**
  * workspaceStore — Phase 1 (PoC) tests
  *
- * Tests the flat NodeMap panel operations: splitPanel, closePanel, resizeSplit, setFocus.
- * Store shape: { rootId, nodes, focusedPanelId } — plain Zustand, no persistence.
+ * Tests the flat CardMap card operations: splitCard, closeCard, resizeSplit, setFocus.
+ * Store shape: { rootId, nodes, focusedCardId } — plain Zustand, no persistence.
  *
  * Phase 3 extension (multi-workspace + persistence mock) will be added in this file
  * when issue #3 upgrade begins. Add the following mock at the top of this file then:
@@ -18,13 +18,13 @@
 
 import { describe, it, expect, beforeEach } from "vitest";
 import { useWorkspaceStore } from "./workspaceStore";
-import type { PanelLeaf, PanelSplit } from "../types/panel";
+import type { CardLeaf, CardSplit } from "../types/card";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeLeaf(id: string, parentId: string | null = null): PanelLeaf {
+function makeLeaf(id: string, parentId: string | null = null): CardLeaf {
   return { id, type: "leaf", parentId, pluginId: null };
 }
 
@@ -33,7 +33,7 @@ function makeSplit(
   childIds: [string, string],
   parentId: string | null = null,
   direction: "horizontal" | "vertical" = "horizontal",
-): PanelSplit {
+): CardSplit {
   return { id, type: "split", parentId, childIds, direction, sizes: [50, 50] };
 }
 
@@ -46,28 +46,28 @@ function get() {
 // ---------------------------------------------------------------------------
 
 beforeEach(() => {
-  useWorkspaceStore.setState({ rootId: null, nodes: {}, focusedPanelId: null });
+  useWorkspaceStore.setState({ rootId: null, nodes: {}, focusedCardId: null });
 });
 
 // ---------------------------------------------------------------------------
-// splitPanel
+// splitCard
 // ---------------------------------------------------------------------------
 
-describe("splitPanel", () => {
+describe("splitCard", () => {
   it("creates a split node and a new leaf sibling from a single root leaf", () => {
     const leaf = makeLeaf("root-leaf");
     useWorkspaceStore.setState({
       rootId: "root-leaf",
       nodes: { "root-leaf": leaf },
-      focusedPanelId: "root-leaf",
+      focusedCardId: "root-leaf",
     });
 
-    get().splitPanel("root-leaf", "horizontal");
+    get().splitCard("root-leaf", "horizontal");
 
     const { rootId, nodes } = get();
     expect(Object.keys(nodes)).toHaveLength(3);
 
-    const root = nodes[rootId!] as PanelSplit;
+    const root = nodes[rootId!] as CardSplit;
     expect(root.type).toBe("split");
     expect(root.parentId).toBeNull();
     expect(root.childIds).toHaveLength(2);
@@ -78,20 +78,20 @@ describe("splitPanel", () => {
     expect(nodes[secondId].parentId).toBe(root.id);
   });
 
-  it("sets focusedPanelId to the new sibling leaf after split", () => {
+  it("sets focusedCardId to the new sibling leaf after split", () => {
     const leaf = makeLeaf("root-leaf");
     useWorkspaceStore.setState({
       rootId: "root-leaf",
       nodes: { "root-leaf": leaf },
-      focusedPanelId: "root-leaf",
+      focusedCardId: "root-leaf",
     });
 
-    get().splitPanel("root-leaf", "horizontal");
+    get().splitCard("root-leaf", "horizontal");
 
-    const { rootId, nodes, focusedPanelId } = get();
-    const root = nodes[rootId!] as PanelSplit;
+    const { rootId, nodes, focusedCardId } = get();
+    const root = nodes[rootId!] as CardSplit;
     const sibling = root.childIds.find((id) => id !== "root-leaf")!;
-    expect(focusedPanelId).toBe(sibling);
+    expect(focusedCardId).toBe(sibling);
   });
 
   it("splits vertically when direction is 'vertical'", () => {
@@ -99,13 +99,13 @@ describe("splitPanel", () => {
     useWorkspaceStore.setState({
       rootId: "root-leaf",
       nodes: { "root-leaf": leaf },
-      focusedPanelId: "root-leaf",
+      focusedCardId: "root-leaf",
     });
 
-    get().splitPanel("root-leaf", "vertical");
+    get().splitCard("root-leaf", "vertical");
 
     const { rootId, nodes } = get();
-    const root = nodes[rootId!] as PanelSplit;
+    const root = nodes[rootId!] as CardSplit;
     expect(root.direction).toBe("vertical");
   });
 
@@ -116,16 +116,16 @@ describe("splitPanel", () => {
     useWorkspaceStore.setState({
       rootId: "root-split",
       nodes: { "root-split": rootSplit, leafA, leafB },
-      focusedPanelId: "leafA",
+      focusedCardId: "leafA",
     });
 
-    get().splitPanel("leafA", "horizontal");
+    get().splitCard("leafA", "horizontal");
 
     const { nodes, rootId } = get();
-    const root = nodes[rootId!] as PanelSplit;
+    const root = nodes[rootId!] as CardSplit;
     // root's first childId must now be the new split wrapper (not leafA directly)
     expect(root.childIds[0]).not.toBe("leafA");
-    const newSplit = nodes[root.childIds[0]] as PanelSplit;
+    const newSplit = nodes[root.childIds[0]] as CardSplit;
     expect(newSplit.type).toBe("split");
     expect(newSplit.parentId).toBe("root-split");
     expect(newSplit.childIds).toContain("leafA");
@@ -137,12 +137,12 @@ describe("splitPanel", () => {
     useWorkspaceStore.setState({
       rootId: "leaf0",
       nodes: { leaf0: leaf },
-      focusedPanelId: "leaf0",
+      focusedCardId: "leaf0",
     });
 
-    get().splitPanel("leaf0", "horizontal");
-    const sibling1 = get().focusedPanelId!;
-    get().splitPanel(sibling1, "horizontal");
+    get().splitCard("leaf0", "horizontal");
+    const sibling1 = get().focusedCardId!;
+    get().splitCard(sibling1, "horizontal");
 
     const { nodes, rootId } = get();
     for (const [id, node] of Object.entries(nodes)) {
@@ -155,38 +155,38 @@ describe("splitPanel", () => {
     }
   });
 
-  it("does nothing when panelId does not exist in nodes", () => {
+  it("does nothing when cardId does not exist in nodes", () => {
     useWorkspaceStore.setState({
       rootId: null,
       nodes: {},
-      focusedPanelId: null,
+      focusedCardId: null,
     });
 
-    expect(() => get().splitPanel("nonexistent", "horizontal")).not.toThrow();
+    expect(() => get().splitCard("nonexistent", "horizontal")).not.toThrow();
 
     expect(Object.keys(get().nodes)).toHaveLength(0);
   });
 });
 
 // ---------------------------------------------------------------------------
-// closePanel
+// closeCard
 // ---------------------------------------------------------------------------
 
-describe("closePanel", () => {
-  it("resets to empty state when closing the only panel", () => {
+describe("closeCard", () => {
+  it("resets to empty state when closing the only card", () => {
     const leaf = makeLeaf("root-leaf");
     useWorkspaceStore.setState({
       rootId: "root-leaf",
       nodes: { "root-leaf": leaf },
-      focusedPanelId: "root-leaf",
+      focusedCardId: "root-leaf",
     });
 
-    get().closePanel("root-leaf");
+    get().closeCard("root-leaf");
 
-    const { rootId, nodes, focusedPanelId } = get();
+    const { rootId, nodes, focusedCardId } = get();
     expect(rootId).toBeNull();
     expect(Object.keys(nodes)).toHaveLength(0);
-    expect(focusedPanelId).toBeNull();
+    expect(focusedCardId).toBeNull();
   });
 
   it("promotes left sibling to root when closing the right child", () => {
@@ -196,10 +196,10 @@ describe("closePanel", () => {
     useWorkspaceStore.setState({
       rootId: "root-split",
       nodes: { "root-split": rootSplit, leafA, leafB },
-      focusedPanelId: "leafB",
+      focusedCardId: "leafB",
     });
 
-    get().closePanel("leafB");
+    get().closeCard("leafB");
 
     const { rootId, nodes } = get();
     expect(rootId).toBe("leafA");
@@ -214,10 +214,10 @@ describe("closePanel", () => {
     useWorkspaceStore.setState({
       rootId: "root-split",
       nodes: { "root-split": rootSplit, leafA, leafB },
-      focusedPanelId: "leafA",
+      focusedCardId: "leafA",
     });
 
-    get().closePanel("leafA");
+    get().closeCard("leafA");
 
     const { rootId, nodes } = get();
     expect(rootId).toBe("leafB");
@@ -244,15 +244,15 @@ describe("closePanel", () => {
         leafB,
         leafC,
       },
-      focusedPanelId: "leafB",
+      focusedCardId: "leafB",
     });
 
-    get().closePanel("leafB");
+    get().closeCard("leafB");
 
     const { nodes } = get();
     expect(nodes["leafC"]).toBeDefined();
     expect(nodes["leafC"].parentId).toBe("root-split");
-    const root = nodes["root-split"] as PanelSplit;
+    const root = nodes["root-split"] as CardSplit;
     expect(root.childIds).toContain("leafC");
     // nestedSplit and leafB must be deleted
     expect(nodes["nested-split"]).toBeUndefined();
@@ -260,7 +260,7 @@ describe("closePanel", () => {
     expect(Object.keys(nodes)).toHaveLength(3); // root-split, leafA, leafC
   });
 
-  it("handles closing a panel when sibling is itself a split node", () => {
+  it("handles closing a card when sibling is itself a split node", () => {
     const leafA = makeLeaf("leafA", "root-split");
     const leafB1 = makeLeaf("leafB1", "splitB");
     const leafB2 = makeLeaf("leafB2", "splitB");
@@ -269,44 +269,44 @@ describe("closePanel", () => {
     useWorkspaceStore.setState({
       rootId: "root-split",
       nodes: { "root-split": rootSplit, leafA, splitB, leafB1, leafB2 },
-      focusedPanelId: "leafA",
+      focusedCardId: "leafA",
     });
 
-    get().closePanel("leafA");
+    get().closeCard("leafA");
 
     const { rootId, nodes } = get();
     expect(rootId).toBe("splitB");
-    const root = nodes["splitB"] as PanelSplit;
+    const root = nodes["splitB"] as CardSplit;
     expect(root.parentId).toBeNull();
     // splitB's childIds and sizes must be unchanged
     expect(root.childIds).toEqual(["leafB1", "leafB2"]);
     expect(root.sizes).toEqual([50, 50]);
   });
 
-  it("sets focusedPanelId to the promoted sibling after close", () => {
+  it("sets focusedCardId to the promoted sibling after close", () => {
     const leafA = makeLeaf("leafA", "root-split");
     const leafB = makeLeaf("leafB", "root-split");
     const rootSplit = makeSplit("root-split", ["leafA", "leafB"]);
     useWorkspaceStore.setState({
       rootId: "root-split",
       nodes: { "root-split": rootSplit, leafA, leafB },
-      focusedPanelId: "leafA",
+      focusedCardId: "leafA",
     });
 
-    get().closePanel("leafA");
+    get().closeCard("leafA");
 
-    expect(get().focusedPanelId).toBe("leafB");
+    expect(get().focusedCardId).toBe("leafB");
   });
 
-  it("does nothing when panelId does not exist in nodes", () => {
+  it("does nothing when cardId does not exist in nodes", () => {
     const leaf = makeLeaf("root-leaf");
     useWorkspaceStore.setState({
       rootId: "root-leaf",
       nodes: { "root-leaf": leaf },
-      focusedPanelId: "root-leaf",
+      focusedCardId: "root-leaf",
     });
 
-    expect(() => get().closePanel("nonexistent")).not.toThrow();
+    expect(() => get().closeCard("nonexistent")).not.toThrow();
 
     expect(Object.keys(get().nodes)).toHaveLength(1);
   });
@@ -324,12 +324,12 @@ describe("resizeSplit", () => {
     useWorkspaceStore.setState({
       rootId: "root-split",
       nodes: { "root-split": rootSplit, leafA, leafB },
-      focusedPanelId: "leafA",
+      focusedCardId: "leafA",
     });
 
     get().resizeSplit("root-split", [30, 70]);
 
-    const split = get().nodes["root-split"] as PanelSplit;
+    const split = get().nodes["root-split"] as CardSplit;
     expect(split.sizes).toEqual([30, 70]);
   });
 
@@ -345,12 +345,12 @@ describe("resizeSplit", () => {
     useWorkspaceStore.setState({
       rootId: "root-split",
       nodes: { "root-split": rootSplit, leafA, leafB },
-      focusedPanelId: "leafA",
+      focusedCardId: "leafA",
     });
 
     get().resizeSplit("root-split", [40, 60]);
 
-    const split = get().nodes["root-split"] as PanelSplit;
+    const split = get().nodes["root-split"] as CardSplit;
     expect(split.childIds).toEqual(["leafA", "leafB"]);
     expect(split.direction).toBe("vertical");
     expect(split.parentId).toBeNull();
@@ -361,7 +361,7 @@ describe("resizeSplit", () => {
     useWorkspaceStore.setState({
       rootId: null,
       nodes: {},
-      focusedPanelId: null,
+      focusedCardId: null,
     });
 
     expect(() => get().resizeSplit("nonexistent", [40, 60])).not.toThrow();
@@ -373,17 +373,17 @@ describe("resizeSplit", () => {
 // ---------------------------------------------------------------------------
 
 describe("setFocus", () => {
-  it("sets focusedPanelId to the given panelId", () => {
+  it("sets focusedCardId to the given cardId", () => {
     const leaf = makeLeaf("leaf1");
     useWorkspaceStore.setState({
       rootId: "leaf1",
       nodes: { leaf1: leaf },
-      focusedPanelId: null,
+      focusedCardId: null,
     });
 
     get().setFocus("leaf1");
 
-    expect(get().focusedPanelId).toBe("leaf1");
+    expect(get().focusedCardId).toBe("leaf1");
   });
 
   it("accepts null to clear focus", () => {
@@ -391,20 +391,20 @@ describe("setFocus", () => {
     useWorkspaceStore.setState({
       rootId: "leaf1",
       nodes: { leaf1: leaf },
-      focusedPanelId: "leaf1",
+      focusedCardId: "leaf1",
     });
 
     get().setFocus(null);
 
-    expect(get().focusedPanelId).toBeNull();
+    expect(get().focusedCardId).toBeNull();
   });
 });
 
 // ---------------------------------------------------------------------------
-// NodeMap invariants — cross-cutting
+// CardMap invariants — cross-cutting
 // ---------------------------------------------------------------------------
 
-describe("NodeMap invariants", () => {
+describe("CardMap invariants", () => {
   function reachableIds(
     nodes: ReturnType<typeof get>["nodes"],
     rootId: string | null,
@@ -418,7 +418,7 @@ describe("NodeMap invariants", () => {
       visited.add(id);
       const node = nodes[id];
       if (node?.type === "split") {
-        queue.push(...(node as PanelSplit).childIds);
+        queue.push(...(node as CardSplit).childIds);
       }
     }
     return visited;
@@ -429,13 +429,13 @@ describe("NodeMap invariants", () => {
     useWorkspaceStore.setState({
       rootId: "leaf0",
       nodes: { leaf0: leaf },
-      focusedPanelId: "leaf0",
+      focusedCardId: "leaf0",
     });
 
-    get().splitPanel("leaf0", "horizontal");
-    const sibling1 = get().focusedPanelId!;
-    get().splitPanel(sibling1, "vertical");
-    get().splitPanel("leaf0", "horizontal");
+    get().splitCard("leaf0", "horizontal");
+    const sibling1 = get().focusedCardId!;
+    get().splitCard(sibling1, "vertical");
+    get().splitCard("leaf0", "horizontal");
 
     const { nodes, rootId } = get();
     for (const [id, node] of Object.entries(nodes)) {
@@ -453,13 +453,13 @@ describe("NodeMap invariants", () => {
     useWorkspaceStore.setState({
       rootId: "leaf0",
       nodes: { leaf0: leaf },
-      focusedPanelId: "leaf0",
+      focusedCardId: "leaf0",
     });
 
-    get().splitPanel("leaf0", "horizontal");
-    const sibling = get().focusedPanelId!;
-    get().splitPanel("leaf0", "vertical");
-    get().closePanel(sibling);
+    get().splitCard("leaf0", "horizontal");
+    const sibling = get().focusedCardId!;
+    get().splitCard("leaf0", "vertical");
+    get().closeCard(sibling);
 
     const { nodes, rootId } = get();
     for (const [id, node] of Object.entries(nodes)) {
@@ -477,16 +477,16 @@ describe("NodeMap invariants", () => {
     useWorkspaceStore.setState({
       rootId: "leaf0",
       nodes: { leaf0: leaf },
-      focusedPanelId: "leaf0",
+      focusedCardId: "leaf0",
     });
 
-    get().splitPanel("leaf0", "horizontal");
-    get().splitPanel("leaf0", "vertical");
+    get().splitCard("leaf0", "horizontal");
+    get().splitCard("leaf0", "vertical");
 
     const { nodes } = get();
     for (const node of Object.values(nodes)) {
       if (node.type === "split") {
-        for (const childId of (node as PanelSplit).childIds) {
+        for (const childId of (node as CardSplit).childIds) {
           expect(nodes[childId]).toBeDefined();
         }
       }
@@ -498,14 +498,14 @@ describe("NodeMap invariants", () => {
     useWorkspaceStore.setState({
       rootId: "leaf0",
       nodes: { leaf0: leaf },
-      focusedPanelId: "leaf0",
+      focusedCardId: "leaf0",
     });
 
-    get().splitPanel("leaf0", "horizontal");
-    const sibling = get().focusedPanelId!;
-    get().splitPanel(sibling, "vertical");
-    const deepSibling = get().focusedPanelId!;
-    get().closePanel(deepSibling);
+    get().splitCard("leaf0", "horizontal");
+    const sibling = get().focusedCardId!;
+    get().splitCard(sibling, "vertical");
+    const deepSibling = get().focusedCardId!;
+    get().closeCard(deepSibling);
 
     const { nodes, rootId } = get();
     const reachable = reachableIds(nodes, rootId);

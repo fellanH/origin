@@ -3,9 +3,9 @@ import {
   selectActiveWorkspace,
 } from "@/store/workspaceStore";
 import EmptyState from "./EmptyState";
-import PanelBranch from "./PanelBranch";
+import CardTree from "./CardTree";
 
-function PanelGrid() {
+function CardLayout() {
   const rootId = useWorkspaceStore((s) => selectActiveWorkspace(s).rootId);
 
   if (rootId === null) {
@@ -14,9 +14,9 @@ function PanelGrid() {
 
   return (
     <div className="h-full w-full">
-      <PanelBranch nodeId={rootId} />
+      <CardTree nodeId={rootId} />
     </div>
   );
 }
 
-export default PanelGrid;
+export default CardLayout;
