@@ -2,7 +2,7 @@ import {
   useWorkspaceStore,
   selectActiveWorkspace,
 } from "@/store/workspaceStore";
-import EmptyState from "@/components/EmptyState";
+import Launcher from "@/components/Launcher";
 
 interface Props {
   nodeId: string;
@@ -25,9 +25,11 @@ function LeafPanel({ nodeId }: Props) {
       onClick={() => setFocus(nodeId)}
     >
       {pluginId === null ? (
-        <EmptyState />
+        <Launcher panelId={nodeId} />
       ) : (
-        <div className="p-4 text-sm text-muted-foreground">{pluginId}</div>
+        <div className="p-4 text-sm text-muted-foreground">
+          Plugin: {pluginId}
+        </div>
       )}
 
       <button

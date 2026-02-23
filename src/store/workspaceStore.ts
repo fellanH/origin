@@ -22,6 +22,7 @@ type WorkspaceActions = {
   closePanel: (panelId: NodeId) => void;
   setFocus: (panelId: NodeId | null) => void;
   resizeSplit: (splitId: NodeId, sizes: [number, number]) => void;
+  setPlugin: (panelId: NodeId, pluginId: string) => void;
 };
 
 export type WorkspaceStore = WorkspaceState & WorkspaceActions;
@@ -212,6 +213,15 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
             node.sizes = sizes;
           }
         }),
+
+      setPlugin: (panelId, pluginId) =>
+        set((draft) => {
+          const ws = draft.workspaces.find(
+            (w) => w.id === draft.activeWorkspaceId,
+          )!;
+          const node = ws.nodes[panelId];
+          if (node && node.type === "leaf") node.pluginId = pluginId;
+        }),
     })),
     { name: "WorkspaceStore" },
   ),
@@ -234,6 +244,7 @@ export const tauriHandler = createTauriStore(
       "closePanel",
       "setFocus",
       "resizeSplit",
+      "setPlugin",
     ],
     filterKeysStrategy: "omit",
     saveOnChange: true,
