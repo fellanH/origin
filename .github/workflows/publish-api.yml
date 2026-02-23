@@ -15,9 +15,12 @@ jobs:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Install and build
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
         working-directory: plugins/api
-        run: npm ci && npm run build
+        run: npm run build
 
       - name: Publish to npm
         working-directory: plugins/api
