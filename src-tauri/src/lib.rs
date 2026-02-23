@@ -1,4 +1,4 @@
-use tauri::menu::{MenuBuilder, MenuItemBuilder};
+use tauri::{menu::{MenuBuilder, MenuItemBuilder}, Emitter, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -20,7 +20,7 @@ pub fn run() {
         .on_menu_event(|app, event| {
             if event.id() == "close-workspace" {
                 if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.emit("close-workspace", ());
+                    let _ = window.emit("close-workspace", &());
                 }
             }
         })
