@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
+import { createTauriStore } from "@tauri-store/zustand";
 import type { NodeId, PanelLeaf, PanelSplit } from "@/types/panel";
 import type { Workspace, WorkspaceId } from "@/types/workspace";
 
@@ -165,4 +166,25 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
     })),
     { name: "WorkspaceStore" },
   ),
+);
+
+// ─── Tauri persistence ───────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const tauriHandler = createTauriStore(
+  "workspace-store",
+  useWorkspaceStore as any,
+  {
+    filterKeys: [
+      "addInitialPanel",
+      "splitPanel",
+      "closePanel",
+      "setFocus",
+      "resizeSplit",
+    ],
+    filterKeysStrategy: "omit",
+    saveOnChange: true,
+    saveStrategy: "debounce",
+    saveInterval: 500,
+  },
 );
