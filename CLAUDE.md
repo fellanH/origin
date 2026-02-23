@@ -33,25 +33,6 @@ You are a Claude Code agent working within this project. `README.md` is the huma
 - Dev builds use `.dev.json` file suffix by default — dev/prod state is intentionally separate
 - `createTauriStore` type gotcha: expects `StoreApi<State>` where `State` requires `[key: string]: unknown` index signature — immer middleware overloads `setState` with a `WritableDraft` type that clashes. Runtime is fine; use `useSpikeStore as any` cast. For real stores, either declare state with `[key: string]: unknown` or cast.
 
-## Cross-Domain Tools
-
-### Write tools
-
-| Tool                  | What it does                                                    |
-| --------------------- | --------------------------------------------------------------- |
-| `send_to_admin`       | Queue a request for the admin agent                             |
-| `log_to_memory`       | Log a status update, blocker, or note                           |
-| `update_project_task` | Update a task's status in any project (including this one)      |
-| `update_queue_item`   | Update a queue item's status (DISPATCHED, COMPLETED, ARCHIVED)  |
-| `send_feedback`       | Report bugs, friction, ideas, or validations to the admin queue |
-
-### Read tools
-
-| Tool                | What it does                  |
-| ------------------- | ----------------------------- |
-| `list_projects`     | List all project bucket names |
-| `get_project_tasks` | Read tasks from any project   |
-
 ## SOPs
 
 See `docs/SOP/index.md` for the full navigation hub. Quick reference:
@@ -70,9 +51,6 @@ See `docs/SOP/index.md` for the full navigation hub. Quick reference:
 ## Rules
 
 1. Stay focused on this project's work
-2. Use crossdomain MCP tools to communicate with admin
-3. Report blockers via `log_to_memory`
-4. When completing a task, update both the project task AND the originating queue item
 
 ## Installed Skills
 
