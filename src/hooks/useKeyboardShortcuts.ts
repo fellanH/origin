@@ -40,6 +40,12 @@ export function useKeyboardShortcuts(): void {
         const { workspaces } = useWorkspaceStore.getState();
         const target = workspaces[Number(e.key) - 1];
         if (target) useWorkspaceStore.getState().setActiveWorkspace(target.id);
+      } else if (e.key === "s") {
+        e.preventDefault();
+        const name = window.prompt("Name this config:");
+        if (name?.trim()) {
+          useWorkspaceStore.getState().saveConfig(name.trim());
+        }
       }
     }
 

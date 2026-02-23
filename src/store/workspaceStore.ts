@@ -3,13 +3,14 @@ import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import { createTauriStore } from "@tauri-store/zustand";
 import type { NodeId, PanelLeaf, PanelSplit } from "@/types/panel";
-import type { Workspace, WorkspaceId } from "@/types/workspace";
+import type { Workspace, WorkspaceId, SavedConfig } from "@/types/workspace";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type WorkspaceState = {
   workspaces: Workspace[];
   activeWorkspaceId: WorkspaceId;
+  savedConfigs: SavedConfig[];
 };
 
 type WorkspaceActions = {
@@ -23,6 +24,9 @@ type WorkspaceActions = {
   setFocus: (panelId: NodeId | null) => void;
   resizeSplit: (splitId: NodeId, sizes: [number, number]) => void;
   setPlugin: (panelId: NodeId, pluginId: string) => void;
+  saveConfig: (name: string) => void;
+  loadConfig: (configId: string) => void;
+  deleteConfig: (configId: string) => void;
 };
 
 export type WorkspaceStore = WorkspaceState & WorkspaceActions;
@@ -47,6 +51,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
     immer((set) => ({
       workspaces: [emptyWorkspace(INITIAL_ID, "Workspace 1")],
       activeWorkspaceId: INITIAL_ID,
+      savedConfigs: [],
 
       // ── Tab actions ──────────────────────────────────────────────────────
 
@@ -222,6 +227,41 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           const node = ws.nodes[panelId];
           if (node && node.type === "leaf") node.pluginId = pluginId;
         }),
+
+      saveConfig: (name) =>
+        set((draft) => {
+          const ws = draft.workspaces.find(
+            (w) => w.id === draft.activeWorkspaceId,
+          )!;
+          draft.savedConfigs.push({
+            id: crypto.randomUUID(),
+            name,
+            snapshot: { rootId: ws.rootId, nodes: { ...ws.nodes } },
+            savedAt: new Date().toISOString(),
+          });
+        }),
+
+      loadConfig: (configId) =>
+        set((draft) => {
+          const config = draft.savedConfigs.find((c) => c.id === configId);
+          if (!config?.snapshot) return;
+          const newId = crypto.randomUUID();
+          draft.workspaces.push({
+            id: newId,
+            name: config.name,
+            rootId: config.snapshot.rootId,
+            nodes: { ...config.snapshot.nodes },
+            focusedPanelId: null,
+          });
+          draft.activeWorkspaceId = newId;
+        }),
+
+      deleteConfig: (configId) =>
+        set((draft) => {
+          draft.savedConfigs = draft.savedConfigs.filter(
+            (c) => c.id !== configId,
+          );
+        }),
     })),
     { name: "WorkspaceStore" },
   ),
@@ -245,6 +285,9 @@ export const tauriHandler = createTauriStore(
       "setFocus",
       "resizeSplit",
       "setPlugin",
+      "saveConfig",
+      "loadConfig",
+      "deleteConfig",
     ],
     filterKeysStrategy: "omit",
     saveOnChange: true,

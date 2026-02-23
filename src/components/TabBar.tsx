@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { cn } from "@/lib/utils";
+import SavedConfigMenu from "@/components/SavedConfigMenu";
 
 export default function TabBar() {
   const workspaces = useWorkspaceStore((s) => s.workspaces);
@@ -92,6 +93,7 @@ export default function TabBar() {
         +
       </button>
 
+      <SavedConfigMenu />
       <div className="flex-1" data-tauri-drag-region />
     </div>
   );
