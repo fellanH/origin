@@ -27,7 +27,8 @@
         "trafficLightPosition": { "x": 14, "y": 22 },
         "acceptFirstMouse": true,
         "shadow": true,
-        "visible": false
+        "visible": false,
+        "backgroundColor": "#000000"
       }
     ]
   }
