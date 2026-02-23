@@ -1,6 +1,6 @@
 # note — MVP Specification
 
-**Version:** 1.1
+**Version:** 1.2
 **Entity:** Klarhimmel AB
 **Type:** Tauri 2 desktop app
 **Status:** Pre-build spec
@@ -11,7 +11,20 @@
 
 ## Product Vision
 
-A developer-focused dynamic dashboard. The app shell provides only panel layout + plugin slots. All functionality is delivered via plugins. Perfect UX for panel management — think a programmable, keyboard-driven tiling workspace for development tools.
+A developer-focused dynamic dashboard built around a single insight: context-switching between windows and tabs kills focus. note provides a single, persistent tiling workspace where everything lives in one place — split panels, keyboard-driven, predictable layouts.
+
+The app shell provides only panel layout + plugin slots. All functionality is delivered via plugins. The window management experience _is_ the product. Plugins are content.
+
+Built as a personal tool first. Designed to be extensible for other developers.
+
+### v1 Success Criteria
+
+The product is "done enough to use" when:
+
+- Panel splitting and keyboard shortcuts work reliably
+- The UX and visual styling feel right
+
+Everything else (saved configs, plugin ecosystem) is secondary to getting the core shell right.
 
 ---
 
@@ -28,8 +41,8 @@ A developer-focused dynamic dashboard. The app shell provides only panel layout 
 - Plugin contract (TypeScript types: PluginManifest, PluginContext)
 - Plugin loading via `note.plugins.json` config file (npm workspaces, Vite dynamic import)
 - Launcher UI: empty panel shows a list of registered plugins to select
-- Full state persistence (Zustand + localStorage for v1)
-- A `@note/hello` workspace plugin as proof-of-concept
+- Full state persistence via `@tauri-store/zustand` (file-backed, origin-independent)
+- A `@note/hello` workspace plugin as proof-of-concept — minimal hello world component, extensively documented as canonical reference for plugin authors
 
 ### Explicitly NOT in v1
 
@@ -42,19 +55,43 @@ A developer-focused dynamic dashboard. The app shell provides only panel layout 
 
 ---
 
+## Visual Design
+
+### Aesthetic
+
+**Minimal/invisible.** The shell disappears — panels, dividers, and chrome have no visual weight at rest. Content takes center stage. Reference points: Zed, Wezterm, Arc.
+
+- No decorative borders, shadows, or backgrounds on the shell itself
+- Dividers and focus rings start at the subtlest reasonable default and are iterated through testing
+- No busy UI elements — the tab bar and panel frame are the only persistent chrome
+
+### Color Mode
+
+System dark/light mode via `prefers-color-scheme`. No manual toggle in v1. Themes and appearance settings are deferred.
+
+### Starting Defaults (iterate after testing)
+
+| Element           | Default                                         |
+| ----------------- | ----------------------------------------------- |
+| Divider (at rest) | 1px, low-contrast, near-invisible               |
+| Divider (hover)   | Slightly more visible, cursor changes to resize |
+| Focus ring        | 1px, subtle accent — present but not loud       |
+| Panel background  | Transparent / inherits window bg                |
+
+---
+
 ## UX Behaviour
 
 ### Initial State
 
-When the app opens, the user sees a **fullscreen empty window** with a minimal **tab bar** at the top. The first tab is active and shows the empty-state block in the center.
+When the app opens, the user sees a **fullscreen empty window**. The window is frameless — the tab bar _is_ the title bar, with macOS traffic lights inset on the left and tabs running alongside them.
 
 ```
-┌─[  Workspace 1  ×]──[+]────────────────────[Saved ▾]──────┐
-├────────────────────────────────────────────────────────────┤
+┌─[●●●]──[  Workspace 1  ×]──[+]────────────[Saved ▾]───────┐
 │                                                            │
 │                 ┌───────────────────┐                      │
 │                 │    note           │                      │
-│                 │                  │                      │
+│                 │                  │                       │
 │                 │  CMD+D   Split →  │                      │
 │                 │  CMD+⇧D  Split ↓  │                      │
 │                 │  CMD+T   New tab  │                      │
@@ -63,13 +100,17 @@ When the app opens, the user sees a **fullscreen empty window** with a minimal *
 └────────────────────────────────────────────────────────────┘
 ```
 
+`●●●` = native macOS traffic lights (close/minimize/zoom) in their standard position. The tab bar row is the only top-level chrome — no separate title bar.
+
 ### Tab Bar
 
-The tab bar runs along the top of the window. Each tab is a fully independent **workspace** — it holds its own panel layout tree. Switching tabs instantly swaps the entire panel layout.
+The tab bar is the window's title bar — frameless, with macOS traffic lights on the far left and tabs running to the right. Each tab is a fully independent **workspace** — it holds its own panel layout tree. Switching tabs instantly swaps the entire panel layout.
 
 ```
-┌─[  Workspace 1  ×]──[  Workspace 2  ×]──[+]──[Saved ▾]───┐
+┌─[●●●]──[  Workspace 1  ×]──[  Workspace 2  ×]──[+]──[Saved ▾]───┐
 ```
+
+The empty space in the tab bar (between the last tab and the `[Saved ▾]` button, and to the right of it) acts as a **drag region** for moving the window (`data-tauri-drag-region`).
 
 - `[+]` button or `CMD+T` — opens a new empty workspace tab
 - `×` on a tab or `CMD+Shift+W` — closes the tab (and its layout)
@@ -114,7 +155,7 @@ Panels are separated by a **drag handle (Divider)**. Dragging the divider redist
 
 `CMD+W` closes the focused panel. Its sibling expands to fill the freed space. Closing the last panel in a tab returns that tab to the empty-state view (root → null).
 
-> **`CMD+W` and macOS:** `CMD+W` is the standard macOS window-close shortcut. Tauri must intercept it before the OS using `tauri-plugin-global-shortcut` — a React keydown handler is not sufficient. When panels are open, `CMD+W` closes the active panel. The window is closed via the native title bar or `CMD+Q`.
+> **`CMD+W` and macOS:** `CMD+W` is the standard macOS window-close shortcut. A webview `keydown` listener with `event.preventDefault()` correctly intercepts it for panel close — `tauri-plugin-global-shortcut` is not needed and not appropriate for in-window shortcuts. Register `onCloseRequested` on the Tauri window to handle the case where macOS tries to close the native window (e.g. last panel already closed). The window is closed via the native traffic lights or `CMD+Q`.
 
 ### Focus
 
@@ -141,7 +182,7 @@ Users can snapshot any tab's current panel layout (including which plugins are l
 Saving:
   CMD+S or click [Save current] in the Saved ▾ menu
   → Prompt for a name (e.g. "Dev setup", "Review mode")
-  → Snapshot stored in localStorage
+  → Snapshot stored on disk (via tauri-store)
 
 Opening:
   Click [Saved ▾] in the tab bar → dropdown lists saved configs
@@ -266,7 +307,9 @@ interface PluginModule {
 
 Plugins are npm workspace packages. `@note/hello` resolves to `plugins/hello/` via workspaces. Vite dynamic `import('@note/hello')` works in both dev and prod (bundled at build time).
 
-> **v1 limitation — build-time only:** Plugin loading uses Vite's static dynamic import. All plugins must be present in `note.plugins.json` at build time; Vite bundles them into the app. Adding a new plugin requires a rebuild. Runtime plugin install (as described in `prompt.md` Phase 2) is architecturally incompatible with this model — it will require a different loading strategy (e.g., Module Federation, a localhost chunk server, or a sandboxed WebView). This is an intentional v1 constraint, not a gap to paper over.
+> **v1 limitation — build-time only:** Plugin loading uses Vite's static dynamic import. All plugins must be present in `note.plugins.json` at build time; Vite bundles them into the app. Adding a new plugin requires a rebuild. Runtime plugin install is architecturally incompatible with this model — it requires a different strategy. This is an intentional v1 constraint.
+>
+> **v2 runtime loading architecture (researched):** On plugin install → `npm install` + `vite build --mode lib` → plugin built to AppData dir. An embedded `axum` Tokio server serves all installed plugin dirs on a random port. At startup, Rust reads the plugin registry, generates an import map, and injects it into the webview HTML before load. The webview resolves `import("plugin-id")` against the import map — no app rebuild needed. For maximum security, prefer a custom `plugin://` URI scheme (Rust protocol handler) over an open localhost port. See `research/vite-plugin-loading.md`.
 
 ---
 
@@ -294,10 +337,9 @@ note/
 │       ├── TabBar.tsx          # Tab strip + [+] button + [Saved ▾] menu
 │       ├── SavedConfigMenu.tsx # Dropdown: list/open/delete saved configs + save current
 │       ├── PanelGrid.tsx       # Root: renders active workspace's PanelNode tree OR EmptyState
-│       ├── PanelBranch.tsx     # Recursive: leaf → Panel, split → two PanelBranches + Divider
+│       ├── PanelBranch.tsx     # Recursive: leaf → Panel, split → Group + two PanelBranches (react-resizable-panels v4)
 │       ├── Panel.tsx           # A leaf panel: if pluginId → PluginHost, else → Launcher
 │       ├── PluginHost.tsx      # Loads + mounts a plugin component with PluginContext; wrapped in ErrorBoundary
-│       ├── Divider.tsx         # Drag-to-resize handle (see Divider Drag Model below)
 │       ├── Launcher.tsx        # Lists registered plugins; onClick → setPlugin
 │       └── EmptyState.tsx      # Centered empty-state block: name + keyboard hints
 ├── plugins/
@@ -313,34 +355,99 @@ note/
 └── tailwind.config.ts
 ```
 
-### Divider Drag Model
+### Resize Handles — `react-resizable-panels` v4
 
-`Divider` handles resize by tracking pointer position between `mousedown` and `mouseup`. Event listeners must be registered on `document` (not the divider element) so drag continues if the cursor leaves the divider bounds:
+Resize handles are provided by [`react-resizable-panels`](https://github.com/bvaughn/react-resizable-panels) v4 (latest: 4.6.5, updated 2026-02-21). This replaces a from-scratch `Divider` implementation.
 
+`PanelBranch` renders a `Group` (orientation from `PanelSplit.direction`) containing two `Panel` children separated by a `Separator`. Each child is either another `PanelBranch` (for a split node) or a `Panel` with plugin content (for a leaf node).
+
+> **v4 API names** — `PanelGroup` → `Group`, `PanelResizeHandle` → `Separator`, `direction` → `orientation`, `onLayout` → `onLayoutChanged`. The shadcn/ui CLI generates v3 code; patch `resizable.tsx` manually.
+
+```tsx
+// PanelBranch.tsx (simplified)
+import { Group, Panel, Separator } from "react-resizable-panels";
+
+function PanelBranch({ node }: { node: PanelTreeNode }) {
+  if (node.type === "leaf") return <LeafPanel node={node} />;
+  return (
+    <Group
+      id={node.id}
+      orientation={node.direction}
+      onLayoutChanged={(sizes) =>
+        resizeSplit(node.id, sizes as [number, number])
+      }
+    >
+      <Panel id={node.children[0].id} defaultSize={node.sizes[0]} minSize={5}>
+        <PanelBranch node={node.children[0]} />
+      </Panel>
+      <Separator />
+      <Panel id={node.children[1].id} defaultSize={node.sizes[1]} minSize={5}>
+        <PanelBranch node={node.children[1]} />
+      </Panel>
+    </Group>
+  );
+}
 ```
-mousedown on Divider  →  register mousemove + mouseup on document
-mousemove             →  compute delta → call resizeSplit(splitId, newSizes)
-mouseup (anywhere)    →  unregister mousemove + mouseup
-```
 
-`Divider` receives `splitId` as a prop (the `PanelSplit.id` of its parent) so it can call `resizeSplit` directly.
+**Sizing:** uncontrolled — `defaultSize` is mount-only. Zustand → library at mount; library → Zustand via `onLayoutChanged` (fires once on pointer release, not per frame). Do NOT use `autoSaveId`/`storage` — Zustand is the single persistence layer.
+
+**`PanelGrid` root:** wrap the root element with `key={activeWorkspaceId}` so that tab switches and saved config loads force a clean remount, applying fresh `defaultSize` values.
+
+**What the library provides:** drag, keyboard resize (ARIA `separator` role), collapse/expand via ref, `defaultSize` prop, arbitrary nesting depth, React 19 support.
+
+**What remains in the Zustand store:** all topology mutations — `splitPanel`, `closePanel`, `setPlugin`, `setFocus`. The library has no split/close API; those are triggered by keyboard shortcuts and menu actions that mutate the tree, causing a re-render.
+
+shadcn/ui's `Resizable` component wraps this library and can be used as the styled primitive.
 
 ### Error Boundaries
 
 `PluginHost` must be wrapped in a React Error Boundary. A plugin that throws during import or render must not propagate errors up the `PanelBranch` tree. On error, the panel shows an inline error state (plugin name + error message) — the rest of the layout remains functional.
 
-### Persistence Notes
+### Persistence — `@tauri-store/zustand`
 
-Zustand `persist` middleware serializes the full workspace store (all tabs, all panel trees, all saved configs) to localStorage under the key `"note-workspace-state"`. The discriminated union (`type: "leaf" | "split"`) deserializes cleanly with JSON.
+State is persisted using [`@tauri-store/zustand`](https://tb.dev.br/tauri-store/plugin-zustand/guide/getting-started) (npm) + `tauri-plugin-zustand` (Rust crate). This writes to disk via the Tauri file system, bypasses localStorage's origin-instability issues, and works correctly across dev and prod.
 
-> **Dev vs. prod localStorage:** Tauri uses different origins in dev (`http://localhost:1420`) vs prod (`tauri://localhost`). The persist key is stable, but the dev build will not share state with the production app. This is expected behavior — do not treat it as a bug.
+**Why not localStorage:** Tauri dev (`http://localhost:1420`) and prod (`tauri://localhost`) use different origins — localStorage data does not carry over. Dev server port instability can blank the store on every restart. See `research/tauri2.md`.
+
+**Zustand v5 requirements (current version: v5.0.11):**
+
+- Named imports only: `import { create } from 'zustand'`
+- Use `useShallow` for any selector that returns a derived object — v5 otherwise risks infinite loops
+- Apply middleware in this order: `devtools( persist( immer( ...store ) ) )`
+- Use `partialize` to exclude action functions from persistence (they serialize to `{}`)
+- Provide a custom `merge` function — default shallow merge silently corrupts nested tree state on hydration
+
+```ts
+// store.ts
+import { create } from "zustand";
+import { useShallow } from "zustand/react/shallow";
+import { immer } from "zustand/middleware/immer";
+import { devtools } from "zustand/middleware";
+import { createStore } from "@tauri-store/zustand";
+
+export const useWorkspaceStore = createStore(
+  "workspace",
+  immer((set, get) => ({
+    ...createWorkspaceSlice(set, get),
+    ...createPluginSlice(set, get),
+  })),
+  {
+    saveOnChange: true,
+    // partialize to exclude functions is handled by @tauri-store/zustand automatically
+  },
+);
+```
+
+Workspace and plugin registry are slices within one combined store. Middleware is applied at the combined boundary only — never inside individual slice files.
 
 ### Tauri Configuration
 
 **`tauri.conf.json`:**
 
 - Set `"identifier"` to a stable reverse-domain ID (e.g., `"com.klarhimmel.note"`) — this anchors the app's data directory path.
-- Register all keyboard shortcuts via `tauri-plugin-global-shortcut`. Without this, macOS intercepts `CMD+W` as a window-close event before the webview fires.
+- Use `"decorations": false` with `"titleBarStyle": "overlay"` (macOS) to get a frameless window with native traffic lights preserved. The traffic lights overlay the top-left of the webview — the tab bar must leave enough left padding (~72px) to clear them.
+- The tab bar's empty/draggable areas must have `data-tauri-drag-region` so the window is still draggable.
+- Keyboard shortcuts (`CMD+D`, `CMD+W`, etc.) are handled via a global `keydown` listener in `App.tsx` with `event.preventDefault()`. `tauri-plugin-global-shortcut` is **not** needed and **not used**. Register `onCloseRequested` on the Tauri window to prevent macOS from closing it when CMD+W is pressed while panels are present.
 
 **CSP:** Since plugins are bundled at build time (no runtime remote fetching), a restrictive policy is appropriate:
 
@@ -356,13 +463,14 @@ Do not use `unsafe-eval`. Adjust if first-party plugins load remote assets.
 
 ## Tech Stack
 
-| Layer    | Choice                                                       |
-| -------- | ------------------------------------------------------------ |
-| Desktop  | Tauri 2                                                      |
-| Frontend | React 19 + Vite 7 + TypeScript                               |
-| Styling  | Tailwind CSS 4 + shadcn/ui                                   |
-| State    | Zustand + localStorage persist (v1; upgrade to SQLite in v2) |
-| Build    | Vite 7, npm workspaces                                       |
+| Layer    | Choice                                                                     |
+| -------- | -------------------------------------------------------------------------- |
+| Desktop  | Tauri 2.10.2                                                               |
+| Frontend | React 19 + Vite 7 + TypeScript                                             |
+| Styling  | Tailwind CSS 4 + shadcn/ui                                                 |
+| Layout   | `react-resizable-panels` v4 (resize handles) + Zustand tree (topology)     |
+| State    | Zustand v5 + `@tauri-store/zustand` (file-backed; upgrade to SQLite in v2) |
+| Build    | Vite 7, npm workspaces                                                     |
 
 ---
 
@@ -384,15 +492,15 @@ Do not use `unsafe-eval`. Adjust if first-party plugins load remote assets.
 
 1. **Scaffold** — `npm create tauri@latest` → React + TypeScript template, configure Tailwind 4 + shadcn/ui
 2. **Types** — `src/types/panel.ts` + `src/types/workspace.ts` + `src/types/plugin.ts`
-3. **Workspace store** — `workspaceStore.ts` (Zustand + persist): workspaces array, active tab, panel ops, saved configs
+3. **Workspace store** — `workspaceStore.ts` (Zustand v5 + `@tauri-store/zustand`): workspaces, active tab, panel ops, saved configs; use `immer` for nested mutations, `useShallow` on derived selectors, `partialize` to exclude actions
 4. **EmptyState** — fullscreen centered block with keyboard hints
 5. **Tab bar** — `TabBar.tsx`: tab list, active indicator, rename, `[+]`, `[×]`
 6. **Saved config menu** — `SavedConfigMenu.tsx`: dropdown, save prompt, list, open, delete
-7. **Panel components** — `PanelGrid` → `PanelNode` → `Panel` + `Divider` (recursive renderer)
+7. **Panel components** — `PanelGrid` → `PanelBranch` (using `react-resizable-panels` v4 `Group` + `Separator`) → `Panel` (recursive renderer)
 8. **Launcher** — reads plugin registry, lists plugins, calls `setPlugin`
 9. **Plugin registry + loader** — reads `note.plugins.json`, dynamic import cache
-10. **PluginHost** — loads module, injects `PluginContext`, renders component
-11. **Keyboard shortcuts** — global keydown handler in `App.tsx`
+10. **PluginHost** — loads module, injects `PluginContext`, renders component inside Error Boundary
+11. **Keyboard shortcuts** — global `keydown` listener in `App.tsx` with `event.preventDefault()`; handlers read `focusedPanelId` from store. `tauri-plugin-global-shortcut` is NOT used (in-window shortcuts work via webview keydown). Register `onCloseRequested` on the Tauri window to prevent accidental window close.
 12. **Hello plugin** — `plugins/hello/` minimal React component with manifest
 13. **Wire it up** — npm workspaces, verify `@note/hello` resolves, end-to-end test
 
@@ -400,19 +508,19 @@ Do not use `unsafe-eval`. Adjust if first-party plugins load remote assets.
 
 ## Critical Files
 
-| File                                 | Purpose                                                       |
-| ------------------------------------ | ------------------------------------------------------------- |
-| `package.json`                       | Root — workspaces, scripts (`tauri dev`, `tauri build`)       |
-| `src-tauri/tauri.conf.json`          | Tauri config — app name, window, CSP                          |
-| `src-tauri/Cargo.toml`               | Rust deps (tauri 2, tauri-plugin-shell, tauri-plugin-fs)      |
-| `src/store/workspaceStore.ts`        | All state — workspaces, panel ops, saved configs              |
-| `src/plugins/registry.ts`            | Maps plugin IDs → dynamic import factories                    |
-| `src/components/TabBar.tsx`          | Tab strip — workspace switching + new/close tab               |
-| `src/components/SavedConfigMenu.tsx` | Save/load/delete named layout configs                         |
-| `src/components/PanelGrid.tsx`       | Root component — starts the render tree                       |
-| `src/components/EmptyState.tsx`      | Initial fullscreen view                                       |
-| `plugins/hello/src/index.tsx`        | PoC plugin — verifies the plugin system works                 |
-| `note.plugins.json`                  | Plugin config — single source of truth for registered plugins |
+| File                                 | Purpose                                                                           |
+| ------------------------------------ | --------------------------------------------------------------------------------- |
+| `package.json`                       | Root — workspaces, scripts (`tauri dev`, `tauri build`)                           |
+| `src-tauri/tauri.conf.json`          | Tauri config — app identifier, window (frameless + overlay), CSP                  |
+| `src-tauri/Cargo.toml`               | Rust deps (tauri 2, tauri-plugin-shell, tauri-plugin-fs, tauri-plugin-zustand)    |
+| `src/store/workspaceStore.ts`        | All state — workspaces, panel ops, saved configs (`@tauri-store/zustand` + immer) |
+| `src/plugins/registry.ts`            | Maps plugin IDs → dynamic import factories                                        |
+| `src/components/TabBar.tsx`          | Tab strip — workspace switching + new/close tab                                   |
+| `src/components/SavedConfigMenu.tsx` | Save/load/delete named layout configs                                             |
+| `src/components/PanelGrid.tsx`       | Root component — starts the render tree                                           |
+| `src/components/EmptyState.tsx`      | Initial fullscreen view                                                           |
+| `plugins/hello/src/index.tsx`        | PoC plugin — verifies the plugin system works                                     |
+| `note.plugins.json`                  | Plugin config — single source of truth for registered plugins                     |
 
 ---
 
@@ -431,7 +539,8 @@ Do not use `unsafe-eval`. Adjust if first-party plugins load remote assets.
 - [ ] Closing the last tab resets to one empty workspace (app does not close)
 - [ ] `CMD+1` / `CMD+2` switch between tabs by position
 - [ ] Double-clicking a tab label makes it editable inline
-- [ ] Tab state (all workspaces) persists across app restarts
+- [ ] Tab state (all workspaces) persists across app restarts (via tauri-store, not localStorage)
+- [ ] State persists correctly in both `tauri dev` and production build
 
 ### Split panels
 
@@ -447,6 +556,8 @@ Do not use `unsafe-eval`. Adjust if first-party plugins load remote assets.
 - [ ] Empty panel shows Launcher with `@note/hello` listed
 - [ ] Clicking `@note/hello` mounts the Hello World component
 - [ ] Plugin assignments survive tab switching
+- [ ] A crashing plugin shows an inline error in its panel; other panels are unaffected
+- [ ] `CMD+W` does NOT close the window when panels are open
 
 ### Saved configs
 
