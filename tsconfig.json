@@ -18,6 +18,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
+      "@note/api": ["./plugins/api/src"],
+      "@note/api/*": ["./plugins/api/src/*"],
       "@note/hello": ["./plugins/hello/src"],
       "@note/hello/*": ["./plugins/hello/src/*"]
     }

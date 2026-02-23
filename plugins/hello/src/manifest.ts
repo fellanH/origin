@@ -1,4 +1,4 @@
-import type { PluginManifest } from "@/types/plugin";
+import type { PluginManifest } from "@note/api";
 
 export const manifest: PluginManifest = {
   id: "com.note.hello",
