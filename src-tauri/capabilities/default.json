@@ -1,0 +1,12 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Core window and path permissions",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "path:default",
+    "core:window:deny-toggle-maximize",
+    "core:window:deny-internal-toggle-maximize"
+  ]
+}
