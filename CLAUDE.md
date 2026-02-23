@@ -8,8 +8,7 @@ Add local overrides in `CLAUDE.local.md` (auto-loaded by Claude Code, not overwr
 
 ## Project Context
 
-Read `prompt.md` at session start for project-specific context (client info, tools, patterns).
-This file is written by the agent that created this bucket and is never overwritten by updates.
+Read `docs/SPEC.md` at session start — it is the authoritative product specification (architecture, UX, plugin API, tech stack, build order).
 
 ## Cross-Domain Tools
 
