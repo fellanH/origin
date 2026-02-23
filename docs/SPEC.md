@@ -5,8 +5,6 @@
 **Type:** Tauri 2 desktop app
 **Status:** Pre-build spec
 
-> **Note:** This spec supersedes `prompt.md` (the original product brief). Where they conflict, this document is authoritative.
-
 ---
 
 ## Product Vision
@@ -336,7 +334,7 @@ note/
 │   │   ├── workspace.ts        # Workspace, SavedConfig, WorkspaceStore types
 │   │   └── plugin.ts           # PluginManifest, PluginContext, PluginModule
 │   ├── store/
-│   │   └── workspaceStore.ts   # Zustand store (tabs + panel ops + saved configs) + persist
+│   │   └── workspaceStore.ts   # Zustand store (tabs + panel ops + saved configs) + @tauri-store/zustand
 │   ├── plugins/
 │   │   ├── registry.ts         # Load note.plugins.json → build plugin registry map
 │   │   └── loader.ts           # Dynamic import → cache → return PluginModule
@@ -423,9 +421,9 @@ State is persisted using [`@tauri-store/zustand`](https://tb.dev.br/tauri-store/
 
 - Named imports only: `import { create } from 'zustand'`
 - Use `useShallow` for any selector that returns a derived object — v5 otherwise risks infinite loops
-- Apply middleware in this order: `devtools( persist( immer( ...store ) ) )`
-- Use `partialize` to exclude action functions from persistence (they serialize to `{}`)
-- Provide a custom `merge` function — default shallow merge silently corrupts nested tree state on hydration
+- Middleware order: `devtools( immer( ...store ) )` — `persist` is not used; `@tauri-store/zustand` replaces it
+- Use `filterKeys` + `filterKeysStrategy: "omit"` to exclude action functions from disk sync (they serialize to `{}`)
+- Flat `NodeMap` serializes cleanly as a plain JSON object — no recursive deserialization needed in `beforeFrontendSync`
 
 ```ts
 // store.ts
@@ -433,20 +431,46 @@ import { create } from "zustand";
 import { useShallow } from "zustand/react/shallow";
 import { immer } from "zustand/middleware/immer";
 import { devtools } from "zustand/middleware";
-import { createStore } from "@tauri-store/zustand";
+import { createTauriStore } from "@tauri-store/zustand";
 
-export const useWorkspaceStore = createStore(
+const useWorkspaceStore = create<WorkspaceStore>()(
+  devtools(
+    immer((...args) => ({
+      ...createWorkspaceSlice(...args),
+      ...createPluginSlice(...args),
+    })),
+  ),
+);
+
+export const workspaceHandler = createTauriStore(
   "workspace",
-  immer((set, get) => ({
-    ...createWorkspaceSlice(set, get),
-    ...createPluginSlice(set, get),
-  })),
+  useWorkspaceStore,
   {
+    filterKeys: [
+      /* all action function keys */
+    ],
+    filterKeysStrategy: "omit",
     saveOnChange: true,
-    // partialize to exclude functions is handled by @tauri-store/zustand automatically
+    saveStrategy: "debounce",
+    saveInterval: 500,
   },
 );
+
+export { useWorkspaceStore };
 ```
+
+Bootstrap — await hydration before mounting React:
+
+```ts
+// main.tsx
+async function bootstrap() {
+  await workspaceHandler.start();
+  ReactDOM.createRoot(document.getElementById("root")!).render(<App />);
+}
+bootstrap();
+```
+
+See `research/tauri-store-zustand.md` for the complete `filterKeys` list and lifecycle hook details.
 
 Workspace and plugin registry are slices within one combined store. Middleware is applied at the combined boundary only — never inside individual slice files.
 
@@ -455,7 +479,7 @@ Workspace and plugin registry are slices within one combined store. Middleware i
 **`tauri.conf.json`:**
 
 - Set `"identifier"` to a stable reverse-domain ID (e.g., `"com.klarhimmel.note"`) — this anchors the app's data directory path.
-- Use `"decorations": false` with `"titleBarStyle": "overlay"` (macOS) to get a frameless window with native traffic lights preserved. The traffic lights overlay the top-left of the webview — the tab bar must leave enough left padding (~72px) to clear them.
+- Use `"decorations": true` with `"titleBarStyle": "Overlay"` (macOS) to get a frameless window with native traffic lights preserved. The traffic lights overlay the top-left of the webview — the tab bar must leave enough left padding (80px) to clear them. See `research/tauri2-frameless-window.md` for the complete window config including `hiddenTitle`, `trafficLightPosition`, and `acceptFirstMouse`.
 - The tab bar's empty/draggable areas must have `data-tauri-drag-region` so the window is still draggable.
 - Keyboard shortcuts (`CMD+D`, `CMD+W`, etc.) are handled via a global `keydown` listener in `App.tsx` with `event.preventDefault()`. `tauri-plugin-global-shortcut` is **not** needed and **not used**. Register `onCloseRequested` on the Tauri window to prevent macOS from closing it when CMD+W is pressed while panels are present.
 
@@ -502,7 +526,7 @@ Do not use `unsafe-eval`. Adjust if first-party plugins load remote assets.
 
 1. **Scaffold** — `npm create tauri@latest` → React + TypeScript template, configure Tailwind 4 + shadcn/ui
 2. **Types** — `src/types/panel.ts` + `src/types/workspace.ts` + `src/types/plugin.ts`
-3. **Workspace store** — `workspaceStore.ts` (Zustand v5 + `@tauri-store/zustand`): workspaces, active tab, panel ops, saved configs; use `immer` for nested mutations, `useShallow` on derived selectors, `partialize` to exclude actions
+3. **Workspace store** — `workspaceStore.ts` (Zustand v5 + `@tauri-store/zustand`): workspaces, active tab, panel ops, saved configs; use `immer` for mutations, `useShallow` on derived selectors, `filterKeys` to exclude actions from disk sync
 4. **EmptyState** — fullscreen centered block with keyboard hints
 5. **Tab bar** — `TabBar.tsx`: tab list, active indicator, rename, `[+]`, `[×]`
 6. **Saved config menu** — `SavedConfigMenu.tsx`: dropdown, save prompt, list, open, delete

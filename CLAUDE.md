@@ -4,7 +4,38 @@ Isolated project bucket. You work within this project only.
 
 ## Project Context
 
-Read `docs/SPEC.md` at session start — it is the authoritative product specification (architecture, UX, plugin API, tech stack, build order).
+Read the Architecture Decisions and Critical Gotchas below before writing any code. Consult `docs/SPEC.md` for deep context (UX, full types, verification checklist). Start with `docs/plans/poc.md`.
+
+No code written. GitHub issues created (13 issues, MVP v1 at `fellanH/note`). Next: PoC (#1 scaffold, partial #2 types, partial #3 store, #4 EmptyState, partial #7 panels, partial #11 shortcuts).
+
+## Architecture Decisions
+
+| Decision           | Choice                                              | Do NOT                                                                             | Research                                     |
+| ------------------ | --------------------------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------- |
+| Panel state model  | Flat `NodeMap` + `parentId` (O(1) split/close)      | Recursive tree with `children`                                                     | `research/flat-map-vs-recursive-tree.md`     |
+| Persistence        | `@tauri-store/zustand` (file-backed)                | `localStorage`, standard `persist` middleware                                      | `research/tauri-store-zustand.md`            |
+| Keyboard shortcuts | Webview `keydown` + `preventDefault()` in `App.tsx` | `tauri-plugin-global-shortcut` (fires when backgrounded, macOS double-fire #10025) | `research/tauri2.md`                         |
+| Resize handles     | `react-resizable-panels` v4                         | From-scratch divider                                                               | `research/react-resizable-panels-zustand.md` |
+| Frameless window   | `decorations: true` + `titleBarStyle: "Overlay"`    | `decorations: false` (removes traffic lights)                                      | `research/tauri2-frameless-window.md`        |
+| Plugin loading v1  | Build-time Vite dynamic import                      | Runtime install                                                                    | `research/vite-plugin-loading.md`            |
+
+## Critical Gotchas
+
+- Tab bar left padding: `pl-[80px]` — NOT 72px
+- `@tauri-store/zustand` API: `createTauriStore()` — `createStore` does not exist
+- Store hydration: `await tauriHandler.start()` before `ReactDOM.createRoot()`
+- `filterKeys` + `filterKeysStrategy: "omit"` replaces `partialize` — do not use `persist` middleware
+- Middleware order: `devtools(immer(...store))` — `persist` is not in the chain
+- Zustand v5: `import { create } from 'zustand'`, `useShallow` for derived selectors
+- `react-resizable-panels` v4 renames: `Group`, `Separator`, `orientation`, `onLayoutChanged`
+- `Panel` name collision: alias with `import { Panel as ResizablePanel }` or name local component `LeafPanel.tsx`
+- `data-tauri-drag-region`: spacer divs only — NOT on interactive elements or the tab bar container
+- `titleBarStyle: "Overlay"` — capital O, Tauri is case-sensitive
+- `key={activeWorkspaceId}` on root `PanelGrid` element — forces remount on tab switch
+- Do NOT call `window.setTitle()` — resets `trafficLightPosition` (Tauri #13044); use `document.title`
+- Do NOT use `unstable` Cargo feature — breaks `trafficLightPosition` (Tauri #14072)
+- `onCloseRequested` must `e.preventDefault()` to prevent CMD+W closing the native window
+- Dev builds use `.dev.json` file suffix by default — dev/prod state is intentionally separate
 
 ## Cross-Domain Tools
 
