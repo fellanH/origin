@@ -2,10 +2,6 @@
 
 Isolated project bucket. You work within this project only.
 
-## Customization
-
-Add local overrides in `CLAUDE.local.md` (auto-loaded by Claude Code, not overwritten by updates).
-
 ## Project Context
 
 Read `docs/SPEC.md` at session start — it is the authoritative product specification (architecture, UX, plugin API, tech stack, build order).
@@ -45,3 +41,17 @@ This closes the loop: admin dispatches work, project executes, admin is notified
 2. Use crossdomain MCP tools to communicate with admin
 3. Report blockers via `log_to_memory`
 4. When completing a task, update both the project task AND the originating queue item
+
+## Installed Skills
+
+Project-scoped skills in `.claude/skills/`:
+
+| Skill                            | Purpose                                               |
+| -------------------------------- | ----------------------------------------------------- |
+| `tauri-v2`                       | Tauri 2 patterns, window config, Rust/JS bridge       |
+| `integrating-tauri-js-frontends` | Tauri ↔ Vite/React integration patterns               |
+| `configuring-tauri-permissions`  | Tauri 2 CSP, `tauri-plugin-fs`, `tauri-plugin-shell`  |
+| `vite`                           | Vite 7 config, dynamic import, workspace bundling     |
+| `tailwind-v4-shadcn`             | Tailwind CSS 4 + shadcn/ui (breaking changes from v3) |
+| `typescript-react-reviewer`      | TypeScript + React 19 code review patterns            |
+| `zustand-state-management`       | Zustand store patterns + `persist` middleware         |
