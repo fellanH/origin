@@ -7,8 +7,11 @@ export default function SavedConfigMenu() {
   const saveConfig = useWorkspaceStore((s) => s.saveConfig);
   const loadConfig = useWorkspaceStore((s) => s.loadConfig);
   const deleteConfig = useWorkspaceStore((s) => s.deleteConfig);
+  const pendingSaveName = useWorkspaceStore((s) => s.pendingSaveName);
 
   const [open, setOpen] = useState(false);
+  const [saveName, setSaveName] = useState("");
+  const [saving, setSaving] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,12 +28,27 @@ export default function SavedConfigMenu() {
     return () => document.removeEventListener("mousedown", handleMouseDown);
   }, [open]);
 
-  function handleSaveCurrent() {
-    const name = window.prompt("Name this config:");
-    if (name?.trim()) {
-      saveConfig(name.trim());
+  useEffect(() => {
+    if (pendingSaveName) {
+      setOpen(true);
+      setSaving(true);
+      useWorkspaceStore.getState().setPendingSaveName(false);
     }
+  }, [pendingSaveName]);
+
+  function commitSave() {
+    const trimmed = saveName.trim();
+    if (trimmed) {
+      saveConfig(trimmed);
+    }
+    setSaving(false);
     setOpen(false);
+    setSaveName("");
+  }
+
+  function cancelSave() {
+    setSaving(false);
+    setSaveName("");
   }
 
   return (
@@ -45,12 +63,33 @@ export default function SavedConfigMenu() {
 
       {open && (
         <div className="absolute top-full left-0 z-50 min-w-[180px] rounded border bg-popover shadow-md">
-          <button
-            className="w-full px-3 py-1.5 text-left text-xs hover:bg-muted/60"
-            onClick={handleSaveCurrent}
-          >
-            Save current
-          </button>
+          {saving ? (
+            <input
+              autoFocus
+              className="w-full px-3 py-1.5 text-xs bg-transparent outline-none placeholder:text-muted-foreground"
+              placeholder="Config name…"
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  commitSave();
+                } else if (e.key === "Escape") {
+                  cancelSave();
+                }
+              }}
+              onBlur={cancelSave}
+            />
+          ) : (
+            <button
+              className="w-full px-3 py-1.5 text-left text-xs hover:bg-muted/60"
+              onClick={() => {
+                setSaving(true);
+                setSaveName("");
+              }}
+            >
+              Save current
+            </button>
+          )}
 
           {savedConfigs.length > 0 && <hr className="border-border" />}
 

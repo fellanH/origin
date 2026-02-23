@@ -1,6 +1,9 @@
 import { useEffect } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { useWorkspaceStore } from "@/store/workspaceStore";
+import {
+  useWorkspaceStore,
+  selectActiveWorkspace,
+} from "@/store/workspaceStore";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import PanelGrid from "@/components/PanelGrid";
 import TabBar from "@/components/TabBar";
@@ -15,7 +18,12 @@ function App() {
     let unlisten: (() => void) | undefined;
     win
       .onCloseRequested((e) => {
-        e.preventDefault();
+        const state = useWorkspaceStore.getState();
+        const ws = selectActiveWorkspace(state);
+        if (ws.rootId !== null) {
+          e.preventDefault(); // panels open — block close
+        }
+        // rootId is null → allow close → traffic lights work
       })
       .then((fn) => {
         unlisten = fn;
