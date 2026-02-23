@@ -10,6 +10,9 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+    },
     "windows": [
       {
         "label": "main",
@@ -27,8 +30,5 @@
         "visible": false
       }
     ]
-  },
-  "security": {
-    "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
   }
 }
