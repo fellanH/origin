@@ -12,10 +12,14 @@ export function useKeyboardShortcuts(): void {
       if (e.key.toLowerCase() === "d") {
         e.preventDefault();
         const state = useWorkspaceStore.getState();
-        const { focusedPanelId } = selectActiveWorkspace(state);
-        if (!focusedPanelId) return;
+        const ws = selectActiveWorkspace(state);
+        if (ws.rootId === null) {
+          state.addInitialPanel();
+          return;
+        }
+        if (!ws.focusedPanelId) return;
         state.splitPanel(
-          focusedPanelId,
+          ws.focusedPanelId,
           e.shiftKey ? "vertical" : "horizontal",
         );
       } else if (e.key === "w" && !e.shiftKey) {

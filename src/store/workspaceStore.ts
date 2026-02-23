@@ -12,6 +12,7 @@ type WorkspaceState = {
 };
 
 type WorkspaceActions = {
+  addInitialPanel: () => void;
   splitPanel: (panelId: NodeId, direction: "horizontal" | "vertical") => void;
   closePanel: (panelId: NodeId) => void;
   setFocus: (panelId: NodeId | null) => void;
@@ -41,6 +42,23 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
         },
       ],
       activeWorkspaceId: INITIAL_ID,
+
+      addInitialPanel: () =>
+        set((draft) => {
+          const ws = draft.workspaces.find(
+            (w) => w.id === draft.activeWorkspaceId,
+          )!;
+          if (ws.rootId !== null) return;
+          const leafId = crypto.randomUUID();
+          ws.nodes[leafId] = {
+            type: "leaf",
+            id: leafId,
+            parentId: null,
+            pluginId: null,
+          } satisfies PanelLeaf;
+          ws.rootId = leafId;
+          ws.focusedPanelId = leafId;
+        }),
 
       splitPanel: (panelId, direction) =>
         set((draft) => {
