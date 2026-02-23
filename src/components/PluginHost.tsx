@@ -16,7 +16,10 @@ function PluginHostInner({ pluginId, context }: Props) {
     setComponent(null);
     setError(null);
     loadPlugin(pluginId)
-      .then((mod) => setComponent(() => mod.default))
+      .then((mod) => {
+        if (mod) setComponent(() => mod.default);
+        else setError(`Plugin not registered: ${pluginId}`);
+      })
       .catch((err) => setError(String(err?.message ?? err)));
   }, [pluginId]);
 

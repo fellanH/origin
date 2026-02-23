@@ -1,5 +1,5 @@
 /**
- * Plugin loader — Phase 4 tests
+ * Plugin loader — v2 tests
  *
  * Tests loadPlugin caching, unknown IDs, and factory error handling.
  * Registry is fully mocked — this tests loader.ts logic only.
@@ -7,21 +7,32 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
+const mockHelloEntry = {
+  id: "com.origin.hello",
+  name: "Hello",
+  load: vi.fn().mockResolvedValue({
+    manifest: { id: "com.origin.hello", name: "Hello", version: "0.1.0" },
+    default: () => null,
+  }),
+};
+
 vi.mock("./registry", () => ({
-  pluginRegistry: {
-    "com.origin.hello": vi.fn().mockResolvedValue({
-      manifest: { id: "com.origin.hello", name: "Hello", version: "0.1.0" },
-      default: () => null,
-    }),
+  getPlugin: (id: string) => {
+    if (id === "com.origin.hello") return mockHelloEntry;
+    return undefined;
   },
 }));
 
 import { loadPlugin, clearPluginCache } from "./loader";
-import { pluginRegistry } from "./registry";
 
 beforeEach(() => {
   clearPluginCache();
   vi.clearAllMocks();
+  // Reset the mock to resolve (in case a test changed it)
+  mockHelloEntry.load.mockResolvedValue({
+    manifest: { id: "com.origin.hello", name: "Hello", version: "0.1.0" },
+    default: () => null,
+  });
 });
 
 describe("loadPlugin", () => {
@@ -40,15 +51,11 @@ describe("loadPlugin", () => {
   });
 
   it("caches the result — factory called only once on repeated loads", async () => {
-    const factory = pluginRegistry["com.origin.hello"] as ReturnType<
-      typeof vi.fn
-    >;
-
     await loadPlugin("com.origin.hello");
     await loadPlugin("com.origin.hello");
     await loadPlugin("com.origin.hello");
 
-    expect(factory).toHaveBeenCalledTimes(1);
+    expect(mockHelloEntry.load).toHaveBeenCalledTimes(1);
   });
 
   it("different plugin ids each call their own factory", async () => {
@@ -60,10 +67,7 @@ describe("loadPlugin", () => {
   });
 
   it("handles a rejected factory (import failure) — returns null", async () => {
-    const factory = pluginRegistry["com.origin.hello"] as ReturnType<
-      typeof vi.fn
-    >;
-    factory.mockRejectedValueOnce(new Error("Module not found"));
+    mockHelloEntry.load.mockRejectedValueOnce(new Error("Module not found"));
 
     const result = await loadPlugin("com.origin.hello");
 

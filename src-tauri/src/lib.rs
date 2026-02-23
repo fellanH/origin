@@ -1,3 +1,5 @@
+mod plugin_manager;
+
 use tauri::{menu::{MenuBuilder, MenuItemBuilder}, Emitter, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -9,6 +11,8 @@ pub fn run() {
                 .autosave(std::time::Duration::from_secs(300))
                 .build(),
         )
+        .plugin(tauri_plugin_dialog::init())
+        .register_uri_scheme_protocol("plugin", plugin_manager::plugin_protocol_handler)
         .setup(|app| {
             let close_tab = MenuItemBuilder::with_id("close-workspace", "Close Tab")
                 .accelerator("CmdOrCtrl+Shift+W")
@@ -24,7 +28,11 @@ pub fn run() {
                 }
             }
         })
-        .invoke_handler(tauri::generate_handler![])
+        .invoke_handler(tauri::generate_handler![
+            plugin_manager::list_installed_plugins,
+            plugin_manager::install_plugin,
+            plugin_manager::restart_app,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
