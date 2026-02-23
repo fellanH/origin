@@ -26,7 +26,7 @@ function App() {
     <div className="flex h-screen flex-col">
       <div
         data-tauri-drag-region
-        className="flex h-12 shrink-0 items-center pl-[80px] pr-4"
+        className="flex h-12 shrink-0 pt-[15px] pl-[80px] pr-4"
       >
         <span className="select-none text-sm font-medium">note</span>
       </div>
