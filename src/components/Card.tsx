@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import {
   useWorkspaceStore,
   selectActiveWorkspace,
@@ -8,22 +8,33 @@ import PluginHost from "@/components/PluginHost";
 import type { PluginContext } from "@/types/plugin";
 import { pluginBus } from "@/lib/pluginBus";
 import { cn } from "@/lib/utils";
+import { useSystemTheme } from "@/hooks/useSystemTheme";
 
 interface Props {
   nodeId: string;
 }
 
 function Card({ nodeId }: Props) {
-  const focusedCardId = useWorkspaceStore(
-    (s) => selectActiveWorkspace(s).focusedCardId,
+  const isFocused = useWorkspaceStore(
+    (s) => selectActiveWorkspace(s).focusedCardId === nodeId,
   );
   const node = useWorkspaceStore((s) => selectActiveWorkspace(s).nodes[nodeId]);
   const setFocus = useWorkspaceStore((s) => s.setFocus);
   const closeCard = useWorkspaceStore((s) => s.closeCard);
   const appDataDir = useWorkspaceStore((s) => s.appDataDir);
 
-  const isFocused = focusedCardId === nodeId;
   const pluginId = node?.type === "leaf" ? node.pluginId : null;
+  const theme = useSystemTheme();
+
+  const pluginContext = useMemo<PluginContext>(
+    () => ({
+      cardId: nodeId,
+      workspacePath: appDataDir,
+      theme,
+      bus: pluginBus,
+    }),
+    [nodeId, appDataDir, theme],
+  );
 
   const divRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -43,19 +54,7 @@ function Card({ nodeId }: Props) {
       {pluginId === null ? (
         <EmptyState cardId={nodeId} />
       ) : (
-        <PluginHost
-          pluginId={pluginId}
-          context={
-            {
-              cardId: nodeId,
-              workspacePath: appDataDir,
-              theme: window.matchMedia("(prefers-color-scheme: dark)").matches
-                ? "dark"
-                : "light",
-              bus: pluginBus,
-            } satisfies PluginContext
-          }
-        />
+        <PluginHost pluginId={pluginId} context={pluginContext} />
       )}
 
       <button
