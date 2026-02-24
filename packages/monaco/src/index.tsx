@@ -1,6 +1,6 @@
 export { manifest } from "./manifest";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Editor from "@monaco-editor/react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
@@ -39,19 +39,23 @@ export default function MonacoPlugin({ context }: { context: PluginContext }) {
 
   const isDark = context.theme === "dark";
 
-  async function handleOpenFile() {
-    const result = await open({ multiple: false });
-    const selected = Array.isArray(result) ? result[0] : result;
-    if (!selected) return;
+  async function openFile(path: string) {
     try {
-      const text = await readTextFile(selected);
-      setFilePath(selected);
+      const text = await readTextFile(path);
+      setFilePath(path);
       setContent(text);
-      setLanguage(getLanguage(selected));
+      setLanguage(getLanguage(path));
       setIsDirty(false);
     } catch {
       // Read error — file may be binary or inaccessible
     }
+  }
+
+  async function handleOpenFile() {
+    const result = await open({ multiple: false });
+    const selected = Array.isArray(result) ? result[0] : result;
+    if (!selected) return;
+    await openFile(selected);
   }
 
   async function handleSave() {
@@ -68,6 +72,16 @@ export default function MonacoPlugin({ context }: { context: PluginContext }) {
     setContent(value ?? "");
     setIsDirty(true);
   }, []);
+
+  // Subscribe to workspace active-path channel — opens files published by
+  // FileTree (or any other plugin) without replacing the manual "Open" picker.
+  useEffect(() => {
+    return context.bus.subscribe("origin:workspace/active-path", ({ path, type }) => {
+      if (type === "file") {
+        void openFile(path);
+      }
+    });
+  }, [context.bus]);
 
   return (
     <div className="flex h-full flex-col">

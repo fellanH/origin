@@ -1,8 +1,9 @@
-import { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo, useCallback } from "react";
 import {
   useWorkspaceStore,
   selectActiveWorkspace,
 } from "@/store/workspaceStore";
+import { useShallow } from "zustand/shallow";
 import EmptyState from "./EmptyState";
 import PluginHost from "./PluginHost";
 import IframePluginHost from "./IframePluginHost";
@@ -31,11 +32,29 @@ function Card({ nodeId }: Props) {
   // Per-workspace bus: isolates events between workspace tabs
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const bus = useWorkspaceStore((s) => s.buses[s.activeWorkspaceId])!;
+  const setPluginConfig = useWorkspaceStore((s) => s.setPluginConfig);
+
+  // Read per-instance config from the node. useShallow avoids re-renders when
+  // the config object reference changes but its contents are identical.
+  const pluginConfig = useWorkspaceStore(
+    useShallow((s) => {
+      const n = selectActiveWorkspace(s)?.nodes[nodeId];
+      return n?.type === "leaf" ? (n.config ?? {}) : {};
+    }),
+  );
 
   const pluginId = node?.type === "leaf" ? node.pluginId : null;
   const pluginEntry = pluginId ? (getPlugin(pluginId) ?? null) : null;
   const tier = pluginEntry?.tier ?? null;
   const theme = useSystemTheme();
+
+  // Stable setConfig callback — avoids unnecessary re-renders of the plugin
+  const setConfig = useCallback(
+    (patch: Record<string, unknown>) => {
+      setPluginConfig(nodeId, patch);
+    },
+    [nodeId, setPluginConfig],
+  );
 
   const pluginContext = useMemo<Omit<PluginContext, "on">>(
     () => ({
@@ -43,12 +62,10 @@ function Card({ nodeId }: Props) {
       workspacePath: appDataDir,
       theme,
       bus,
-      // config/setConfig: per-card plugin configuration — store backing is
-      // a future milestone; stubs keep the type contract satisfied until then.
-      config: {},
-      setConfig: () => {},
+      config: pluginConfig,
+      setConfig,
     }),
-    [nodeId, appDataDir, theme, bus],
+    [nodeId, appDataDir, theme, bus, pluginConfig, setConfig],
   );
 
   const divRef = useRef<HTMLDivElement>(null);

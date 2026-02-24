@@ -5,6 +5,8 @@ export type CardLeaf = {
   id: CardId;
   parentId: CardId | null;
   pluginId: string | null;
+  /** Per-instance plugin configuration. Shallow-merged by setPluginConfig. */
+  config?: Record<string, unknown>;
 };
 
 export type CardSplit = {

@@ -10,6 +10,7 @@ import {
   exists,
 } from "@tauri-apps/plugin-fs";
 import type { PluginContext } from "@origin/api";
+import { manifest } from "./manifest";
 
 interface TreeNode {
   name: string;
@@ -70,16 +71,25 @@ interface TreeItemProps {
   depth: number;
   expandedPaths: Set<string>;
   onToggle: (node: TreeNode) => void;
+  onFileClick: (node: TreeNode) => void;
 }
 
-function TreeItem({ node, depth, expandedPaths, onToggle }: TreeItemProps) {
+function TreeItem({ node, depth, expandedPaths, onToggle, onFileClick }: TreeItemProps) {
   const isExpanded = expandedPaths.has(node.path);
   const icon = node.isDirectory ? (isExpanded ? "📂" : "📁") : fileIcon(node);
+
+  function handleClick() {
+    if (node.isDirectory) {
+      onToggle(node);
+    } else {
+      onFileClick(node);
+    }
+  }
 
   return (
     <div>
       <div
-        onClick={() => onToggle(node)}
+        onClick={handleClick}
         className="flex cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-xs hover:bg-white/10"
         style={{ paddingLeft: `${4 + depth * 14}px` }}
       >
@@ -95,6 +105,7 @@ function TreeItem({ node, depth, expandedPaths, onToggle }: TreeItemProps) {
             depth={depth + 1}
             expandedPaths={expandedPaths}
             onToggle={onToggle}
+            onFileClick={onFileClick}
           />
         ))}
     </div>
@@ -155,13 +166,17 @@ export default function FileTreePlugin({
   }
 
   async function handleToggle(node: TreeNode) {
-    if (!node.isDirectory) return;
-
     if (expandedPaths.has(node.path)) {
       setExpandedPaths((prev) => {
         const next = new Set(prev);
         next.delete(node.path);
         return next;
+      });
+
+      context.bus.publish("origin:workspace/active-path", {
+        path: node.path,
+        type: "directory",
+        source: manifest.id,
       });
       return;
     }
@@ -177,6 +192,20 @@ export default function FileTreePlugin({
     }
 
     setExpandedPaths((prev) => new Set([...prev, node.path]));
+
+    context.bus.publish("origin:workspace/active-path", {
+      path: node.path,
+      type: "directory",
+      source: manifest.id,
+    });
+  }
+
+  function handleFileClick(node: TreeNode) {
+    context.bus.publish("origin:workspace/active-path", {
+      path: node.path,
+      type: "file",
+      source: manifest.id,
+    });
   }
 
   const isDark = context.theme === "dark";
@@ -216,6 +245,7 @@ export default function FileTreePlugin({
             depth={0}
             expandedPaths={expandedPaths}
             onToggle={handleToggle}
+            onFileClick={handleFileClick}
           />
         ))}
       </div>
