@@ -4,6 +4,7 @@ import { immer } from "zustand/middleware/immer";
 import { createTauriStore } from "@tauri-store/zustand";
 import type { CardId, CardLeaf, CardSplit } from "@/types/card";
 import type { Workspace, WorkspaceId, SavedConfig } from "@/types/workspace";
+import { panelRefs } from "@/lib/panelRefs";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,7 @@ type WorkspaceActions = {
   deleteConfig: (configId: string) => void;
   setPendingSaveName: (v: boolean) => void;
   setAppDataDir: (path: string) => void;
+  applyLayoutPreset: (preset: "equal" | "main-sidebar") => void;
 };
 
 export type WorkspaceStore = WorkspaceState & WorkspaceActions;
@@ -347,6 +349,51 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
         set((draft) => {
           draft.appDataDir = path;
         }),
+
+      applyLayoutPreset: (preset) => {
+        const state = useWorkspaceStore.getState();
+        const ws = state.workspaces.find(
+          (w) => w.id === state.activeWorkspaceId,
+        );
+        if (!ws) return;
+
+        if (preset === "equal") {
+          // For every split node, resize its two children equally (50/50).
+          // This covers all PanelGroups in the current workspace.
+          for (const node of Object.values(ws.nodes)) {
+            if (node.type !== "split") continue;
+            const [firstId, secondId] = node.childIds;
+            const firstHandle = panelRefs.get(firstId);
+            const secondHandle = panelRefs.get(secondId);
+            if (firstHandle && secondHandle) {
+              firstHandle.resize("50");
+              secondHandle.resize("50");
+            }
+          }
+        } else {
+          // main-sidebar: focused panel gets 60%, its sibling gets 40%.
+          // Only the immediate parent PanelGroup of the focused leaf is resized.
+          const focusedId = ws.focusedCardId;
+          if (!focusedId) return;
+          const focusedNode = ws.nodes[focusedId];
+          if (!focusedNode || focusedNode.type !== "leaf") return;
+          const parentId = focusedNode.parentId;
+          if (!parentId) return; // single panel — nothing to resize
+          const parentNode = ws.nodes[parentId];
+          if (!parentNode || parentNode.type !== "split") return;
+
+          const [firstId, secondId] = parentNode.childIds;
+          const isFocusedFirst = firstId === focusedId;
+          const focusedHandle = panelRefs.get(focusedId);
+          const siblingId = isFocusedFirst ? secondId : firstId;
+          const siblingHandle = panelRefs.get(siblingId);
+
+          if (focusedHandle && siblingHandle) {
+            focusedHandle.resize("60");
+            siblingHandle.resize("40");
+          }
+        }
+      },
     })),
     { name: "WorkspaceStore" },
   ),

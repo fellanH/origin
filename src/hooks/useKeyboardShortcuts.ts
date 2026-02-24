@@ -55,6 +55,14 @@ export function useKeyboardShortcuts(): void {
               handle.resize(Math.max(pct - 5, 5));
             }
           }
+        } else if (e.code === "Digit0") {
+          // CMD+Opt+0 : equalize all panels
+          e.preventDefault();
+          useWorkspaceStore.getState().applyLayoutPreset("equal");
+        } else if (e.code === "KeyM") {
+          // CMD+Opt+M : main + sidebar (focused 60%, sibling 40%)
+          e.preventDefault();
+          useWorkspaceStore.getState().applyLayoutPreset("main-sidebar");
         }
         return;
       }
