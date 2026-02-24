@@ -6,7 +6,6 @@ import {
 } from "@/store/workspaceStore";
 import { useShallow } from "zustand/shallow";
 import EmptyState from "./EmptyState";
-import PluginHost from "./PluginHost";
 import IframePluginHost from "./IframePluginHost";
 import { getPlugin } from "@/plugins/registry";
 import { cn } from "@/lib/utils";
@@ -46,7 +45,6 @@ function Card({ nodeId }: Props) {
 
   const pluginId = node?.type === "leaf" ? node.pluginId : null;
   const pluginEntry = pluginId ? (getPlugin(pluginId) ?? null) : null;
-  const tier = pluginEntry?.tier ?? null;
   const theme = useSystemTheme();
 
   // Stable setConfig callback — avoids unnecessary re-renders of the plugin
@@ -57,7 +55,8 @@ function Card({ nodeId }: Props) {
     [nodeId, setPluginConfig],
   );
 
-  // invoke: L0 plugins call Tauri directly; L1 plugins use the postMessage bridge.
+  // invoke / onEvent: L1 plugins use the postMessage bridge in IframePluginHost —
+  // these stubs satisfy PluginContext until the type is narrowed in a future pass.
   const invoke = useCallback(
     <T = unknown,>(
       command: string,
@@ -66,8 +65,6 @@ function Card({ nodeId }: Props) {
     [],
   );
 
-  // onEvent: L0 plugins have direct Tauri access so this is a no-op stub;
-  // L1 plugins use the postMessage bridge in IframePluginHost.
   const onEvent = useCallback(
     (
       _event: string,
@@ -112,17 +109,11 @@ function Card({ nodeId }: Props) {
           cardId={nodeId}
           autoOpen={launcherOpenForNodeId === nodeId}
         />
-      ) : tier === "L1" ? (
+      ) : (
         <IframePluginHost
           pluginId={pluginId}
           context={pluginContext}
           manifest={pluginEntry?.manifest}
-        />
-      ) : (
-        <PluginHost
-          pluginId={pluginId}
-          nodeId={nodeId}
-          context={pluginContext}
         />
       )}
 
