@@ -6,6 +6,60 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.6.0] — 2026-02-24
+
+Issue: #141
+
+### Added
+
+- `OriginChannelMap["origin:workspace/active-path"]` — standard channel for
+  broadcasting the active workspace path between plugins. Payload:
+  `{ path: string; type: "file" | "directory"; source: string }`.
+  FileTree publishes on every file/directory click; Monaco subscribes to
+  open files automatically. Any plugin may publish or subscribe.
+
+---
+
+## [0.5.0] — 2026-02-24
+
+Issue: #139
+
+### Breaking Changes
+
+- `PluginContext` now requires `config: Record<string, unknown>` and
+  `setConfig: (patch: Record<string, unknown>) => void`. All plugin components
+  receive these fields automatically from `PluginHost` / `IframePluginHost`;
+  no plugin-side changes are required unless the plugin was constructing a
+  `PluginContext` manually (e.g. in tests).
+
+### Added
+
+- `PluginContext.config` — per-instance plugin configuration. Persisted
+  alongside the card in the workspace store (`CardLeaf.config`). Survives app
+  restarts and workspace save/restore. Typed as `Record<string, unknown>`; cast
+  individual keys as needed (`context.config.url as string`).
+- `PluginContext.setConfig(patch)` — shallow-merges a patch into the card's
+  stored config. Equivalent to `setState` in React: existing keys not in the
+  patch are preserved.
+- `CardLeaf.config?: Record<string, unknown>` — optional field added to the
+  card node type. Persisted via the existing `workspaces` key in the Tauri
+  store; no migration needed (defaults to `{}`).
+- `setPluginConfig(cardId, patch)` store action — internal action used by
+  `PluginHost` / `IframePluginHost` to flush config patches into the store.
+- `IframePluginContext.config` — added to the postMessage context struct so L1
+  plugins receive initial config in `ORIGIN_INIT`.
+- New postMessage message types (in `iframeProtocol.ts`):
+  - `ORIGIN_CONFIG_SET` (plugin → host): plugin requests a config patch.
+  - `ORIGIN_CONFIG_UPDATE` (host → plugin): host pushes a config update after
+    an external change (e.g. the same plugin in a second tab).
+- `@origin/sdk`: `usePluginContext()` now returns `IframePluginContextWithConfig`
+  (extends `IframePluginContext` with `setConfig`). Handles `ORIGIN_CONFIG_UPDATE`
+  to keep the iframe context in sync.
+- `@origin/github` migrated to use `context.config` / `context.setConfig`
+  instead of `readTextFile`/`writeTextFile` for owner/repo persistence.
+
+---
+
 ## [0.4.0] — 2026-02-24
 
 Issues: #108, #109
@@ -84,6 +138,8 @@ a standalone `@origin-cards/api` workspace package.
 
 ---
 
+[0.6.0]: https://github.com/fellanH/origin/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/fellanH/origin/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/fellanH/origin/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/fellanH/origin/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/fellanH/origin/compare/v0.1.0...v0.2.0

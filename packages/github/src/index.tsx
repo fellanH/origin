@@ -1,9 +1,7 @@
 export { manifest } from "./manifest";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { PluginContext } from "@origin/api";
-import { readTextFile, writeTextFile, mkdir } from "@tauri-apps/plugin-fs";
-import { join } from "@tauri-apps/api/path";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
 interface PR {
@@ -16,11 +14,6 @@ interface PR {
   labels: { name: string; color: string }[];
 }
 
-interface Config {
-  owner: string;
-  repo: string;
-}
-
 function relativeTime(isoDate: string): string {
   const diff = Date.now() - new Date(isoDate).getTime();
   const mins = Math.floor(diff / 60000);
@@ -31,16 +24,30 @@ function relativeTime(isoDate: string): string {
 }
 
 export default function GitHubPlugin({ context }: { context: PluginContext }) {
-  const [owner, setOwner] = useState("");
-  const [repo, setRepo] = useState("");
-  const [configured, setConfigured] = useState(false);
+  // Derive owner/repo from persisted config (context.config is shallow-merged)
+  const savedOwner = (context.config.owner as string | undefined) ?? "";
+  const savedRepo = (context.config.repo as string | undefined) ?? "";
+
+  const [owner, setOwner] = useState(savedOwner);
+  const [repo, setRepo] = useState(savedRepo);
+  const [configured, setConfigured] = useState(
+    Boolean(savedOwner && savedRepo),
+  );
   const [showSettings, setShowSettings] = useState(false);
   const [prs, setPrs] = useState<PR[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastFetched, setLastFetched] = useState<number | null>(null);
-  const configFileRef = useRef<string | null>(null);
   const isDark = context.theme === "dark";
+
+  // Sync local state when config changes externally (e.g. another panel)
+  useEffect(() => {
+    const o = (context.config.owner as string | undefined) ?? "";
+    const r = (context.config.repo as string | undefined) ?? "";
+    setOwner(o);
+    setRepo(r);
+    setConfigured(Boolean(o && r));
+  }, [context.config.owner, context.config.repo]);
 
   const fetchPRs = useCallback(async (o: string, r: string) => {
     setLoading(true);
@@ -60,32 +67,14 @@ export default function GitHubPlugin({ context }: { context: PluginContext }) {
     }
   }, []);
 
-  // Load saved config on mount; fetch immediately if config exists
+  // Fetch on initial load if already configured
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      const dir = await join(context.workspacePath, "github");
-      await mkdir(dir, { recursive: true });
-      const file = await join(dir, `${context.cardId}.json`);
-      configFileRef.current = file;
-      try {
-        const text = await readTextFile(file);
-        const config = JSON.parse(text) as Config;
-        if (!cancelled) {
-          setOwner(config.owner);
-          setRepo(config.repo);
-          setConfigured(true);
-          await fetchPRs(config.owner, config.repo);
-        }
-      } catch {
-        // No config yet — show setup screen
-      }
+    if (savedOwner && savedRepo) {
+      void fetchPRs(savedOwner, savedRepo);
     }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [context.workspacePath, context.cardId, fetchPRs]);
+    // Only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-refresh every 5 minutes
   useEffect(() => {
@@ -94,21 +83,18 @@ export default function GitHubPlugin({ context }: { context: PluginContext }) {
     return () => clearInterval(id);
   }, [configured, showSettings, owner, repo, fetchPRs]);
 
-  const handleConnect = useCallback(async () => {
+  const handleConnect = useCallback(() => {
     const o = owner.trim();
     const r = repo.trim();
     if (!o || !r) return;
-    if (!configFileRef.current) return;
-    await writeTextFile(
-      configFileRef.current,
-      JSON.stringify({ owner: o, repo: r }),
-    );
+    // Persist to workspace store — replaces file-based config
+    context.setConfig({ owner: o, repo: r });
     setOwner(o);
     setRepo(r);
     setConfigured(true);
     setShowSettings(false);
-    await fetchPRs(o, r);
-  }, [owner, repo, fetchPRs]);
+    void fetchPRs(o, r);
+  }, [owner, repo, fetchPRs, context]);
 
   const minutesAgo =
     lastFetched !== null

@@ -59,3 +59,47 @@ pub fn recover_workspace_store(app: AppHandle) -> Result<String, String> {
         Ok("no-backup".to_string())
     }
 }
+
+/// Copy all `.json` files from `from_dir` to `to_dir`, creating `to_dir` if needed.
+///
+/// Does NOT delete source files — safe migration that can be reverted.
+/// If `to_dir` already exists and a destination file already exists, it is
+/// overwritten (idempotent — re-enabling sync after a restart is safe).
+///
+/// Returns `Ok(())` on success, or an error string on failure.
+#[tauri::command]
+pub fn migrate_store_path(from_dir: String, to_dir: String) -> Result<(), String> {
+    let src = PathBuf::from(&from_dir);
+    let dst = PathBuf::from(&to_dir);
+
+    if !src.exists() {
+        // Nothing to migrate yet — first launch before any store files exist.
+        return Ok(());
+    }
+    if !src.is_dir() {
+        return Err(format!("Source path is not a directory: {from_dir}"));
+    }
+
+    std::fs::create_dir_all(&dst)
+        .map_err(|e| format!("Failed to create destination directory {to_dir}: {e}"))?;
+
+    let entries = std::fs::read_dir(&src)
+        .map_err(|e| format!("Failed to read source directory {from_dir}: {e}"))?;
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_file() {
+            // Only migrate JSON store files.
+            if path.extension().and_then(|ext| ext.to_str()) == Some("json") {
+                if let Some(filename) = path.file_name() {
+                    let dest_file = dst.join(filename);
+                    std::fs::copy(&path, &dest_file).map_err(|e| {
+                        format!("Failed to copy {filename:?}: {e}")
+                    })?;
+                }
+            }
+        }
+    }
+
+    Ok(())
+}

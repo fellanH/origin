@@ -15,6 +15,17 @@ import type React from "react";
 export interface OriginChannelMap {
   /** Fired whenever the system theme switches. */
   "com.origin.app:theme-changed": { theme: "light" | "dark" };
+  /**
+   * Fired when the active path changes in the workspace — e.g. a file is
+   * selected in FileTree. Monaco (and any other subscriber) opens the path.
+   */
+  "origin:workspace/active-path": {
+    /** Absolute filesystem path. */
+    path: string;
+    type: "file" | "directory";
+    /** Plugin ID of the publisher, e.g. "com.origin.filetree". */
+    source: string;
+  };
 }
 
 /** Pub/sub bus injected into every plugin via PluginContext. */
@@ -72,6 +83,21 @@ export interface PluginContext {
   theme: "light" | "dark";
   /** Inter-plugin communication bus scoped to this workspace */
   bus: PluginBus;
+  /**
+   * Per-instance plugin configuration. Persisted alongside the card in the
+   * workspace store. Use setConfig to update — changes are shallow-merged.
+   *
+   * @example
+   * const url = (context.config.url as string) ?? "http://localhost:3000";
+   */
+  config: Record<string, unknown>;
+  /**
+   * Shallow-merge a patch into this card's config. Persisted automatically.
+   *
+   * @example
+   * context.setConfig({ url: "http://localhost:4000" });
+   */
+  setConfig: (patch: Record<string, unknown>) => void;
   /**
    * Subscribe to a panel lifecycle event.
    * Returns an unsubscribe function — call it in your plugin's cleanup.

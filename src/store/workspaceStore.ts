@@ -67,6 +67,11 @@ type WorkspaceActions = {
   setSplitAutoLaunch: (v: boolean) => void;
   setZoomedNodeId: (id: string | null) => void;
   /**
+   * Shallow-merge a config patch into the leaf node's config.
+   * No-op if the node does not exist or is not a leaf.
+   */
+  setPluginConfig: (cardId: CardId, patch: Record<string, unknown>) => void;
+  /**
    * Ensure every loaded workspace has a bus instance.
    * Call once after tauriHandler.start() resolves to reconstruct buses
    * for workspaces that were deserialized from disk (functions are not persisted).
@@ -558,6 +563,15 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
       setZoomedNodeId: (id) =>
         set((draft) => {
           draft.zoomedNodeId = id;
+        }),
+
+      setPluginConfig: (cardId, patch) =>
+        set((draft) => {
+          const ws = getActiveWs(draft);
+          if (!ws) return;
+          const node = ws.nodes[cardId];
+          if (!node || node.type !== "leaf") return;
+          node.config = { ...node.config, ...patch };
         }),
 
       hydrateBuses: () =>
