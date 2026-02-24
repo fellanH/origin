@@ -1,7 +1,8 @@
 /**
- * Plugin registry — v2 tests
+ * Plugin registry — L1-only tests
  *
  * Verifies getPluginRegistry() shape and initRegistry() with mocked invoke.
+ * All plugins are L1 (sandboxed iframes) — there is no L0 bundled tier.
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
@@ -11,29 +12,22 @@ vi.mock("@tauri-apps/api/core", () => ({
   invoke: vi.fn().mockResolvedValue([]),
 }));
 
-// Mock bundled plugin import
-vi.mock("@origin/notepad", () => ({
-  default: () => null,
-  manifest: { id: "com.origin.notepad", name: "Notepad", version: "0.1.0" },
-}));
-
 import { getPluginRegistry, getPlugin, initRegistry } from "./registry";
 import { invoke } from "@tauri-apps/api/core";
 
 const REVERSE_DOMAIN_RE = /^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*){2,}$/;
 
 describe("getPluginRegistry", () => {
-  it("returns an array", () => {
+  it("returns an empty array before initRegistry is called", () => {
     const registry = getPluginRegistry();
     expect(Array.isArray(registry)).toBe(true);
   });
 
-  it("has an entry for 'com.origin.notepad'", () => {
-    const registry = getPluginRegistry();
-    expect(registry.some((e) => e.id === "com.origin.notepad")).toBe(true);
-  });
-
-  it("all ids match reverse-domain format", () => {
+  it("all ids match reverse-domain format after initRegistry", async () => {
+    vi.mocked(invoke).mockResolvedValueOnce([
+      { id: "com.origin.notepad", name: "Notepad", version: "0.1.0" },
+    ]);
+    await initRegistry();
     for (const entry of getPluginRegistry()) {
       expect(
         entry.id,
@@ -42,7 +36,11 @@ describe("getPluginRegistry", () => {
     }
   });
 
-  it("all entries have a load function returning a Promise", () => {
+  it("all entries have a load function returning a Promise", async () => {
+    vi.mocked(invoke).mockResolvedValueOnce([
+      { id: "com.origin.notepad", name: "Notepad", version: "0.1.0" },
+    ]);
+    await initRegistry();
     for (const entry of getPluginRegistry()) {
       expect(
         typeof entry.load,
@@ -58,18 +56,6 @@ describe("getPlugin", () => {
   it("returns undefined for an unknown id", () => {
     expect(getPlugin("com.unknown.plugin")).toBeUndefined();
   });
-
-  it("returns the entry for 'com.origin.notepad'", () => {
-    const entry = getPlugin("com.origin.notepad");
-    expect(entry).toBeDefined();
-    expect(entry?.id).toBe("com.origin.notepad");
-    expect(entry?.name).toBe("Notepad");
-  });
-
-  it("bundled entry has tier 'L0'", () => {
-    const entry = getPlugin("com.origin.notepad");
-    expect(entry?.tier).toBe("L0");
-  });
 });
 
 describe("initRegistry", () => {
@@ -77,7 +63,7 @@ describe("initRegistry", () => {
     vi.clearAllMocks();
   });
 
-  it("appends v2 plugins from invoke result", async () => {
+  it("populates registry from invoke result", async () => {
     vi.mocked(invoke).mockResolvedValueOnce([
       { id: "com.example.myplugin", name: "My Plugin", version: "1.0.0" },
     ]);
@@ -86,35 +72,21 @@ describe("initRegistry", () => {
 
     const registry = getPluginRegistry();
     expect(registry.some((e) => e.id === "com.example.myplugin")).toBe(true);
-    expect(registry.some((e) => e.id === "com.origin.notepad")).toBe(true);
   });
 
-  it("does not duplicate v1 bundled plugins even if returned by invoke", async () => {
+  it("replaces registry on each call", async () => {
     vi.mocked(invoke).mockResolvedValueOnce([
       { id: "com.origin.notepad", name: "Notepad", version: "0.1.0" },
     ]);
 
     await initRegistry();
 
-    const notepadEntries = getPluginRegistry().filter(
-      (e) => e.id === "com.origin.notepad",
+    expect(getPluginRegistry().some((e) => e.id === "com.origin.notepad")).toBe(
+      true,
     );
-    expect(notepadEntries).toHaveLength(1);
   });
 
-  it("v2 entry load function uses plugin:// scheme", async () => {
-    vi.mocked(invoke).mockResolvedValueOnce([
-      { id: "com.example.test", name: "Test", version: "1.0.0" },
-    ]);
-
-    await initRegistry();
-
-    const entry = getPlugin("com.example.test");
-    expect(entry).toBeDefined();
-    expect(typeof entry!.load).toBe("function");
-  });
-
-  it("v2 entries have tier 'L1'", async () => {
+  it("all entries have tier 'L1'", async () => {
     vi.mocked(invoke).mockResolvedValueOnce([
       {
         id: "com.example.community",
@@ -127,5 +99,17 @@ describe("initRegistry", () => {
 
     const entry = getPlugin("com.example.community");
     expect(entry?.tier).toBe("L1");
+  });
+
+  it("entry load function uses plugin:// scheme", async () => {
+    vi.mocked(invoke).mockResolvedValueOnce([
+      { id: "com.example.test", name: "Test", version: "1.0.0" },
+    ]);
+
+    await initRegistry();
+
+    const entry = getPlugin("com.example.test");
+    expect(entry).toBeDefined();
+    expect(typeof entry!.load).toBe("function");
   });
 });

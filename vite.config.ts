@@ -64,22 +64,13 @@ export default defineConfig({
 
   resolve: {
     alias: {
-      // Plugin API type contract
+      // Plugin API type contract — keep until @origin/api imports are migrated to @origin-cards/api
       "@origin/api": path.resolve(__dirname, "packages/api/src"),
-      // Plugin workspace packages — activated in issue #12
-      "@origin/notepad": path.resolve(__dirname, "packages/notepad/src"),
-      // SDK for L1 iframe plugins
-      "@origin/sdk": path.resolve(__dirname, "packages/sdk/src/index.ts"),
       // Internal path alias
       "@": path.resolve(__dirname, "src"),
     },
     // Prevents "invalid hook call" if a plugin package resolves its own React copy
     dedupe: ["react", "react-dom"],
-  },
-
-  // Pre-bundle dynamically imported plugins to prevent page reload on first load in dev
-  optimizeDeps: {
-    include: ["@origin/notepad", "@origin/sdk"],
   },
 
   clearScreen: false,
