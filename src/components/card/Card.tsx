@@ -1,4 +1,5 @@
 import { useRef, useEffect, useMemo, useCallback } from "react";
+import { invoke as tauriInvoke } from "@tauri-apps/api/core";
 import {
   useWorkspaceStore,
   selectActiveWorkspace,
@@ -56,6 +57,27 @@ function Card({ nodeId }: Props) {
     [nodeId, setPluginConfig],
   );
 
+  // invoke: L0 plugins call Tauri directly; L1 plugins use the postMessage bridge.
+  const invoke = useCallback(
+    <T = unknown,>(
+      command: string,
+      args?: Record<string, unknown>,
+    ): Promise<T> => tauriInvoke<T>(command, args),
+    [],
+  );
+
+  // onEvent: L0 plugins have direct Tauri access so this is a no-op stub;
+  // L1 plugins use the postMessage bridge in IframePluginHost.
+  const onEvent = useCallback(
+    (
+      _event: string,
+      _args: Record<string, unknown>,
+      _handler: (payload: unknown) => void,
+    ): (() => void) =>
+      () => {},
+    [],
+  );
+
   const pluginContext = useMemo<Omit<PluginContext, "on">>(
     () => ({
       cardId: nodeId,
@@ -64,8 +86,10 @@ function Card({ nodeId }: Props) {
       bus,
       config: pluginConfig,
       setConfig,
+      invoke,
+      onEvent,
     }),
-    [nodeId, appDataDir, theme, bus, pluginConfig, setConfig],
+    [nodeId, appDataDir, theme, bus, pluginConfig, setConfig, invoke, onEvent],
   );
 
   const divRef = useRef<HTMLDivElement>(null);
