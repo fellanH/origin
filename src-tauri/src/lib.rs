@@ -12,6 +12,7 @@ pub fn run() {
                 .autosave(std::time::Duration::from_secs(300))
                 .build(),
         )
+        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .register_uri_scheme_protocol("plugin", plugin_manager::plugin_protocol_handler)
         .setup(|app| {
