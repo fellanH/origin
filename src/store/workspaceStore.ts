@@ -11,6 +11,12 @@ import { panelRefs } from "@/lib/panelRefs";
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type WorkspaceState = {
+  /**
+   * Schema version for the persisted JSON shape.
+   * - undefined / missing: treated as v0 (pre-versioning; no migration required yet)
+   * - 1: current shape (added in #112)
+   */
+  version: 1;
   workspaces: Workspace[];
   activeWorkspaceId: WorkspaceId;
   /** Workspace that was active before the current one; enables CMD+Opt+Tab toggle */
@@ -103,6 +109,7 @@ const INITIAL_ID: WorkspaceId = "default";
 export const useWorkspaceStore = create<WorkspaceStore>()(
   devtools(
     immer((set) => ({
+      version: 1,
       workspaces: [emptyWorkspace(INITIAL_ID, "Workspace 1")],
       activeWorkspaceId: INITIAL_ID,
       lastWorkspaceId: null,
@@ -574,6 +581,7 @@ export const tauriHandler = createTauriStore(
   useWorkspaceStore as any,
   {
     filterKeys: [
+      "version",
       "workspaces",
       "activeWorkspaceId",
       "lastWorkspaceId",
