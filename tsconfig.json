@@ -24,7 +24,7 @@
       "@origin/hello": ["./packages/hello/src"],
       "@origin/hello/*": ["./packages/hello/src/*"],
       "@origin/notepad": ["./packages/notepad/src"],
-      "@origin/notepad/*": ["./packages/notepad/src/*"],
+      "@origin/notepad/*": ["./packages/notepad/src/*"]
     }
   },
   "include": ["src"],
