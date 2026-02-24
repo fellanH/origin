@@ -33,10 +33,7 @@ function App() {
       }
       // Any keypress while overlay is open dismisses it (except modifier-only keys)
       if (showOverlay && !e.metaKey && !e.altKey && !e.ctrlKey) {
-        if (
-          e.key === "Escape" ||
-          (!e.key.startsWith("F") && e.key !== "Tab")
-        ) {
+        if (e.key === "Escape" || (!e.key.startsWith("F") && e.key !== "Tab")) {
           setShowOverlay(false);
         }
       }

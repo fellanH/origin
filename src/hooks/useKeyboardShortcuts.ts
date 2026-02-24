@@ -13,6 +13,24 @@ export function useKeyboardShortcuts(): void {
 
       // ── CMD+Opt+… shortcuts ──────────────────────────────────────────────
       if (e.altKey) {
+        // ── CMD+Shift+Opt+… : swap focused panel in a direction ────────────
+        if (e.shiftKey) {
+          if (e.code === "KeyH" || e.code === "ArrowLeft") {
+            e.preventDefault();
+            useWorkspaceStore.getState().swapPanel("left");
+          } else if (e.code === "KeyL" || e.code === "ArrowRight") {
+            e.preventDefault();
+            useWorkspaceStore.getState().swapPanel("right");
+          } else if (e.code === "KeyK" || e.code === "ArrowUp") {
+            e.preventDefault();
+            useWorkspaceStore.getState().swapPanel("up");
+          } else if (e.code === "KeyJ" || e.code === "ArrowDown") {
+            e.preventDefault();
+            useWorkspaceStore.getState().swapPanel("down");
+          }
+          return;
+        }
+
         if (e.code === "Tab") {
           // CMD+Opt+Tab: toggle last workspace
           e.preventDefault();
