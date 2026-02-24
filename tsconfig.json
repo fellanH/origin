@@ -21,7 +21,9 @@
       "@origin/api": ["./plugins/api/src"],
       "@origin/api/*": ["./plugins/api/src/*"],
       "@origin/hello": ["./plugins/hello/src"],
-      "@origin/hello/*": ["./plugins/hello/src/*"]
+      "@origin/hello/*": ["./plugins/hello/src/*"],
+      "@origin/github": ["./plugins/github/src"],
+      "@origin/github/*": ["./plugins/github/src/*"]
     }
   },
   "include": ["src"],
