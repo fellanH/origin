@@ -16,6 +16,11 @@ const BUNDLED: Record<
     name: "GitHub PRs",
     icon: "🐙",
   },
+  "com.origin.terminal": {
+    load: () => import("@origin/terminal") as Promise<PluginModule>,
+    name: "Terminal",
+    icon: ">_",
+  },
 };
 
 export interface RegistryEntry {

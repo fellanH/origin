@@ -1,10 +1,14 @@
 mod plugin_manager;
+mod pty;
 
 use tauri::{menu::{MenuBuilder, MenuItemBuilder}, Emitter, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let _ = fix_path_env::fix();
+
     tauri::Builder::default()
+        .manage(pty::PtyManager::new())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_window_state::Builder::new().build())
         .plugin(
@@ -35,6 +39,10 @@ pub fn run() {
             plugin_manager::list_installed_plugins,
             plugin_manager::install_plugin,
             plugin_manager::restart_app,
+            pty::pty_spawn,
+            pty::pty_write,
+            pty::pty_resize,
+            pty::pty_destroy,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

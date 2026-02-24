@@ -1,6 +1,7 @@
 {
   "plugins": [
     { "id": "com.origin.hello", "package": "@origin/hello" },
-    { "id": "com.origin.github", "package": "@origin/github" }
+    { "id": "com.origin.github", "package": "@origin/github" },
+    { "id": "com.origin.terminal", "package": "@origin/terminal" }
   ]
 }
