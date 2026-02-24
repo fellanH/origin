@@ -39,10 +39,10 @@ npm run tauri build
 ```
 src/          React 19 frontend (components, store, plugins, types)
 src-tauri/    Rust/Tauri backend (commands, capabilities, config)
-plugins/      @origin/* plugin packages (npm workspaces)
+packages/     @origin/* plugin packages (npm workspaces)
   api/        @origin/api — plugin type contract (PluginManifest, PluginContext)
   hello/      @origin/hello — reference plugin implementation
-  template/   @origin/template — scaffold for new plugin authors
+  template/   @origin/template — scaffold for new plugin authors (deprecated)
 docs/         Spec, research, SOPs, standards
 ```
 
@@ -60,7 +60,7 @@ docs/         Spec, research, SOPs, standards
 
 ## Plugin system
 
-Plugins are npm workspace packages under `plugins/`. Each plugin:
+Plugins are npm workspace packages under `packages/`. Each plugin:
 
 - Depends on `@origin/api` for type contracts (`PluginManifest`, `PluginContext`)
 - Exports a `manifest` and a default React component
@@ -79,7 +79,7 @@ To build your own plugin, start from the [origin-plugin-starter](https://github.
 | Styling      | Tailwind CSS 4 + shadcn/ui          | v4 only — breaking changes from v3                             |
 | Panel layout | `react-resizable-panels` v4         | v4 renames several APIs                                        |
 | State        | Zustand v5 + `@tauri-store/zustand` | File-backed; not localStorage                                  |
-| Build        | Vite 7, npm workspaces              | Plugins in `plugins/`                                          |
+| Build        | Vite 7, npm workspaces              | Plugins in `packages/`                                         |
 
 ## Documentation
 

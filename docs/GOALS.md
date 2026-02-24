@@ -23,7 +23,7 @@ should be an Origin plugin. The goal is 50+ quality community plugins.
 
 **3. Exceptional plugin author DX**
 Writing a plugin should feel like writing a React component — because it is.
-`@origin/api` provides the contract. `plugins/template` provides the scaffold.
+`@origin/api` provides the contract. `packages/template` provides the scaffold.
 The SOP gets you from zero to running in under 10 minutes. If that's not
 true, it's a bug.
 

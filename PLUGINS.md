@@ -4,9 +4,9 @@ A curated list of plugins built for [Origin](https://github.com/fellanH/origin).
 
 ## Official
 
-| Plugin                                                             | Description                                                       |
-| ------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| [hello](https://github.com/fellanH/origin/tree/main/plugins/hello) | Reference plugin — demonstrates the full plugin API with comments |
+| Plugin                                                              | Description                                                       |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [hello](https://github.com/fellanH/origin/tree/main/packages/hello) | Reference plugin — demonstrates the full plugin API with comments |
 
 ## Community
 
