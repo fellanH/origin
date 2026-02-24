@@ -1,9 +1,7 @@
 import { useEffect } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { appDataDir } from "@tauri-apps/api/path";
 import {
   useWorkspaceStore,
-  selectActiveWorkspace,
 } from "@/store/workspaceStore";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import CardLayout from "@/components/CardLayout";
@@ -18,24 +16,6 @@ function App() {
   useEffect(() => {
     appDataDir().then(setAppDataDir);
   }, [setAppDataDir]);
-
-  useEffect(() => {
-    const win = getCurrentWindow();
-    let unlisten: (() => void) | undefined;
-    win
-      .onCloseRequested((e) => {
-        const state = useWorkspaceStore.getState();
-        const ws = selectActiveWorkspace(state);
-        if (ws.rootId !== null) {
-          e.preventDefault(); // panels open — block close
-        }
-        // rootId is null → allow close → traffic lights work
-      })
-      .then((fn) => {
-        unlisten = fn;
-      });
-    return () => unlisten?.();
-  }, []);
 
   return (
     <div className="flex h-screen flex-col">
