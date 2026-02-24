@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { cn } from "@/lib/utils";
 import SavedConfigMenu from "@/components/SavedConfigMenu";
@@ -32,10 +33,19 @@ export default function TabBar() {
     setEditingId(null);
   }
 
+  function handleMouseDown(e: React.MouseEvent) {
+    // Only left-button drags on non-input elements (inputs need text selection)
+    if (e.button !== 0) return;
+    if ((e.target as HTMLElement).closest("input, textarea")) return;
+    getCurrentWindow()
+      .startDragging()
+      .catch(() => {});
+  }
+
   return (
     <div
       className="flex h-[38px] shrink-0 items-center pl-[80px]"
-      data-tauri-drag-region
+      onMouseDown={handleMouseDown}
     >
       {workspaces.map((ws) => {
         const isActive = ws.id === activeWorkspaceId;
@@ -99,7 +109,7 @@ export default function TabBar() {
 
       <SavedConfigMenu />
       <PluginBrowser />
-      <div className="flex-1 self-stretch" data-tauri-drag-region />
+      <div className="flex-1 self-stretch" />
     </div>
   );
 }
