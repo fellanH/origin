@@ -46,6 +46,14 @@ Native browser feature. An import map defines `"my-plugin" → "http://localhost
 - **Vite problem:** Vite resolves all bare specifiers at build time and does not pass import maps through. Use `vite-plugin-import-maps` to inject maps into built HTML, but you lose Vite's module graph for those imports.
 - **Best fit for Tauri:** Generate import map in Rust at app startup from installed plugin metadata → inject into webview HTML before load
 
+#### WKWebView import map compatibility — macOS Ventura 13.0 minimum
+
+> **macOS version requirement (closes #115):** Import maps require **WebKit 616.1 / Safari 16.4+**, which ships with **macOS Ventura 13.0**. Users on macOS Monterey 12.x (Safari < 16.4) will silently fail to load v2 community plugins — the import map spec is present in the HTML but bare-specifier `import()` calls fall through to a 404.
+>
+> - v1 bundled plugins (build-time Vite imports) are **not affected** — they do not use import maps.
+> - A startup OS version check (`tauri::api::os::os_version()`) is a future TODO (#115) to warn Monterey users.
+> - Plugin authors targeting the marketplace must document macOS 13.0 Ventura as their minimum user requirement.
+
 ### ESM CDN (esm.sh, jspm)
 
 Not suitable for a local-first desktop app. Network dependency is a hard constraint. Only viable if self-hosting an `esm.sh` instance locally. Skip.
