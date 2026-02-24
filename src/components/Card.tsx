@@ -6,7 +6,6 @@ import {
 import EmptyState from "@/components/EmptyState";
 import PluginHost from "@/components/PluginHost";
 import IframePluginHost from "@/components/IframePluginHost";
-import { pluginBus } from "@/lib/pluginBus";
 import { getPlugin } from "@/plugins/registry";
 import { cn } from "@/lib/utils";
 import { useSystemTheme } from "@/hooks/useSystemTheme";
@@ -29,6 +28,9 @@ function Card({ nodeId }: Props) {
   const launcherOpenForNodeId = useWorkspaceStore(
     (s) => s.launcherOpenForNodeId,
   );
+  // Per-workspace bus: isolates events between workspace tabs
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const bus = useWorkspaceStore((s) => s.buses[s.activeWorkspaceId])!;
 
   const pluginId = node?.type === "leaf" ? node.pluginId : null;
   const tier = pluginId ? (getPlugin(pluginId)?.tier ?? "L0") : null;
@@ -39,9 +41,9 @@ function Card({ nodeId }: Props) {
       cardId: nodeId,
       workspacePath: appDataDir,
       theme,
-      bus: pluginBus,
+      bus,
     }),
-    [nodeId, appDataDir, theme],
+    [nodeId, appDataDir, theme, bus],
   );
 
   const divRef = useRef<HTMLDivElement>(null);

@@ -4,6 +4,8 @@ import { immer } from "zustand/middleware/immer";
 import { createTauriStore } from "@tauri-store/zustand";
 import type { CardId, CardLeaf, CardSplit } from "@/types/card";
 import type { Workspace, WorkspaceId, SavedConfig } from "@/types/workspace";
+import type { PluginBus } from "@origin/api";
+import { createPluginBus } from "@/lib/pluginBus";
 import { panelRefs } from "@/lib/panelRefs";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -17,6 +19,12 @@ type WorkspaceState = {
   pendingSaveName: boolean;
   /** Resolved at startup via appDataDir() — never persisted */
   appDataDir: string;
+  /**
+   * Per-workspace pub/sub bus instances. Keyed by WorkspaceId.
+   * NOT persisted — buses are recreated on startup via hydrateBuses().
+   * Buses are created in addWorkspace/loadConfig and removed in closeWorkspace.
+   */
+  buses: Record<WorkspaceId, PluginBus>;
   /**
    * When set, the EmptyState (Launcher) in the matching card will auto-open
    * its plugin picker. Cleared once the launcher has acknowledged it.
@@ -52,6 +60,12 @@ type WorkspaceActions = {
   clearLauncherForNode: (nodeId: string) => void;
   setSplitAutoLaunch: (v: boolean) => void;
   setZoomedNodeId: (id: string | null) => void;
+  /**
+   * Ensure every loaded workspace has a bus instance.
+   * Call once after tauriHandler.start() resolves to reconstruct buses
+   * for workspaces that were deserialized from disk (functions are not persisted).
+   */
+  hydrateBuses: () => void;
 };
 
 export type WorkspaceStore = WorkspaceState & WorkspaceActions;
@@ -98,6 +112,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
       launcherOpenForNodeId: null,
       splitAutoLaunch: true,
       zoomedNodeId: null,
+      buses: { [INITIAL_ID]: createPluginBus() },
 
       // ── Tab actions ──────────────────────────────────────────────────────
 
@@ -107,6 +122,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           const id = crypto.randomUUID();
           draft.workspaces.push(emptyWorkspace(id, name));
           draft.activeWorkspaceId = id;
+          draft.buses[id] = createPluginBus();
         }),
 
       closeWorkspace: (id) =>
@@ -119,11 +135,14 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
             const newId = crypto.randomUUID();
             draft.workspaces = [emptyWorkspace(newId, "Workspace 1")];
             draft.activeWorkspaceId = newId;
+            delete draft.buses[id];
+            draft.buses[newId] = createPluginBus();
             return;
           }
 
           const wasActive = draft.activeWorkspaceId === id;
           draft.workspaces.splice(idx, 1);
+          delete draft.buses[id];
 
           if (wasActive) {
             // Prefer previous tab; fall back to the tab now at idx (next)
@@ -413,6 +432,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
             zoomedCardId: null,
           });
           draft.activeWorkspaceId = newId;
+          draft.buses[newId] = createPluginBus();
         }),
 
       deleteConfig: (configId) =>
@@ -492,6 +512,15 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
       setZoomedNodeId: (id) =>
         set((draft) => {
           draft.zoomedNodeId = id;
+        }),
+
+      hydrateBuses: () =>
+        set((draft) => {
+          for (const ws of draft.workspaces) {
+            if (!draft.buses[ws.id]) {
+              draft.buses[ws.id] = createPluginBus();
+            }
+          }
         }),
     })),
     { name: "WorkspaceStore" },

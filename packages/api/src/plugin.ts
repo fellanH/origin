@@ -1,13 +1,38 @@
 import type React from "react";
 
+/**
+ * Open-ended channel registry. Each plugin extends this via declaration merging
+ * in its own `channels.d.ts` — no central file needed.
+ *
+ * @example
+ * // packages/filetree/src/channels.d.ts
+ * declare module "@origin/api" {
+ *   interface OriginChannelMap {
+ *     "com.origin.filetree:file-selected": { path: string; isDir: boolean };
+ *   }
+ * }
+ */
+export interface OriginChannelMap {
+  /** Fired whenever the system theme switches. */
+  "com.origin.app:theme-changed": { theme: "light" | "dark" };
+}
+
 /** Pub/sub bus injected into every plugin via PluginContext. */
 export interface PluginBus {
   /** Broadcast a value on a channel. Cached as the last value. */
-  publish(channel: string, payload: unknown): void;
+  publish<K extends keyof OriginChannelMap>(
+    channel: K,
+    payload: OriginChannelMap[K],
+  ): void;
   /** Subscribe to a channel. Returns an unsubscribe function. */
-  subscribe(channel: string, handler: (payload: unknown) => void): () => void;
+  subscribe<K extends keyof OriginChannelMap>(
+    channel: K,
+    handler: (payload: OriginChannelMap[K]) => void,
+  ): () => void;
   /** Synchronously read the last published value on a channel. */
-  read(channel: string): unknown;
+  read<K extends keyof OriginChannelMap>(
+    channel: K,
+  ): OriginChannelMap[K] | undefined;
 }
 
 /** Metadata declared by every plugin. Shown in the Launcher UI. */
@@ -38,7 +63,7 @@ export interface PluginContext {
   workspacePath: string;
   /** Current app theme */
   theme: "light" | "dark";
-  /** Inter-plugin communication bus */
+  /** Inter-plugin communication bus scoped to this workspace */
   bus: PluginBus;
   /**
    * Subscribe to a panel lifecycle event.
