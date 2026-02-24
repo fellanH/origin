@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,8 @@ type FetchState =
   | { status: "loading" }
   | { status: "ok"; plugins: RegistryPlugin[] }
   | { status: "error" };
+
+type InstallState = "idle" | "installing" | "success" | "error";
 
 const STEPS = [
   {
@@ -106,6 +109,18 @@ export default function PluginBrowser() {
 // ─── Discover tab ─────────────────────────────────────────────────────────────
 
 function DiscoverTab({ fetchState }: { fetchState: FetchState }) {
+  const [installStates, setInstallStates] = useState<
+    Record<string, InstallState>
+  >({});
+
+  function handleInstall(plugin: RegistryPlugin) {
+    const pkg = plugin.package ?? plugin.id;
+    setInstallStates((s) => ({ ...s, [plugin.id]: "installing" }));
+    invoke<string>("npm_install_plugin", { package: pkg })
+      .then(() => setInstallStates((s) => ({ ...s, [plugin.id]: "success" })))
+      .catch(() => setInstallStates((s) => ({ ...s, [plugin.id]: "error" })));
+  }
+
   if (fetchState.status === "idle" || fetchState.status === "loading") {
     return (
       <div className="space-y-3">
@@ -135,13 +150,28 @@ function DiscoverTab({ fetchState }: { fetchState: FetchState }) {
   return (
     <div className="space-y-2">
       {fetchState.plugins.map((plugin) => (
-        <PluginCard key={plugin.id} plugin={plugin} />
+        <PluginCard
+          key={plugin.id}
+          plugin={plugin}
+          installState={installStates[plugin.id] ?? "idle"}
+          onInstall={handleInstall}
+        />
       ))}
     </div>
   );
 }
 
-function PluginCard({ plugin }: { plugin: RegistryPlugin }) {
+interface PluginCardProps {
+  plugin: RegistryPlugin;
+  installState: InstallState;
+  onInstall: (plugin: RegistryPlugin) => void;
+}
+
+function PluginCard({ plugin, installState, onInstall }: PluginCardProps) {
+  const isInstalling = installState === "installing";
+  const isSuccess = installState === "success";
+  const isError = installState === "error";
+
   return (
     <div className="flex items-start gap-3 rounded-lg border border-border p-3">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-muted text-xl">
@@ -151,35 +181,54 @@ function PluginCard({ plugin }: { plugin: RegistryPlugin }) {
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-1.5">
           <span className="text-sm font-medium">{plugin.name}</span>
-          <span className="text-xs text-muted-foreground">
-            v{plugin.version}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            by {plugin.author}
-          </span>
+          <span className="text-xs text-muted-foreground">v{plugin.version}</span>
+          <span className="text-xs text-muted-foreground">by {plugin.author}</span>
         </div>
         <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
           {plugin.description}
         </p>
       </div>
 
-      <div className="flex shrink-0 items-center gap-2">
-        {plugin.github && (
-          <a
-            href={plugin.github}
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs text-muted-foreground hover:text-foreground"
+      <div className="flex shrink-0 flex-col items-end gap-1.5">
+        <div className="flex items-center gap-2">
+          {plugin.github && (
+            <a
+              href={plugin.github}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              GitHub
+            </a>
+          )}
+          <button
+            onClick={() => onInstall(plugin)}
+            disabled={isInstalling || isSuccess}
+            className={cn(
+              "rounded-md px-3 py-1 text-xs transition-colors",
+              isSuccess
+                ? "bg-green-600 text-white opacity-80"
+                : isError
+                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90",
+              (isInstalling || isSuccess) && "cursor-not-allowed",
+            )}
           >
-            GitHub
-          </a>
+            {isInstalling
+              ? "Installing…"
+              : isSuccess
+                ? "✓ Installed"
+                : isError
+                  ? "Retry"
+                  : "Install"}
+          </button>
+        </div>
+        {isSuccess && (
+          <span className="text-xs text-muted-foreground">Restart to activate</span>
         )}
-        <button
-          className="rounded-md bg-primary px-3 py-1 text-xs text-primary-foreground hover:bg-primary/90"
-          onClick={() => console.info("Install:", plugin.id)}
-        >
-          Install
-        </button>
+        {isError && (
+          <span className="text-xs text-destructive">Install failed</span>
+        )}
       </div>
     </div>
   );
