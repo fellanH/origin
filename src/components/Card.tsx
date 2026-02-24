@@ -5,10 +5,10 @@ import {
 } from "@/store/workspaceStore";
 import EmptyState from "@/components/EmptyState";
 import PluginHost from "@/components/PluginHost";
-import type { PluginContext } from "@/types/plugin";
 import { pluginBus } from "@/lib/pluginBus";
 import { cn } from "@/lib/utils";
 import { useSystemTheme } from "@/hooks/useSystemTheme";
+import type { PluginContext } from "@/types/plugin";
 
 interface Props {
   nodeId: string;
@@ -26,7 +26,7 @@ function Card({ nodeId }: Props) {
   const pluginId = node?.type === "leaf" ? node.pluginId : null;
   const theme = useSystemTheme();
 
-  const pluginContext = useMemo<PluginContext>(
+  const pluginContext = useMemo<Omit<PluginContext, "on">>(
     () => ({
       cardId: nodeId,
       workspacePath: appDataDir,
@@ -54,7 +54,7 @@ function Card({ nodeId }: Props) {
       {pluginId === null ? (
         <EmptyState cardId={nodeId} />
       ) : (
-        <PluginHost pluginId={pluginId} context={pluginContext} />
+        <PluginHost pluginId={pluginId} nodeId={nodeId} context={pluginContext} />
       )}
 
       <button
