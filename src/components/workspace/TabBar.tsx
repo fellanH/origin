@@ -3,7 +3,11 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { cn } from "@/lib/utils";
 
-export default function TabBar() {
+type TabBarProps = {
+  onOpenSettings: () => void;
+};
+
+export default function TabBar({ onOpenSettings }: TabBarProps) {
   const workspaces = useWorkspaceStore((s) => s.workspaces);
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
   const addWorkspace = useWorkspaceStore((s) => s.addWorkspace);
@@ -106,6 +110,20 @@ export default function TabBar() {
       </button>
 
       <div className="flex-1 self-stretch" />
+
+      {/* Settings gear — far right, stops drag propagation */}
+      <button
+        tabIndex={-1}
+        aria-label="Open settings"
+        className="flex h-full select-none items-center px-2 text-sm opacity-50 hover:opacity-100"
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpenSettings();
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        ⚙
+      </button>
     </div>
   );
 }
