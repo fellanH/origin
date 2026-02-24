@@ -24,6 +24,9 @@ function Card({ nodeId }: Props) {
   const setFocus = useWorkspaceStore((s) => s.setFocus);
   const closeCard = useWorkspaceStore((s) => s.closeCard);
   const appDataDir = useWorkspaceStore((s) => s.appDataDir);
+  const launcherOpenForNodeId = useWorkspaceStore(
+    (s) => s.launcherOpenForNodeId,
+  );
 
   const pluginId = node?.type === "leaf" ? node.pluginId : null;
   const theme = useSystemTheme();
@@ -54,7 +57,10 @@ function Card({ nodeId }: Props) {
       onClick={() => setFocus(nodeId)}
     >
       {pluginId === null ? (
-        <EmptyState cardId={nodeId} />
+        <EmptyState
+          cardId={nodeId}
+          autoOpen={launcherOpenForNodeId === nodeId}
+        />
       ) : (
         <PluginHost
           pluginId={pluginId}
