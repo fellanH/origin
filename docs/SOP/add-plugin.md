@@ -13,10 +13,12 @@ Adding a new `@origin/*` plugin to the app — whether a first-party plugin or a
 
 There are two plugin execution tiers:
 
-| Tier   | Who                     | Loading                                                  | Isolation                    | Lifecycle events                         |
-| ------ | ----------------------- | -------------------------------------------------------- | ---------------------------- | ---------------------------------------- |
-| **L0** | First-party (this repo) | Build-time Vite dynamic import (static literal required) | None — runs in main app tree | Full (`focus`, `blur`, `resize`, `zoom`) |
-| **L1** | Community / marketplace | Runtime via `plugin://` URI scheme into sandboxed iframe | Null-origin iframe           | None (iframe boundary)                   |
+| Tier   | Who                     | Loading                                                  | Isolation                    | Lifecycle events                         | Minimum macOS        |
+| ------ | ----------------------- | -------------------------------------------------------- | ---------------------------- | ---------------------------------------- | -------------------- |
+| **L0** | First-party (this repo) | Build-time Vite dynamic import (static literal required) | None — runs in main app tree | Full (`focus`, `blur`, `resize`, `zoom`) | macOS 10.15 Catalina |
+| **L1** | Community / marketplace | Runtime via `plugin://` URI scheme into sandboxed iframe | Null-origin iframe           | None (iframe boundary)                   | macOS 13.0 Ventura   |
+
+> **L1 OS requirement:** L1 marketplace plugins use ES import maps injected into the WKWebView. Import maps require **WebKit 616.1 / Safari 16.4+**, which ships with **macOS Ventura 13.0**. Users on macOS Monterey 12.x will silently fail to load L1 plugins. See [issue #115](https://github.com/fellanH/origin/issues/115) and `docs/research/vite-plugin-loading.md` — WKWebView import map compatibility section.
 
 This SOP covers **L0 plugins**. L1 plugin authors use `@origin/sdk` (`usePluginContext`, `useBusChannel`) instead of `PluginContext` directly — they do not need to touch the core repo.
 

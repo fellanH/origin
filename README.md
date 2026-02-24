@@ -21,6 +21,15 @@ Key properties:
 - Node.js 20+
 - macOS (primary target; Tauri 2 desktop)
 
+### macOS version requirements
+
+| Feature                              | Minimum macOS        | Reason                                                     |
+| ------------------------------------ | -------------------- | ---------------------------------------------------------- |
+| Core app (v1 bundled plugins)        | macOS 10.15 Catalina | Tauri 2 minimum                                            |
+| Marketplace / community plugins (v2) | macOS 13.0 Ventura   | Import maps require WebKit 616.1 / Safari 16.4+ (Ventura+) |
+
+Users on macOS Monterey 12.x can run the app and all bundled plugins (notepad, terminal, file tree, etc.), but v2 community plugins loaded from the marketplace will silently fail to resolve — import maps are not supported in Safari < 16.4.
+
 ## Getting started
 
 ```bash

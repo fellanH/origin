@@ -8,6 +8,11 @@ use tauri::{menu::{MenuBuilder, MenuItemBuilder}, Emitter, Manager};
 pub fn run() {
     let _ = fix_path_env::fix();
 
+    // TODO: #115 — warn users on Monterey that v2 marketplace plugins require macOS 13.0 Ventura.
+    // Import maps (used by L1 plugin loading) need WebKit 616.1 / Safari 16.4+, which ships with
+    // Ventura. On Monterey the import map is injected but bare-specifier import() falls through to
+    // a 404 silently. Use tauri::api::os::os_version() (or the tauri-plugin-os crate) to detect
+    // macOS < 13.0 at startup and emit a user-visible warning before the webview loads.
     tauri::Builder::default()
         .manage(pty::PtyManager::new())
         .plugin(tauri_plugin_updater::Builder::new().build())
