@@ -48,7 +48,7 @@ type WorkspaceActions = {
   setFocus: (cardId: CardId | null) => void;
   moveFocus: (direction: "left" | "right" | "up" | "down") => void;
   swapPanel: (direction: "left" | "right" | "up" | "down") => void;
-  resizeSplit: (splitId: CardId, sizes: [number, number]) => void;
+  resizeSplit: (splitId: CardId, sizes: number[]) => void;
   setPlugin: (cardId: CardId, pluginId: string) => void;
   saveConfig: (name: string) => void;
   loadConfig: (configId: string) => void;
@@ -230,7 +230,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           } else {
             const parent = ws.nodes[parentId];
             if (parent && parent.type === "split") {
-              const idx = parent.childIds.indexOf(cardId) as 0 | 1;
+              const idx = parent.childIds.indexOf(cardId);
               parent.childIds[idx] = newSplitId;
             }
           }
@@ -262,6 +262,27 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           const parent = ws.nodes[parentSplitId];
           if (!parent || parent.type !== "split") return;
 
+          const closedIdx = parent.childIds.indexOf(cardId);
+
+          if (parent.childIds.length > 2) {
+            // N-ary: just remove this child from the split
+            parent.childIds.splice(closedIdx, 1);
+            parent.sizes.splice(closedIdx, 1);
+            delete ws.nodes[cardId];
+            // Focus the adjacent sibling
+            const focusIdx = Math.min(closedIdx, parent.childIds.length - 1);
+            let newFocus = parent.childIds[focusIdx];
+            // Descend to leaf if sibling is a split
+            while (newFocus) {
+              const n = ws.nodes[newFocus];
+              if (!n || n.type === "leaf") break;
+              newFocus = n.childIds[0];
+            }
+            ws.focusedCardId = newFocus ?? null;
+            return;
+          }
+
+          // Binary: collapse the split, promote the sibling
           const siblingId = parent.childIds.find((id) => id !== cardId)!;
           const grandParentId = parent.parentId;
 
@@ -273,7 +294,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           } else {
             const gp = ws.nodes[grandParentId];
             if (gp && gp.type === "split") {
-              const idx = gp.childIds.indexOf(parentSplitId) as 0 | 1;
+              const idx = gp.childIds.indexOf(parentSplitId);
               gp.childIds[idx] = siblingId;
             }
           }
@@ -322,18 +343,21 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
 
             if (orientationMatches) {
               const childIndex = parentNode.childIds.indexOf(currentId);
-              const canMove = wantPrev ? childIndex === 1 : childIndex === 0;
+              const canMove = wantPrev
+                ? childIndex > 0
+                : childIndex < parentNode.childIds.length - 1;
 
               if (canMove) {
                 // Navigate into the sibling subtree, landing on first leaf
                 const siblingRoot = wantPrev
-                  ? parentNode.childIds[0]
-                  : parentNode.childIds[1];
-                let target = siblingRoot;
+                  ? parentNode.childIds[childIndex - 1]
+                  : parentNode.childIds[childIndex + 1];
+                if (!siblingRoot) return;
+                let target: CardId = siblingRoot;
                 while (true) {
                   const t = nodes[target];
                   if (!t || t.type !== "split") break;
-                  target = t.childIds[0];
+                  target = t.childIds[0] ?? target;
                 }
                 ws.focusedCardId = target;
                 return;
@@ -372,13 +396,24 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
 
             if (orientationMatches) {
               const childIndex = parentNode.childIds.indexOf(currentId);
-              const canSwap = wantPrev ? childIndex === 1 : childIndex === 0;
+              const canSwap = wantPrev
+                ? childIndex > 0
+                : childIndex < parentNode.childIds.length - 1;
 
               if (canSwap) {
-                // Swap the two children of the pivot split.
-                // Both subtrees keep their parentId pointing to parentNode —
-                // only the order within childIds changes.
-                parentNode.childIds.reverse();
+                const targetIdx = wantPrev ? childIndex - 1 : childIndex + 1;
+                // Swap both childIds and sizes to keep them in sync
+                [
+                  parentNode.childIds[childIndex],
+                  parentNode.childIds[targetIdx],
+                ] = [
+                  parentNode.childIds[targetIdx]!,
+                  parentNode.childIds[childIndex]!,
+                ];
+                [parentNode.sizes[childIndex], parentNode.sizes[targetIdx]] = [
+                  parentNode.sizes[targetIdx]!,
+                  parentNode.sizes[childIndex]!,
+                ];
                 return;
               }
             }
@@ -464,9 +499,10 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           // This covers all PanelGroups in the current workspace.
           for (const node of Object.values(ws.nodes)) {
             if (node.type !== "split") continue;
-            const [firstId, secondId] = node.childIds;
-            const firstHandle = panelRefs.get(firstId);
-            const secondHandle = panelRefs.get(secondId);
+            const firstId = node.childIds[0];
+            const secondId = node.childIds[1];
+            const firstHandle = firstId ? panelRefs.get(firstId) : undefined;
+            const secondHandle = secondId ? panelRefs.get(secondId) : undefined;
             if (firstHandle && secondHandle) {
               firstHandle.resize("50");
               secondHandle.resize("50");
@@ -484,11 +520,14 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           const parentNode = ws.nodes[parentId];
           if (!parentNode || parentNode.type !== "split") return;
 
-          const [firstId, secondId] = parentNode.childIds;
+          const firstId = parentNode.childIds[0];
+          const secondId = parentNode.childIds[1];
           const isFocusedFirst = firstId === focusedId;
           const focusedHandle = panelRefs.get(focusedId);
           const siblingId = isFocusedFirst ? secondId : firstId;
-          const siblingHandle = panelRefs.get(siblingId);
+          const siblingHandle = siblingId
+            ? panelRefs.get(siblingId)
+            : undefined;
 
           if (focusedHandle && siblingHandle) {
             focusedHandle.resize("60");

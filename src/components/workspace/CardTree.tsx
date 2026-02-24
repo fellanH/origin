@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import {
   Group,
   Panel as ResizablePanel,
@@ -8,7 +9,7 @@ import {
   selectActiveWorkspace,
 } from "@/store/workspaceStore";
 import { panelRefs } from "@/lib/panelRefs";
-import Card from "./Card";
+import Card from "@/components/card/Card";
 
 interface Props {
   nodeId: string;
@@ -25,40 +26,35 @@ function CardTree({ nodeId }: Props) {
     return <Card nodeId={nodeId} />;
   }
 
-  // node.type === "split"
+  // node.type === "split" — N-ary children
   return (
     <Group
       orientation={node.direction}
       onLayoutChanged={(sizes) => {
-        if (sizes.length === 2) {
-          useWorkspaceStore
-            .getState()
-            .resizeSplit(nodeId, sizes as [number, number]);
+        const sizesArr = Object.values(sizes);
+        if (sizesArr.length === node.childIds.length) {
+          useWorkspaceStore.getState().resizeSplit(nodeId, sizesArr);
         }
       }}
       className="h-full w-full"
     >
-      <ResizablePanel
-        defaultSize={node.sizes[0]}
-        className="overflow-hidden"
-        panelRef={(handle) => {
-          if (handle) panelRefs.set(node.childIds[0], handle);
-          else panelRefs.delete(node.childIds[0]);
-        }}
-      >
-        <CardTree nodeId={node.childIds[0]} />
-      </ResizablePanel>
-      <Separator className="shrink-0 bg-border hover:bg-foreground/30 active:bg-foreground/50 transition-colors aria-[orientation=vertical]:w-[3px] aria-[orientation=vertical]:h-full aria-[orientation=horizontal]:h-[3px] aria-[orientation=horizontal]:w-full" />
-      <ResizablePanel
-        defaultSize={node.sizes[1]}
-        className="overflow-hidden"
-        panelRef={(handle) => {
-          if (handle) panelRefs.set(node.childIds[1], handle);
-          else panelRefs.delete(node.childIds[1]);
-        }}
-      >
-        <CardTree nodeId={node.childIds[1]} />
-      </ResizablePanel>
+      {node.childIds.map((childId, idx) => (
+        <Fragment key={childId}>
+          {idx > 0 && (
+            <Separator className="shrink-0 bg-border hover:bg-foreground/30 active:bg-foreground/50 transition-colors aria-[orientation=vertical]:w-[3px] aria-[orientation=vertical]:h-full aria-[orientation=horizontal]:h-[3px] aria-[orientation=horizontal]:w-full" />
+          )}
+          <ResizablePanel
+            defaultSize={node.sizes[idx] ?? 50}
+            className="overflow-hidden"
+            panelRef={(handle) => {
+              if (handle) panelRefs.set(childId, handle);
+              else panelRefs.delete(childId);
+            }}
+          >
+            <CardTree nodeId={childId} />
+          </ResizablePanel>
+        </Fragment>
+      ))}
     </Group>
   );
 }

@@ -31,9 +31,6 @@ function MiniNode({ nodeId, nodes, focusedCardId, onSelectCard }: NodeProps) {
   if (!node) return null;
 
   if (node.type === "split") {
-    const [firstId, secondId] = node.childIds;
-    const [firstSize, secondSize] = node.sizes;
-
     return (
       <div
         className={cn(
@@ -41,28 +38,20 @@ function MiniNode({ nodeId, nodes, focusedCardId, onSelectCard }: NodeProps) {
           node.direction === "horizontal" ? "flex-row" : "flex-col",
         )}
       >
-        <div
-          style={{ flex: firstSize }}
-          className="min-h-0 min-w-0 overflow-hidden"
-        >
-          <MiniNode
-            nodeId={firstId}
-            nodes={nodes}
-            focusedCardId={focusedCardId}
-            onSelectCard={onSelectCard}
-          />
-        </div>
-        <div
-          style={{ flex: secondSize }}
-          className="min-h-0 min-w-0 overflow-hidden"
-        >
-          <MiniNode
-            nodeId={secondId}
-            nodes={nodes}
-            focusedCardId={focusedCardId}
-            onSelectCard={onSelectCard}
-          />
-        </div>
+        {node.childIds.map((childId, idx) => (
+          <div
+            key={childId}
+            style={{ flex: node.sizes[idx] ?? 1 }}
+            className="min-h-0 min-w-0 overflow-hidden"
+          >
+            <MiniNode
+              nodeId={childId}
+              nodes={nodes}
+              focusedCardId={focusedCardId}
+              onSelectCard={onSelectCard}
+            />
+          </div>
+        ))}
       </div>
     );
   }
