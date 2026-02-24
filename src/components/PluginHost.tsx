@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { loadPlugin } from "@/plugins/loader";
+import { loadPlugin, getCachedPlugin } from "@/plugins/loader";
 import type { PluginComponent, PluginContext } from "@/types/plugin";
 
 interface Props {
@@ -9,12 +9,17 @@ interface Props {
 }
 
 function PluginHostInner({ pluginId, context }: Props) {
-  const [Component, setComponent] = useState<PluginComponent | null>(null);
+  const [Component, setComponent] = useState<PluginComponent | null>(
+    () => getCachedPlugin(pluginId)?.default ?? null
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setComponent(null);
-    setError(null);
+    // If already cached, component is already set — skip the flash
+    if (!getCachedPlugin(pluginId)) {
+      setComponent(null);
+      setError(null);
+    }
     loadPlugin(pluginId)
       .then((mod) => {
         if (mod) setComponent(() => mod.default);
