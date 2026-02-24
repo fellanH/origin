@@ -27,11 +27,13 @@ function CardTree({ nodeId }: Props) {
   return (
     <Group
       orientation={node.direction}
-      onLayoutChanged={(sizes) =>
-        useWorkspaceStore
-          .getState()
-          .resizeSplit(nodeId, sizes as unknown as [number, number])
-      }
+      onLayoutChanged={(sizes) => {
+        if (sizes.length === 2) {
+          useWorkspaceStore
+            .getState()
+            .resizeSplit(nodeId, sizes as [number, number]);
+        }
+      }}
       className="h-full w-full"
     >
       <ResizablePanel
