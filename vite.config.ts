@@ -68,9 +68,10 @@ export default defineConfig({
       "@origin/api": path.resolve(__dirname, "plugins/api/src"),
       // Plugin workspace packages — activated in issue #12
       "@origin/hello": path.resolve(__dirname, "plugins/hello/src"),
-      "@origin/terminal": path.resolve(__dirname, "plugins/terminal/src"),
+      "@origin/notepad": path.resolve(__dirname, "plugins/notepad/src"),
+      "@origin/filetree": path.resolve(__dirname, "plugins/filetree/src"),
+      "@origin/monaco": path.resolve(__dirname, "plugins/monaco/src"),
       "@origin/browser": path.resolve(__dirname, "plugins/browser/src"),
-      "@origin/github": path.resolve(__dirname, "plugins/github/src"),
       // Internal path alias
       "@": path.resolve(__dirname, "src"),
     },
@@ -82,9 +83,10 @@ export default defineConfig({
   optimizeDeps: {
     include: [
       "@origin/hello",
-      "@origin/terminal",
+      "@origin/notepad",
+      "@origin/filetree",
+      "@origin/monaco",
       "@origin/browser",
-      "@origin/github",
     ],
   },
 

@@ -19,6 +19,7 @@
     "claude": "claude --plugin-dir .claude/plugin --dangerously-skip-permissions"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2",
     "@tauri-apps/plugin-fs": "^2",
