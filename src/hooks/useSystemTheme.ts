@@ -7,7 +7,9 @@ import { useState, useEffect } from "react";
  */
 export function useSystemTheme(): "light" | "dark" {
   const [theme, setTheme] = useState<"light" | "dark">(
-    window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light",
+    window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light",
   );
 
   useEffect(() => {

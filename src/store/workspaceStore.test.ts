@@ -1518,5 +1518,187 @@ describe("saveConfig / loadConfig / deleteConfig", () => {
     get().deleteConfig("nonexistent");
 
     expect(useWorkspaceStore.getState().savedConfigs).toHaveLength(1);
+
+// swapPanel
+// ---------------------------------------------------------------------------
+
+describe("swapPanel", () => {
+  it("swaps two leaf siblings in a horizontal split when moving left from the right child", () => {
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit("root-split", ["leafA", "leafB"]);
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: "leafB",
+    });
+
+    get().swapPanel("left");
+
+    const { nodes } = get();
+    const split = nodes["root-split"] as CardSplit;
+    expect(split.childIds).toEqual(["leafB", "leafA"]);
+  });
+
+  it("swaps two leaf siblings in a horizontal split when moving right from the left child", () => {
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit("root-split", ["leafA", "leafB"]);
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: "leafA",
+    });
+
+    get().swapPanel("right");
+
+    const { nodes } = get();
+    const split = nodes["root-split"] as CardSplit;
+    expect(split.childIds).toEqual(["leafB", "leafA"]);
+  });
+
+  it("swaps two leaf siblings in a vertical split when moving up from the bottom child", () => {
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit(
+      "root-split",
+      ["leafA", "leafB"],
+      null,
+      "vertical",
+    );
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: "leafB",
+    });
+
+    get().swapPanel("up");
+
+    const { nodes } = get();
+    const split = nodes["root-split"] as CardSplit;
+    expect(split.childIds).toEqual(["leafB", "leafA"]);
+  });
+
+  it("swaps subtrees at the pivot split for a cross-parent swap", () => {
+    // Layout: root-split [leafA, nested-split [leafB, leafC]]
+    // Focused on leafB; swap left → swap leafA with nested-split
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "nested-split");
+    const leafC = makeLeaf("leafC", "nested-split");
+    const nestedSplit = makeSplit(
+      "nested-split",
+      ["leafB", "leafC"],
+      "root-split",
+    );
+    const rootSplit = makeSplit("root-split", ["leafA", "nested-split"]);
+    setWorkspace({
+      rootId: "root-split",
+      nodes: {
+        "root-split": rootSplit,
+        leafA,
+        "nested-split": nestedSplit,
+        leafB,
+        leafC,
+      },
+      focusedCardId: "leafB",
+    });
+
+    get().swapPanel("left");
+
+    const { nodes } = get();
+    const root = nodes["root-split"] as CardSplit;
+    // nested-split should now be on the left, leafA on the right
+    expect(root.childIds).toEqual(["nested-split", "leafA"]);
+    // parentIds must remain intact
+    expect(nodes["leafA"].parentId).toBe("root-split");
+    expect(nodes["nested-split"].parentId).toBe("root-split");
+  });
+
+  it("does nothing when there is no neighbor in the requested direction", () => {
+    // Focused on the left child — cannot swap further left
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit("root-split", ["leafA", "leafB"]);
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: "leafA",
+    });
+
+    get().swapPanel("left");
+
+    const { nodes } = get();
+    const split = nodes["root-split"] as CardSplit;
+    // Should remain unchanged
+    expect(split.childIds).toEqual(["leafA", "leafB"]);
+  });
+
+  it("does nothing when focused panel has no parent (single root leaf)", () => {
+    const leaf = makeLeaf("root-leaf");
+    setWorkspace({
+      rootId: "root-leaf",
+      nodes: { "root-leaf": leaf },
+      focusedCardId: "root-leaf",
+    });
+
+    expect(() => get().swapPanel("right")).not.toThrow();
+
+    expect(get().rootId).toBe("root-leaf");
+  });
+
+  it("keeps focusedCardId on the same panel after the swap", () => {
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit("root-split", ["leafA", "leafB"]);
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: "leafA",
+    });
+
+    get().swapPanel("right");
+
+    expect(get().focusedCardId).toBe("leafA");
+  });
+
+  it("does nothing when direction does not match the split orientation", () => {
+    // Horizontal split, but trying to swap up/down
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit("root-split", ["leafA", "leafB"]);
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: "leafA",
+    });
+
+    get().swapPanel("down");
+
+    const { nodes } = get();
+    const split = nodes["root-split"] as CardSplit;
+    expect(split.childIds).toEqual(["leafA", "leafB"]);
+  });
+
+  it("preserves all parentId invariants after swap", () => {
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit("root-split", ["leafA", "leafB"]);
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: "leafA",
+    });
+
+    get().swapPanel("right");
+
+    const { nodes, rootId } = get();
+    for (const [id, node] of Object.entries(nodes)) {
+      if (id === rootId) {
+        expect(node.parentId).toBeNull();
+      } else {
+        expect(node.parentId).not.toBeNull();
+        expect(nodes[node.parentId!]).toBeDefined();
+      }
+    }
   });
 });

@@ -30,6 +30,7 @@ type WorkspaceActions = {
   closeCard: (cardId: CardId) => void;
   setFocus: (cardId: CardId | null) => void;
   moveFocus: (direction: "left" | "right" | "up" | "down") => void;
+  swapPanel: (direction: "left" | "right" | "up" | "down") => void;
   resizeSplit: (splitId: CardId, sizes: [number, number]) => void;
   setPlugin: (cardId: CardId, pluginId: string) => void;
   saveConfig: (name: string) => void;
@@ -295,6 +296,49 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
                   target = t.childIds[0];
                 }
                 ws.focusedCardId = target;
+                return;
+              }
+            }
+
+            // Climb to the next ancestor
+            currentId = currentNode.parentId;
+          }
+        }),
+
+      swapPanel: (direction) =>
+        set((draft) => {
+          const ws = draft.workspaces.find(
+            (w) => w.id === draft.activeWorkspaceId,
+          )!;
+          if (!ws.focusedCardId) return;
+
+          const nodes = ws.nodes;
+          const wantPrev = direction === "left" || direction === "up";
+          const wantHorizontal = direction === "left" || direction === "right";
+
+          // Walk up the tree to find an ancestor split that handles this direction
+          // (same traversal logic as moveFocus)
+          let currentId = ws.focusedCardId;
+          while (true) {
+            const currentNode = nodes[currentId];
+            if (!currentNode || currentNode.parentId === null) return;
+
+            const parentNode = nodes[currentNode.parentId];
+            if (!parentNode || parentNode.type !== "split") return;
+
+            const orientationMatches = wantHorizontal
+              ? parentNode.direction === "horizontal"
+              : parentNode.direction === "vertical";
+
+            if (orientationMatches) {
+              const childIndex = parentNode.childIds.indexOf(currentId);
+              const canSwap = wantPrev ? childIndex === 1 : childIndex === 0;
+
+              if (canSwap) {
+                // Swap the two children of the pivot split.
+                // Both subtrees keep their parentId pointing to parentNode —
+                // only the order within childIds changes.
+                parentNode.childIds.reverse();
                 return;
               }
             }

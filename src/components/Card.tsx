@@ -18,7 +18,9 @@ function Card({ nodeId }: Props) {
   const isFocused = useWorkspaceStore(
     (s) => selectActiveWorkspace(s)?.focusedCardId === nodeId,
   );
-  const node = useWorkspaceStore((s) => selectActiveWorkspace(s)?.nodes[nodeId]);
+  const node = useWorkspaceStore(
+    (s) => selectActiveWorkspace(s)?.nodes[nodeId],
+  );
   const setFocus = useWorkspaceStore((s) => s.setFocus);
   const closeCard = useWorkspaceStore((s) => s.closeCard);
   const appDataDir = useWorkspaceStore((s) => s.appDataDir);
@@ -54,7 +56,11 @@ function Card({ nodeId }: Props) {
       {pluginId === null ? (
         <EmptyState cardId={nodeId} />
       ) : (
-        <PluginHost pluginId={pluginId} nodeId={nodeId} context={pluginContext} />
+        <PluginHost
+          pluginId={pluginId}
+          nodeId={nodeId}
+          context={pluginContext}
+        />
       )}
 
       <button
