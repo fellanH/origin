@@ -42,6 +42,8 @@ pub fn run() {
             }
         })
         .invoke_handler(tauri::generate_handler![
+            commands::fs::backup_workspace_store,
+            commands::fs::recover_workspace_store,
             commands::plugins::list_installed_plugins,
             commands::plugins::install_plugin,
             commands::plugins::restart_app,
