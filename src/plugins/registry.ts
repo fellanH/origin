@@ -17,11 +17,16 @@ export interface RegistryEntry {
   id: string;
   name: string;
   icon?: string;
+  tier: "L0" | "L1";
   load: () => Promise<PluginModule>;
 }
 
 function buildV1Registry(): RegistryEntry[] {
-  return Object.entries(BUNDLED).map(([id, entry]) => ({ id, ...entry }));
+  return Object.entries(BUNDLED).map(([id, entry]) => ({
+    id,
+    tier: "L0" as const,
+    ...entry,
+  }));
 }
 
 let _registry: RegistryEntry[] = buildV1Registry();
@@ -37,6 +42,7 @@ export async function initRegistry(): Promise<void> {
         id: p.id,
         name: p.name,
         icon: p.icon,
+        tier: "L1",
         load: () =>
           import(
             /* @vite-ignore */ `plugin://localhost/${p.id}/index.js`

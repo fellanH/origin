@@ -11,7 +11,7 @@
   },
   "app": {
     "security": {
-      "csp": "default-src 'self' plugin:; script-src 'self' plugin:; style-src 'self' 'unsafe-inline' plugin:"
+      "csp": "default-src 'self' plugin:; script-src 'self' plugin:; style-src 'self' 'unsafe-inline' plugin:; frame-src plugin:"
     },
     "windows": [
       {

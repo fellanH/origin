@@ -68,6 +68,8 @@ export default defineConfig({
       "@origin/api": path.resolve(__dirname, "plugins/api/src"),
       // Plugin workspace packages — activated in issue #12
       "@origin/notepad": path.resolve(__dirname, "plugins/notepad/src"),
+      // SDK for L1 iframe plugins
+      "@origin/sdk": path.resolve(__dirname, "plugins/sdk/src/index.ts"),
       // Internal path alias
       "@": path.resolve(__dirname, "src"),
     },
@@ -77,7 +79,7 @@ export default defineConfig({
 
   // Pre-bundle dynamically imported plugins to prevent page reload on first load in dev
   optimizeDeps: {
-    include: ["@origin/notepad"],
+    include: ["@origin/notepad", "@origin/sdk"],
   },
 
   clearScreen: false,

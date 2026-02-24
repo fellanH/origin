@@ -5,7 +5,9 @@ import {
 } from "@/store/workspaceStore";
 import EmptyState from "@/components/EmptyState";
 import PluginHost from "@/components/PluginHost";
+import IframePluginHost from "@/components/IframePluginHost";
 import { pluginBus } from "@/lib/pluginBus";
+import { getPlugin } from "@/plugins/registry";
 import { cn } from "@/lib/utils";
 import { useSystemTheme } from "@/hooks/useSystemTheme";
 import type { PluginContext } from "@/types/plugin";
@@ -29,6 +31,7 @@ function Card({ nodeId }: Props) {
   );
 
   const pluginId = node?.type === "leaf" ? node.pluginId : null;
+  const tier = pluginId ? (getPlugin(pluginId)?.tier ?? "L0") : null;
   const theme = useSystemTheme();
 
   const pluginContext = useMemo<Omit<PluginContext, "on">>(
@@ -61,6 +64,8 @@ function Card({ nodeId }: Props) {
           cardId={nodeId}
           autoOpen={launcherOpenForNodeId === nodeId}
         />
+      ) : tier === "L1" ? (
+        <IframePluginHost pluginId={pluginId} context={pluginContext} />
       ) : (
         <PluginHost
           pluginId={pluginId}
