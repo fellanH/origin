@@ -1,22 +1,28 @@
 import { useRef, useEffect, useCallback } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { ErrorBoundary } from "react-error-boundary";
-import type { PluginContext, OriginChannelMap } from "@/types/plugin";
+import type { PluginContext, OriginChannelMap, PluginManifest } from "@/types/plugin";
 import type {
   PluginToHostMessage,
   HostToPluginMessage,
 } from "@/lib/iframeProtocol";
+import { COMMAND_CAPABILITY_MAP } from "@/lib/iframeProtocol";
 
 interface Props {
   pluginId: string;
   context: Omit<PluginContext, "on">;
+  manifest?: PluginManifest;
 }
 
-function IframePluginHostInner({ pluginId, context }: Props) {
+function IframePluginHostInner({ pluginId, context, manifest }: Props) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   // Track whether ORIGIN_READY has been received so theme updates can be forwarded
   const readyRef = useRef(false);
   // Map of channel → unsubscribe fn for channels the plugin has subscribed to
   const channelUnsubs = useRef(new Map<string, () => void>());
+  // Keep manifest in a ref so the onMessage closure always sees the latest value
+  const manifestRef = useRef(manifest);
+  manifestRef.current = manifest;
 
   const postToPlugin = useCallback((msg: HostToPluginMessage) => {
     // sandboxed iframes without allow-same-origin have a null origin — must use "*"
@@ -67,6 +73,41 @@ function IframePluginHostInner({ pluginId, context }: Props) {
           unsub();
           channelUnsubs.current.delete(msg.channel);
         }
+      } else if (msg.type === "ORIGIN_INVOKE") {
+        const { id, command, args } = msg;
+
+        // 1. Command must be in the allow-list
+        const requiredCap = COMMAND_CAPABILITY_MAP[command];
+        if (requiredCap === undefined) {
+          postToPlugin({
+            type: "ORIGIN_INVOKE_ERROR",
+            id,
+            error: `Command not allowed: ${command}`,
+          });
+          return;
+        }
+
+        // 2. Plugin manifest must declare the required capability
+        const declared = manifestRef.current?.requiredCapabilities ?? [];
+        if (!declared.includes(requiredCap)) {
+          postToPlugin({
+            type: "ORIGIN_INVOKE_ERROR",
+            id,
+            error: `Missing capability: ${requiredCap}`,
+          });
+          return;
+        }
+
+        // 3. Proxy the call through Tauri — failures must not crash the host
+        invoke(command, args)
+          .then((result) => {
+            postToPlugin({ type: "ORIGIN_INVOKE_RESULT", id, result });
+          })
+          .catch((err: unknown) => {
+            const error =
+              err instanceof Error ? err.message : String(err);
+            postToPlugin({ type: "ORIGIN_INVOKE_ERROR", id, error });
+          });
       }
     }
 
@@ -103,7 +144,7 @@ function IframePluginHostInner({ pluginId, context }: Props) {
   );
 }
 
-export default function IframePluginHost({ pluginId, context }: Props) {
+export default function IframePluginHost({ pluginId, context, manifest }: Props) {
   return (
     <ErrorBoundary
       resetKeys={[pluginId]}
@@ -113,7 +154,7 @@ export default function IframePluginHost({ pluginId, context }: Props) {
         </div>
       )}
     >
-      <IframePluginHostInner pluginId={pluginId} context={context} />
+      <IframePluginHostInner pluginId={pluginId} context={context} manifest={manifest} />
     </ErrorBoundary>
   );
 }

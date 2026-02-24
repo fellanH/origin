@@ -33,7 +33,8 @@ function Card({ nodeId }: Props) {
   const bus = useWorkspaceStore((s) => s.buses[s.activeWorkspaceId])!;
 
   const pluginId = node?.type === "leaf" ? node.pluginId : null;
-  const tier = pluginId ? (getPlugin(pluginId)?.tier ?? "L0") : null;
+  const pluginEntry = pluginId ? (getPlugin(pluginId) ?? null) : null;
+  const tier = pluginEntry?.tier ?? null;
   const theme = useSystemTheme();
 
   const pluginContext = useMemo<Omit<PluginContext, "on">>(
@@ -42,6 +43,10 @@ function Card({ nodeId }: Props) {
       workspacePath: appDataDir,
       theme,
       bus,
+      // config/setConfig: per-card plugin configuration — store backing is
+      // a future milestone; stubs keep the type contract satisfied until then.
+      config: {},
+      setConfig: () => {},
     }),
     [nodeId, appDataDir, theme, bus],
   );
@@ -67,7 +72,11 @@ function Card({ nodeId }: Props) {
           autoOpen={launcherOpenForNodeId === nodeId}
         />
       ) : tier === "L1" ? (
-        <IframePluginHost pluginId={pluginId} context={pluginContext} />
+        <IframePluginHost
+          pluginId={pluginId}
+          context={pluginContext}
+          manifest={pluginEntry?.manifest}
+        />
       ) : (
         <PluginHost
           pluginId={pluginId}

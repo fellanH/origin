@@ -19,6 +19,12 @@ export interface RegistryEntry {
   icon?: string;
   tier: "L0" | "L1";
   load: () => Promise<PluginModule>;
+  /**
+   * Full manifest for L1 (sandboxed iframe) plugins — used by IframePluginHost
+   * to enforce the capability allow-list for ORIGIN_INVOKE. Absent for L0
+   * plugins (they run in the main React tree and call Tauri directly).
+   */
+  manifest?: PluginManifest;
 }
 
 function buildV1Registry(): RegistryEntry[] {
@@ -43,6 +49,7 @@ export async function initRegistry(): Promise<void> {
         name: p.name,
         icon: p.icon,
         tier: "L1",
+        manifest: p,
         load: () =>
           import(
             /* @vite-ignore */ `plugin://localhost/${p.id}/index.js`
