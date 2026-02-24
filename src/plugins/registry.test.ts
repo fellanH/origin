@@ -12,9 +12,9 @@ vi.mock("@tauri-apps/api/core", () => ({
 }));
 
 // Mock bundled plugin import
-vi.mock("@origin/hello", () => ({
+vi.mock("@origin/notepad", () => ({
   default: () => null,
-  manifest: { id: "com.origin.hello", name: "Hello", version: "0.1.0" },
+  manifest: { id: "com.origin.notepad", name: "Notepad", version: "0.1.0" },
 }));
 
 import { getPluginRegistry, getPlugin, initRegistry } from "./registry";
@@ -28,9 +28,9 @@ describe("getPluginRegistry", () => {
     expect(Array.isArray(registry)).toBe(true);
   });
 
-  it("has an entry for 'com.origin.hello'", () => {
+  it("has an entry for 'com.origin.notepad'", () => {
     const registry = getPluginRegistry();
-    expect(registry.some((e) => e.id === "com.origin.hello")).toBe(true);
+    expect(registry.some((e) => e.id === "com.origin.notepad")).toBe(true);
   });
 
   it("all ids match reverse-domain format", () => {
@@ -59,11 +59,16 @@ describe("getPlugin", () => {
     expect(getPlugin("com.unknown.plugin")).toBeUndefined();
   });
 
-  it("returns the entry for 'com.origin.hello'", () => {
-    const entry = getPlugin("com.origin.hello");
+  it("returns the entry for 'com.origin.notepad'", () => {
+    const entry = getPlugin("com.origin.notepad");
     expect(entry).toBeDefined();
-    expect(entry?.id).toBe("com.origin.hello");
-    expect(entry?.name).toBe("Hello");
+    expect(entry?.id).toBe("com.origin.notepad");
+    expect(entry?.name).toBe("Notepad");
+  });
+
+  it("bundled entry has tier 'L0'", () => {
+    const entry = getPlugin("com.origin.notepad");
+    expect(entry?.tier).toBe("L0");
   });
 });
 
@@ -81,20 +86,20 @@ describe("initRegistry", () => {
 
     const registry = getPluginRegistry();
     expect(registry.some((e) => e.id === "com.example.myplugin")).toBe(true);
-    expect(registry.some((e) => e.id === "com.origin.hello")).toBe(true);
+    expect(registry.some((e) => e.id === "com.origin.notepad")).toBe(true);
   });
 
   it("does not duplicate v1 bundled plugins even if returned by invoke", async () => {
     vi.mocked(invoke).mockResolvedValueOnce([
-      { id: "com.origin.hello", name: "Hello", version: "0.1.0" },
+      { id: "com.origin.notepad", name: "Notepad", version: "0.1.0" },
     ]);
 
     await initRegistry();
 
-    const helloEntries = getPluginRegistry().filter(
-      (e) => e.id === "com.origin.hello",
+    const notepadEntries = getPluginRegistry().filter(
+      (e) => e.id === "com.origin.notepad",
     );
-    expect(helloEntries).toHaveLength(1);
+    expect(notepadEntries).toHaveLength(1);
   });
 
   it("v2 entry load function uses plugin:// scheme", async () => {
@@ -107,5 +112,20 @@ describe("initRegistry", () => {
     const entry = getPlugin("com.example.test");
     expect(entry).toBeDefined();
     expect(typeof entry!.load).toBe("function");
+  });
+
+  it("v2 entries have tier 'L1'", async () => {
+    vi.mocked(invoke).mockResolvedValueOnce([
+      {
+        id: "com.example.community",
+        name: "Community Plugin",
+        version: "1.0.0",
+      },
+    ]);
+
+    await initRegistry();
+
+    const entry = getPlugin("com.example.community");
+    expect(entry?.tier).toBe("L1");
   });
 });
