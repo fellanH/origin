@@ -411,6 +411,479 @@ describe("setFocus", () => {
 });
 
 // ---------------------------------------------------------------------------
+// moveFocus
+// ---------------------------------------------------------------------------
+
+describe("moveFocus", () => {
+  it("no-ops when focusedCardId is null", () => {
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit("root-split", ["leafA", "leafB"]);
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: null,
+    });
+
+    get().moveFocus("right");
+
+    expect(get().focusedCardId).toBeNull();
+  });
+
+  it("moves right to sibling in a horizontal split", () => {
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit(
+      "root-split",
+      ["leafA", "leafB"],
+      null,
+      "horizontal",
+    );
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: "leafA",
+    });
+
+    get().moveFocus("right");
+
+    expect(get().focusedCardId).toBe("leafB");
+  });
+
+  it("moves left to sibling in a horizontal split", () => {
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit(
+      "root-split",
+      ["leafA", "leafB"],
+      null,
+      "horizontal",
+    );
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: "leafB",
+    });
+
+    get().moveFocus("left");
+
+    expect(get().focusedCardId).toBe("leafA");
+  });
+
+  it("moves down to sibling in a vertical split", () => {
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit(
+      "root-split",
+      ["leafA", "leafB"],
+      null,
+      "vertical",
+    );
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: "leafA",
+    });
+
+    get().moveFocus("down");
+
+    expect(get().focusedCardId).toBe("leafB");
+  });
+
+  it("moves up to sibling in a vertical split", () => {
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit(
+      "root-split",
+      ["leafA", "leafB"],
+      null,
+      "vertical",
+    );
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: "leafB",
+    });
+
+    get().moveFocus("up");
+
+    expect(get().focusedCardId).toBe("leafA");
+  });
+
+  it("no-ops at left boundary (already leftmost leaf in horizontal split)", () => {
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit(
+      "root-split",
+      ["leafA", "leafB"],
+      null,
+      "horizontal",
+    );
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: "leafA",
+    });
+
+    get().moveFocus("left");
+
+    expect(get().focusedCardId).toBe("leafA");
+  });
+
+  it("no-ops at right boundary (already rightmost leaf in horizontal split)", () => {
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit(
+      "root-split",
+      ["leafA", "leafB"],
+      null,
+      "horizontal",
+    );
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: "leafB",
+    });
+
+    get().moveFocus("right");
+
+    expect(get().focusedCardId).toBe("leafB");
+  });
+
+  it("no-ops at top boundary (already topmost leaf in vertical split)", () => {
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit(
+      "root-split",
+      ["leafA", "leafB"],
+      null,
+      "vertical",
+    );
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: "leafA",
+    });
+
+    get().moveFocus("up");
+
+    expect(get().focusedCardId).toBe("leafA");
+  });
+
+  it("no-ops at bottom boundary (already bottommost leaf in vertical split)", () => {
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit(
+      "root-split",
+      ["leafA", "leafB"],
+      null,
+      "vertical",
+    );
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: "leafB",
+    });
+
+    get().moveFocus("down");
+
+    expect(get().focusedCardId).toBe("leafB");
+  });
+
+  it("no-ops when moving horizontally in a purely vertical split (orientation mismatch)", () => {
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit(
+      "root-split",
+      ["leafA", "leafB"],
+      null,
+      "vertical",
+    );
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: "leafA",
+    });
+
+    get().moveFocus("right");
+
+    expect(get().focusedCardId).toBe("leafA");
+  });
+
+  it("no-ops when moving vertically in a purely horizontal split (orientation mismatch)", () => {
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "root-split");
+    const rootSplit = makeSplit(
+      "root-split",
+      ["leafA", "leafB"],
+      null,
+      "horizontal",
+    );
+    setWorkspace({
+      rootId: "root-split",
+      nodes: { "root-split": rootSplit, leafA, leafB },
+      focusedCardId: "leafA",
+    });
+
+    get().moveFocus("down");
+
+    expect(get().focusedCardId).toBe("leafA");
+  });
+
+  it("descends into sibling subtree and lands on its first leaf (right into nested split)", () => {
+    // Layout: horizontal root split
+    //   left: leafA
+    //   right: nested horizontal split
+    //            left: leafB
+    //            right: leafC
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "nested-split");
+    const leafC = makeLeaf("leafC", "nested-split");
+    const nestedSplit = makeSplit(
+      "nested-split",
+      ["leafB", "leafC"],
+      "root-split",
+      "horizontal",
+    );
+    const rootSplit = makeSplit(
+      "root-split",
+      ["leafA", "nested-split"],
+      null,
+      "horizontal",
+    );
+    setWorkspace({
+      rootId: "root-split",
+      nodes: {
+        "root-split": rootSplit,
+        leafA,
+        "nested-split": nestedSplit,
+        leafB,
+        leafC,
+      },
+      focusedCardId: "leafA",
+    });
+
+    get().moveFocus("right");
+
+    // Should land on leafB — the first (childIds[0]) leaf in the nested split
+    expect(get().focusedCardId).toBe("leafB");
+  });
+
+  it("descends into sibling subtree and lands on its first leaf (left into nested split)", () => {
+    // Layout: horizontal root split
+    //   left: nested horizontal split
+    //            left: leafA
+    //            right: leafB
+    //   right: leafC
+    const leafA = makeLeaf("leafA", "nested-split");
+    const leafB = makeLeaf("leafB", "nested-split");
+    const leafC = makeLeaf("leafC", "root-split");
+    const nestedSplit = makeSplit(
+      "nested-split",
+      ["leafA", "leafB"],
+      "root-split",
+      "horizontal",
+    );
+    const rootSplit = makeSplit(
+      "root-split",
+      ["nested-split", "leafC"],
+      null,
+      "horizontal",
+    );
+    setWorkspace({
+      rootId: "root-split",
+      nodes: {
+        "root-split": rootSplit,
+        "nested-split": nestedSplit,
+        leafA,
+        leafB,
+        leafC,
+      },
+      focusedCardId: "leafC",
+    });
+
+    get().moveFocus("left");
+
+    // Should land on leafA — the first (childIds[0]) leaf in the nested split
+    expect(get().focusedCardId).toBe("leafA");
+  });
+
+  it("climbs ancestor splits to find matching orientation (horizontal move skips vertical ancestor)", () => {
+    // Layout:
+    //   vertical root split
+    //     top: horizontal split
+    //            left: leafA
+    //            right: leafB
+    //     bottom: leafC
+    //
+    // leafA moving right should match the horizontal inner split and go to leafB
+    const leafA = makeLeaf("leafA", "inner-split");
+    const leafB = makeLeaf("leafB", "inner-split");
+    const leafC = makeLeaf("leafC", "root-split");
+    const innerSplit = makeSplit(
+      "inner-split",
+      ["leafA", "leafB"],
+      "root-split",
+      "horizontal",
+    );
+    const rootSplit = makeSplit(
+      "root-split",
+      ["inner-split", "leafC"],
+      null,
+      "vertical",
+    );
+    setWorkspace({
+      rootId: "root-split",
+      nodes: {
+        "root-split": rootSplit,
+        "inner-split": innerSplit,
+        leafA,
+        leafB,
+        leafC,
+      },
+      focusedCardId: "leafA",
+    });
+
+    get().moveFocus("right");
+
+    expect(get().focusedCardId).toBe("leafB");
+  });
+
+  it("mixed orientation: moving down from inner-left leaf crosses horizontal split boundary into vertical sibling's first leaf", () => {
+    // Layout:
+    //   horizontal root split
+    //     left: vertical split
+    //              top: leafA
+    //              bottom: leafB
+    //     right: leafC
+    //
+    // leafA moving down should find the vertical inner split and move to leafB
+    const leafA = makeLeaf("leafA", "inner-split");
+    const leafB = makeLeaf("leafB", "inner-split");
+    const leafC = makeLeaf("leafC", "root-split");
+    const innerSplit = makeSplit(
+      "inner-split",
+      ["leafA", "leafB"],
+      "root-split",
+      "vertical",
+    );
+    const rootSplit = makeSplit(
+      "root-split",
+      ["inner-split", "leafC"],
+      null,
+      "horizontal",
+    );
+    setWorkspace({
+      rootId: "root-split",
+      nodes: {
+        "root-split": rootSplit,
+        "inner-split": innerSplit,
+        leafA,
+        leafB,
+        leafC,
+      },
+      focusedCardId: "leafA",
+    });
+
+    get().moveFocus("down");
+
+    expect(get().focusedCardId).toBe("leafB");
+  });
+
+  it("mixed orientation: moving right from bottom of vertical split climbs up and crosses horizontal root", () => {
+    // Layout:
+    //   horizontal root split
+    //     left: vertical split
+    //              top: leafA
+    //              bottom: leafB   <-- focused
+    //     right: leafC
+    //
+    // leafB moving right: vertical split doesn't match, climbs to horizontal root,
+    // leafB is inside inner-split which is at index 0 of root, so canMove is true → lands on leafC
+    const leafA = makeLeaf("leafA", "inner-split");
+    const leafB = makeLeaf("leafB", "inner-split");
+    const leafC = makeLeaf("leafC", "root-split");
+    const innerSplit = makeSplit(
+      "inner-split",
+      ["leafA", "leafB"],
+      "root-split",
+      "vertical",
+    );
+    const rootSplit = makeSplit(
+      "root-split",
+      ["inner-split", "leafC"],
+      null,
+      "horizontal",
+    );
+    setWorkspace({
+      rootId: "root-split",
+      nodes: {
+        "root-split": rootSplit,
+        "inner-split": innerSplit,
+        leafA,
+        leafB,
+        leafC,
+      },
+      focusedCardId: "leafB",
+    });
+
+    get().moveFocus("right");
+
+    expect(get().focusedCardId).toBe("leafC");
+  });
+
+  it("lands on deeply nested first leaf when navigating into a multi-level subtree", () => {
+    // Layout: horizontal root split
+    //   left: leafA
+    //   right: outer-nested (horizontal)
+    //            left: inner-nested (vertical)
+    //                    top: leafB   <-- deepest first leaf
+    //                    bottom: leafC
+    //            right: leafD
+    const leafA = makeLeaf("leafA", "root-split");
+    const leafB = makeLeaf("leafB", "inner-nested");
+    const leafC = makeLeaf("leafC", "inner-nested");
+    const leafD = makeLeaf("leafD", "outer-nested");
+    const innerNested = makeSplit(
+      "inner-nested",
+      ["leafB", "leafC"],
+      "outer-nested",
+      "vertical",
+    );
+    const outerNested = makeSplit(
+      "outer-nested",
+      ["inner-nested", "leafD"],
+      "root-split",
+      "horizontal",
+    );
+    const rootSplit = makeSplit(
+      "root-split",
+      ["leafA", "outer-nested"],
+      null,
+      "horizontal",
+    );
+    setWorkspace({
+      rootId: "root-split",
+      nodes: {
+        "root-split": rootSplit,
+        leafA,
+        "outer-nested": outerNested,
+        "inner-nested": innerNested,
+        leafB,
+        leafC,
+        leafD,
+      },
+      focusedCardId: "leafA",
+    });
+
+    get().moveFocus("right");
+
+    // Descends into outer-nested → childIds[0] = inner-nested → childIds[0] = leafB
+    expect(get().focusedCardId).toBe("leafB");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // CardMap invariants — cross-cutting
 // ---------------------------------------------------------------------------
 
