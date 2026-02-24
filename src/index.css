@@ -6,6 +6,13 @@
   user-select: none;
 }
 
+/* Text inputs must opt out — dragging over them should select text, not move window */
+[data-tauri-drag-region] input,
+[data-tauri-drag-region] textarea {
+  -webkit-app-region: no-drag;
+  user-select: auto;
+}
+
 /* ─── Semantic tokens — light mode ─────────────────────────────────── */
 :root {
   color-scheme: light dark;
