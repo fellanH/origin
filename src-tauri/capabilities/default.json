@@ -8,6 +8,7 @@
     "core:path:default",
     "core:window:deny-toggle-maximize",
     "core:window:deny-internal-toggle-maximize",
-    "dialog:default"
+    "dialog:default",
+    "updater:default"
   ]
 }
