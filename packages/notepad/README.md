@@ -4,7 +4,7 @@ Use this as the starting point for any new `@origin/*` plugin.
 
 ## Quickstart
 
-1. **Copy** `plugins/template/` to `plugins/your-plugin/`
+1. **Copy** `packages/template/` to `packages/your-plugin/`
 2. **Update** `package.json` — set `"name"` to `"@origin/your-plugin"`
 3. **Edit** `src/manifest.ts` — set `id` (reverse-domain, e.g. `"com.yourco.yourplugin"`), `name`, `icon`, and `description`
 4. **Build** your component in `src/index.tsx` — default export must accept `{ context: PluginContext }`

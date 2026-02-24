@@ -339,7 +339,7 @@ interface PluginModule {
 }
 ```
 
-Plugins are npm workspace packages. `@origin/hello` resolves to `plugins/hello/` via workspaces. Vite dynamic `import('@origin/hello')` works in both dev and prod (bundled at build time).
+Plugins are npm workspace packages. `@origin/hello` resolves to `packages/hello/` via workspaces. Vite dynamic `import('@origin/hello')` works in both dev and prod (bundled at build time).
 
 > **Two-tier plugin system:**
 >
@@ -381,7 +381,7 @@ origin/
 │       ├── PluginHost.tsx      # L0: loads + mounts a plugin component with PluginContext; wrapped in ErrorBoundary
 │       ├── IframePluginHost.tsx # L1: sandboxed iframe host with postMessage protocol + bus relay
 │       └── EmptyState.tsx      # Unified empty slot: name + keyboard hints + plugin list; optional cardId prop
-├── plugins/
+├── packages/
 │   ├── api/
 │   │   └── src/plugin.ts       # Type contract: PluginManifest, PluginContext, PluginBus, PluginModule
 │   ├── sdk/
@@ -392,7 +392,7 @@ origin/
 │           ├── manifest.ts     # PluginManifest export
 │           └── index.tsx       # default export: React component
 ├── origin.plugins.json
-├── package.json                # workspaces: ["plugins/*"]
+├── package.json                # workspaces: ["packages/*"]
 ├── vite.config.ts
 ├── tsconfig.json
 └── tailwind.config.ts
@@ -615,7 +615,7 @@ Do not use `unsafe-eval`. The `plugin:` entry is required for L1 iframe plugin s
 8. **Plugin registry + loader** — reads `origin.plugins.json`, dynamic import cache
 9. **PluginHost** — loads module, injects `PluginContext`, renders component inside Error Boundary
 10. **Keyboard shortcuts** — global `keydown` listener in `App.tsx` with `event.preventDefault()`; handlers read `focusedPanelId` from store. `tauri-plugin-global-shortcut` is NOT used (in-window shortcuts work via webview keydown). Register `onCloseRequested` on the Tauri window to prevent accidental window close.
-11. **Hello plugin** — `plugins/hello/` minimal React component with manifest
+11. **Hello plugin** — `packages/hello/` minimal React component with manifest
 12. **Wire it up** — npm workspaces, verify `@origin/hello` resolves, end-to-end test
 
 ---
@@ -633,12 +633,12 @@ Do not use `unsafe-eval`. The `plugin:` entry is required for L1 iframe plugin s
 | `src/components/PluginHost.tsx`       | L0 host — direct React mount, full `PluginContext` including `on()` lifecycle events     |
 | `src/components/IframePluginHost.tsx` | L1 host — sandboxed iframe, postMessage handshake, bus relay, theme forwarding           |
 | `src/lib/iframeProtocol.ts`           | Typed postMessage schema (`HostToPluginMessage`, `PluginToHostMessage`)                  |
-| `plugins/sdk/src/`                    | `@origin/sdk`: `usePluginContext()` + `useBusChannel()` for L1 plugin authors            |
+| `packages/sdk/src/`                   | `@origin/sdk`: `usePluginContext()` + `useBusChannel()` for L1 plugin authors            |
 | `src/components/TabBar.tsx`           | Tab strip — workspace switching + new/close tab                                          |
 | `src/components/SavedConfigMenu.tsx`  | Save/load/delete named layout configs                                                    |
 | `src/components/PanelGrid.tsx`        | Root component — starts the render tree                                                  |
 | `src/components/EmptyState.tsx`       | Unified empty slot — rendered at workspace level (no panels) and panel level (no plugin) |
-| `plugins/hello/src/index.tsx`         | PoC plugin — verifies the plugin system works                                            |
+| `packages/hello/src/index.tsx`        | PoC plugin — verifies the plugin system works                                            |
 | `origin.plugins.json`                 | Plugin config — single source of truth for registered plugins                            |
 
 ---
