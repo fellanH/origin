@@ -4,6 +4,7 @@ import {
   useWorkspaceStore,
   selectActiveWorkspace,
 } from "@/store/workspaceStore";
+import { panelRefs } from "@/lib/panelRefs";
 
 export function useKeyboardShortcuts(): void {
   useEffect(() => {
@@ -28,6 +29,32 @@ export function useKeyboardShortcuts(): void {
         } else if (e.code === "KeyJ" || e.code === "ArrowDown") {
           e.preventDefault();
           useWorkspaceStore.getState().moveFocus("down");
+        } else if (e.code === "Equal") {
+          // CMD+Opt+= : grow focused panel by 5%
+          e.preventDefault();
+          const focusedId = selectActiveWorkspace(
+            useWorkspaceStore.getState(),
+          ).focusedCardId;
+          if (focusedId) {
+            const handle = panelRefs.get(focusedId);
+            if (handle) {
+              const pct = handle.getSize().asPercentage;
+              handle.resize(String(Math.min(pct + 5, 95)));
+            }
+          }
+        } else if (e.code === "Minus") {
+          // CMD+Opt+- : shrink focused panel by 5%
+          e.preventDefault();
+          const focusedId = selectActiveWorkspace(
+            useWorkspaceStore.getState(),
+          ).focusedCardId;
+          if (focusedId) {
+            const handle = panelRefs.get(focusedId);
+            if (handle) {
+              const pct = handle.getSize().asPercentage;
+              handle.resize(String(Math.max(pct - 5, 5)));
+            }
+          }
         }
         return;
       }

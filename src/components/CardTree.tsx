@@ -7,6 +7,7 @@ import {
   useWorkspaceStore,
   selectActiveWorkspace,
 } from "@/store/workspaceStore";
+import { panelRefs } from "@/lib/panelRefs";
 import Card from "./Card";
 
 interface Props {
@@ -33,11 +34,23 @@ function CardTree({ nodeId }: Props) {
       }
       className="h-full w-full"
     >
-      <ResizablePanel defaultSize={node.sizes[0]}>
+      <ResizablePanel
+        defaultSize={node.sizes[0]}
+        panelRef={(handle) => {
+          if (handle) panelRefs.set(node.childIds[0], handle);
+          else panelRefs.delete(node.childIds[0]);
+        }}
+      >
         <CardTree nodeId={node.childIds[0]} />
       </ResizablePanel>
       <Separator className="w-px bg-border/30 hover:bg-border transition-colors" />
-      <ResizablePanel defaultSize={node.sizes[1]}>
+      <ResizablePanel
+        defaultSize={node.sizes[1]}
+        panelRef={(handle) => {
+          if (handle) panelRefs.set(node.childIds[1], handle);
+          else panelRefs.delete(node.childIds[1]);
+        }}
+      >
         <CardTree nodeId={node.childIds[1]} />
       </ResizablePanel>
     </Group>
