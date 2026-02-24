@@ -1,3 +1,4 @@
+import { useRef, useEffect } from "react";
 import {
   useWorkspaceStore,
   selectActiveWorkspace,
@@ -5,6 +6,7 @@ import {
 import EmptyState from "@/components/EmptyState";
 import PluginHost from "@/components/PluginHost";
 import type { PluginContext } from "@/types/plugin";
+import { cn } from "@/lib/utils";
 
 interface Props {
   nodeId: string;
@@ -22,9 +24,19 @@ function Card({ nodeId }: Props) {
   const isFocused = focusedCardId === nodeId;
   const pluginId = node?.type === "leaf" ? node.pluginId : null;
 
+  const divRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (isFocused) divRef.current?.focus();
+  }, [isFocused]);
+
   return (
     <div
-      className={`group relative h-full w-full cursor-pointer${isFocused ? " ring-1 ring-inset ring-primary/40" : ""}`}
+      ref={divRef}
+      tabIndex={-1}
+      className={cn(
+        "group relative h-full w-full cursor-pointer outline-none",
+        isFocused ? "ring-2 ring-blue-500/80" : "ring-1 ring-white/10",
+      )}
       onClick={() => setFocus(nodeId)}
     >
       {pluginId === null ? (
