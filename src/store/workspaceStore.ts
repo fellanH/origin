@@ -94,7 +94,8 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           if (wasActive) {
             // Prefer previous tab; fall back to the tab now at idx (next)
             const nextIdx = Math.max(0, idx - 1);
-            draft.activeWorkspaceId = draft.workspaces[nextIdx].id;
+            const next = draft.workspaces[nextIdx];
+            if (next) draft.activeWorkspaceId = next.id;
           }
         }),
 
@@ -170,13 +171,13 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
             pluginId: null,
           } satisfies CardLeaf;
 
-          ws.nodes[cardId].parentId = newSplitId;
+          node.parentId = newSplitId;
 
           if (parentId === null) {
             ws.rootId = newSplitId;
           } else {
             const parent = ws.nodes[parentId];
-            if (parent.type === "split") {
+            if (parent && parent.type === "split") {
               const idx = parent.childIds.indexOf(cardId) as 0 | 1;
               parent.childIds[idx] = newSplitId;
             }
@@ -209,13 +210,14 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           const siblingId = parent.childIds.find((id) => id !== cardId)!;
           const grandParentId = parent.parentId;
 
-          ws.nodes[siblingId].parentId = grandParentId;
+          const sibling = ws.nodes[siblingId];
+          if (sibling) sibling.parentId = grandParentId;
 
           if (grandParentId === null) {
             ws.rootId = siblingId;
           } else {
             const gp = ws.nodes[grandParentId];
-            if (gp.type === "split") {
+            if (gp && gp.type === "split") {
               const idx = gp.childIds.indexOf(parentSplitId) as 0 | 1;
               gp.childIds[idx] = siblingId;
             }
