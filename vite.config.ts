@@ -65,11 +65,11 @@ export default defineConfig({
   resolve: {
     alias: {
       // Plugin API type contract
-      "@origin/api": path.resolve(__dirname, "plugins/api/src"),
+      "@origin/api": path.resolve(__dirname, "packages/api/src"),
       // Plugin workspace packages — activated in issue #12
-      "@origin/notepad": path.resolve(__dirname, "plugins/notepad/src"),
+      "@origin/notepad": path.resolve(__dirname, "packages/notepad/src"),
       // SDK for L1 iframe plugins
-      "@origin/sdk": path.resolve(__dirname, "plugins/sdk/src/index.ts"),
+      "@origin/sdk": path.resolve(__dirname, "packages/sdk/src/index.ts"),
       // Internal path alias
       "@": path.resolve(__dirname, "src"),
     },

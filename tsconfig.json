@@ -19,14 +19,14 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "@origin/api": ["./plugins/api/src"],
-      "@origin/api/*": ["./plugins/api/src/*"],
-      "@origin/hello": ["./plugins/hello/src"],
-      "@origin/hello/*": ["./plugins/hello/src/*"],
-      "@origin/notepad": ["./plugins/notepad/src"],
-      "@origin/notepad/*": ["./plugins/notepad/src/*"],
-      "@origin/sdk": ["./plugins/sdk/src/index.ts"],
-      "@origin/sdk/*": ["./plugins/sdk/src/*"]
+      "@origin/api": ["./packages/api/src"],
+      "@origin/api/*": ["./packages/api/src/*"],
+      "@origin/hello": ["./packages/hello/src"],
+      "@origin/hello/*": ["./packages/hello/src/*"],
+      "@origin/notepad": ["./packages/notepad/src"],
+      "@origin/notepad/*": ["./packages/notepad/src/*"],
+      "@origin/sdk": ["./packages/sdk/src/index.ts"],
+      "@origin/sdk/*": ["./packages/sdk/src/*"]
     }
   },
   "include": ["src"],
