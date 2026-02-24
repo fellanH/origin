@@ -10,7 +10,7 @@ Run this when finishing a GitHub issue or dispatched task. Closes the loop so ad
 
 ```
 update_project_task
-  project: note
+  project: origin
   task_id: <issue number or task id>
   status: COMPLETE
   note: <one-sentence summary of what was done>

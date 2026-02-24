@@ -1,4 +1,4 @@
-# SOP Index — note
+# SOP Index — origin
 
 Navigation hub: which SOP to use at each workflow stage.
 

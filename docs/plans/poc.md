@@ -1,4 +1,4 @@
-# note — Proof of Concept: Core Shell
+# origin — Proof of Concept: Core Shell
 
 **Goal:** Validate the app's core value proposition before building anything else.
 **Scope:** Issues #1, partial #2, partial #3, #4, partial #7, partial #11 — nothing else.
@@ -74,7 +74,7 @@ interface PoCStore {
 
 ```json
 {
-  "identifier": "com.klarhimmel.note",
+  "identifier": "com.klarhimmel.origin",
   "build": {
     "devUrl": "http://localhost:1420",
     "frontendDist": "../dist",
@@ -84,7 +84,7 @@ interface PoCStore {
   "app": {
     "windows": [
       {
-        "title": "note",
+        "title": "origin",
         "width": 1200,
         "height": 800,
         "decorations": true,

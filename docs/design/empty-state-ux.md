@@ -10,7 +10,7 @@
 
 `EmptyState` and `Launcher` have been merged into a single `EmptyState` component. It always renders the same content regardless of context:
 
-- App name "note" (`text-sm font-medium`)
+- App name "origin" (`text-sm font-medium`)
 - Keyboard hints: `⌘D — split horizontally` / `⌘⇧D — split vertically` (`text-xs text-muted-foreground`)
 - Plugin list: icon + name buttons (`text-sm`, hover: `bg-muted`)
 
@@ -58,4 +58,4 @@ The original review (comment on #25) proposed:
 - Q3: No extra content in split empty panels — **still holds**
 - Q4: EmptyState copy ("split" wording) — **kept as-is; "split" is descriptive and preferred**
 
-Follow-up issues A (fix copy) and B (⌘W hint) are **closed/dropped** by this decision. Issue C (one-line descriptor below "note") remains valid as future polish.
+Follow-up issues A (fix copy) and B (⌘W hint) are **closed/dropped** by this decision. Issue C (one-line descriptor below "origin") remains valid as future polish.

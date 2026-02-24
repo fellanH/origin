@@ -1,4 +1,4 @@
-# Issue Lifecycle SOP — note
+# Issue Lifecycle SOP — origin
 
 ## Definition of Ready
 

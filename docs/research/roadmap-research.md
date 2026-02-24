@@ -145,7 +145,7 @@ Automerge 3.0 (released August 2025) is a significant improvement over v2:
 - Backwards-compatible file format with Automerge 2
 - Available as an npm package with WASM bindings — works in a Tauri webview
 
-**For note:** Each `Workspace` is a good unit of an Automerge document. The flat `NodeMap` serializes naturally as an Automerge `Map`. Saved configs are Automerge `List` entries.
+**For origin:** Each `Workspace` is a good unit of an Automerge document. The flat `NodeMap` serializes naturally as an Automerge `Map`. Saved configs are Automerge `List` entries.
 
 **Sync transport:** Automerge Repo handles synchronization. For a solo two-device setup, a simple relay server (a free Fly.io instance or a GitHub Gist used as a sync point) is sufficient. The Automerge sync protocol is delta-based — only changes are transmitted.
 
@@ -161,7 +161,7 @@ Automerge 3.0 (released August 2025) is a significant improvement over v2:
 
 Yjs is the most widely deployed CRDT library in production (Notion, Liveblocks, many others). It is faster than Automerge for text-heavy workloads and has better garbage collection.
 
-**For note:** The data model (panel topology, plugin assignments) is not text-heavy. Yjs's strength is in `YText` collaborative editing. For JSON-shaped workspace state, Automerge's document model maps more naturally.
+**For origin:** The data model (panel topology, plugin assignments) is not text-heavy. Yjs's strength is in `YText` collaborative editing. For JSON-shaped workspace state, Automerge's document model maps more naturally.
 
 **Verdict:** Use Automerge unless you add a text-editing plugin that needs real-time collaboration — then add Yjs specifically for that plugin's state.
 
@@ -176,7 +176,7 @@ An emerging Rust-native CRDT library. Native Rust crate (`loro`) + JS/WASM bindi
 
 Adds CRDT semantics to SQLite tables. Works on macOS desktop, has JS bindings, and is commercially backed (Turso, Fly.io). Insert performance is 2.5x slower than standard SQLite; read performance is identical.
 
-**For note:** The workspace state is not relational — it is a flat JSON document tree. Fitting it into SQLite schema for CRDT sync adds complexity without a clear advantage over Automerge. More appropriate if the app evolves to include relational data (e.g., a notes database, a task list) where SQLite's query capabilities matter.
+**For origin:** The workspace state is not relational — it is a flat JSON document tree. Fitting it into SQLite schema for CRDT sync adds complexity without a clear advantage over Automerge. More appropriate if the app evolves to include relational data (e.g., a notes database, a task list) where SQLite's query capabilities matter.
 
 **Risk:** Moderate. Event log replication (v2 feature) is still incomplete. The WASM build is available but loading SQLite extensions inside Tauri's webview adds an unusual dependency chain. Skip for a workspace config sync use case.
 
@@ -226,7 +226,7 @@ No server needed. Use GitHub Releases as the CDN.
 
 ```
 tauri.conf.json endpoint:
-"https://github.com/<user>/note/releases/latest/download/latest.json"
+"https://github.com/<user>/origin/releases/latest/download/latest.json"
 ```
 
 The `latest.json` file uploaded to each GitHub Release:

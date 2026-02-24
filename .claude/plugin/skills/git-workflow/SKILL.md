@@ -1,8 +1,8 @@
 ---
-description: Apply the git workflow for the note project — branch naming, commit convention, PR draft/squash-merge strategy, and issue closing.
+description: Apply the git workflow for the origin project — branch naming, commit convention, PR draft/squash-merge strategy, and issue closing.
 ---
 
-# Git Workflow SOP — note
+# Git Workflow SOP — origin
 
 ## Branch Naming
 

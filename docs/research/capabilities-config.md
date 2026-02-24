@@ -98,7 +98,7 @@ From `research/tauri-store-zustand.md` — provided by `@tauri-store/zustand` do
 
 **Why `$RESOURCE`:** `origin.plugins.json` is bundled with the app as a resource file. The Rust resolver maps it to the app bundle's resources directory.
 
-**Why `$APPCONFIG`:** Future: user-managed plugin list could live in `$APPCONFIG/note/plugins.json` alongside `tauri-store` state. Not needed v1 but cheap to include now.
+**Why `$APPCONFIG`:** Future: user-managed plugin list could live in `$APPCONFIG/origin/plugins.json` alongside `tauri-store` state. Not needed v1 but cheap to include now.
 
 > **Note:** `fs:default` grants read access to `$APPDATA`, `$APPLOCALDATA`, `$APPCACHE`, `$APPLOG`, and `$APPCONFIG` but NOT `$RESOURCE`. Since `origin.plugins.json` is a bundled resource, the scoped `$RESOURCE` permission is required explicitly.
 

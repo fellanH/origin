@@ -1,4 +1,4 @@
-# Git Workflow SOP — note
+# Git Workflow SOP — origin
 
 ## Branch Naming
 

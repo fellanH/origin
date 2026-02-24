@@ -37,7 +37,7 @@ Default hydration does a shallow merge. For a binary tree (`{ root: { type: 'spl
 
 ```ts
 persist(storeCreator, {
-  name: "note-workspace-state",
+  name: "origin-workspace-state",
   merge: (persisted, current) => deepMerge(current, persisted),
 });
 ```
@@ -134,7 +134,7 @@ create<Store>()(
 
 **Recommendation:** Single store with slices. Multiple stores only for genuinely independent state.
 
-For `note`: workspace slice + plugin registry slice → one combined store.
+For `origin`: workspace slice + plugin registry slice → one combined store.
 
 **Rule:** Apply middleware (`immer`, `devtools`) only at the combined store boundary — not inside individual slice files.
 

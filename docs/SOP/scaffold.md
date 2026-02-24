@@ -48,7 +48,7 @@ Variant           → React + TypeScript
 ```
 
 ```bash
-cd note
+cd origin
 ```
 
 **Do not run `npm run tauri dev` yet.** The generated configs are stock — replace them before first run.
@@ -56,7 +56,7 @@ cd note
 Expected directory structure:
 
 ```
-note/
+origin/
 ├── src-tauri/
 │   ├── src/main.rs
 │   ├── src/lib.rs

@@ -1,4 +1,4 @@
-# Release SOP — note
+# Release SOP — origin
 
 ## Versioning
 
@@ -49,7 +49,7 @@ Code signing requires an Apple Developer account. Required env vars when that ti
 For personal use only (pre-public release): clear quarantine instead of notarizing:
 
 ```bash
-xattr -cr note.app
+xattr -cr origin.app
 ```
 
 Do not distribute unsigned builds publicly.

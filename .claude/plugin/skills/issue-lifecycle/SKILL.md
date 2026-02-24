@@ -2,7 +2,7 @@
 description: Review issue readiness and sprint order before picking up a GitHub issue. Covers definition of ready, WIP limits, sprint sequence, and issue creation standards.
 ---
 
-# Issue Lifecycle SOP — note
+# Issue Lifecycle SOP — origin
 
 ## Definition of Ready
 

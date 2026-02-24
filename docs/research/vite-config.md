@@ -96,7 +96,7 @@ Vite pre-bundles dependencies at dev server start. Without `include: ["@origin/h
 
 `include` tells Vite to pre-bundle `@origin/hello` at startup so dynamic imports work immediately. This is especially important because the plugin loader calls `import(pluginId)` lazily when a user opens the launcher — any reload would be jarring.
 
-**For production builds:** Dynamic imports are standard Rollup code-splitting. `@origin/hello` gets emitted as a separate chunk (e.g., `dist/assets/@note-hello-[hash].js`). No issues — `optimizeDeps` is dev-only.
+**For production builds:** Dynamic imports are standard Rollup code-splitting. `@origin/hello` gets emitted as a separate chunk (e.g., `dist/assets/@origin-hello-[hash].js`). No issues — `optimizeDeps` is dev-only.
 
 ### Add plugins to `optimizeDeps.include` as you add them
 
@@ -283,7 +283,7 @@ In production builds, Vite (via Rollup) handles `import('@origin/hello')` as a c
 dist/
 ├── assets/
 │   ├── index-[hash].js        # main app bundle
-│   ├── @note_hello-[hash].js  # @origin/hello chunk
+│   ├── @origin_hello-[hash].js  # @origin/hello chunk
 │   └── ...
 └── index.html
 ```
@@ -297,7 +297,7 @@ build: {
   rollupOptions: {
     output: {
       chunkFileNames: (chunkInfo) => {
-        if (chunkInfo.name.startsWith("@note_")) {
+        if (chunkInfo.name.startsWith("@origin_")) {
           return "assets/plugins/[name]-[hash].js";
         }
         return "assets/[name]-[hash].js";
