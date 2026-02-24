@@ -155,3 +155,27 @@ pub fn install_plugin(app: AppHandle, src_path: String) -> Result<PluginManifest
 pub fn restart_app(app: AppHandle) {
     app.restart();
 }
+
+#[tauri::command]
+pub fn save_plugin_bundle(
+    app: AppHandle,
+    id: String,
+    manifest_json: String,
+    js_source: String,
+) -> Result<(), String> {
+    let Some(plugins_dir) = plugins_dir(&app) else {
+        return Err("Failed to resolve app data directory".to_string());
+    };
+
+    let dest = plugins_dir.join(&id);
+    std::fs::create_dir_all(&dest)
+        .map_err(|e| format!("Failed to create plugin directory: {e}"))?;
+
+    std::fs::write(dest.join("manifest.json"), &manifest_json)
+        .map_err(|e| format!("Failed to write manifest.json: {e}"))?;
+
+    std::fs::write(dest.join("index.js"), &js_source)
+        .map_err(|e| format!("Failed to write index.js: {e}"))?;
+
+    Ok(())
+}
