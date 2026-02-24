@@ -48,6 +48,7 @@ function PluginHostInner({ pluginId, context }: Props) {
 export default function PluginHost({ pluginId, context }: Props) {
   return (
     <ErrorBoundary
+      resetKeys={[pluginId]}
       fallbackRender={({ error }) => (
         <div className="flex h-full items-center justify-center p-4 text-sm text-destructive">
           Plugin error: {error instanceof Error ? error.message : String(error)}
