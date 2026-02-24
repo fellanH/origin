@@ -29,7 +29,9 @@
       "@origin/monaco": ["./plugins/monaco/src"],
       "@origin/monaco/*": ["./plugins/monaco/src/*"],
       "@origin/browser": ["./plugins/browser/src"],
-      "@origin/browser/*": ["./plugins/browser/src/*"]
+      "@origin/browser/*": ["./plugins/browser/src/*"],
+      "@origin/github": ["./plugins/github/src"],
+      "@origin/github/*": ["./plugins/github/src/*"]
     }
   },
   "include": ["src"],
