@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useSyncExternalStore } from "react";
 import type { PluginBus } from "./plugin";
 
@@ -12,8 +13,12 @@ export function useBusChannel<T = unknown>(
   bus: PluginBus,
   channel: string,
 ): T | undefined {
+  const subscribe = useCallback(
+    (notify: () => void) => bus.subscribe(channel, notify),
+    [bus, channel],
+  );
   return useSyncExternalStore(
-    (notify) => bus.subscribe(channel, notify),
+    subscribe,
     () => bus.read(channel) as T | undefined,
   );
 }

@@ -7,8 +7,9 @@ const _lastValues = new Map<string, unknown>();
 
 export const pluginBus: PluginBus = {
   publish(channel, payload) {
-    _lastValues.set(channel, payload);
-    _subscribers.get(channel)?.forEach((fn) => fn(payload));
+    const frozen = Object.freeze({ ...(payload as object) }) as typeof payload;
+    _lastValues.set(channel, frozen);
+    _subscribers.get(channel)?.forEach((fn) => fn(frozen));
   },
 
   subscribe(channel, handler) {
