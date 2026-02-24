@@ -17,6 +17,15 @@ type WorkspaceState = {
   pendingSaveName: boolean;
   /** Resolved at startup via appDataDir() — never persisted */
   appDataDir: string;
+  /**
+   * When set, the EmptyState (Launcher) in the matching card will auto-open
+   * its plugin picker. Cleared once the launcher has acknowledged it.
+   */
+  launcherOpenForNodeId: string | null;
+  /** When true, CMD+D/⇧D auto-opens the Launcher in the new panel. Default: true */
+  splitAutoLaunch: boolean;
+  /** Ephemeral zoom overlay — never persisted. null means no zoom active. */
+  zoomedNodeId: string | null;
 };
 
 type WorkspaceActions = {
@@ -40,6 +49,9 @@ type WorkspaceActions = {
   setPendingSaveName: (v: boolean) => void;
   setAppDataDir: (path: string) => void;
   applyLayoutPreset: (preset: "equal" | "main-sidebar") => void;
+  clearLauncherForNode: (nodeId: string) => void;
+  setSplitAutoLaunch: (v: boolean) => void;
+  setZoomedNodeId: (id: string | null) => void;
 };
 
 export type WorkspaceStore = WorkspaceState & WorkspaceActions;
@@ -83,6 +95,9 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
       savedConfigs: [],
       pendingSaveName: false,
       appDataDir: "",
+      launcherOpenForNodeId: null,
+      splitAutoLaunch: true,
+      zoomedNodeId: null,
 
       // ── Tab actions ──────────────────────────────────────────────────────
 
@@ -122,6 +137,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
         set((draft) => {
           draft.lastWorkspaceId = draft.activeWorkspaceId;
           draft.activeWorkspaceId = id;
+          draft.zoomedNodeId = null;
         }),
 
       switchToLastWorkspace: () =>
@@ -135,6 +151,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           const prev = draft.lastWorkspaceId;
           draft.lastWorkspaceId = draft.activeWorkspaceId;
           draft.activeWorkspaceId = prev;
+          draft.zoomedNodeId = null;
         }),
 
       renameWorkspace: (id, name) =>
@@ -200,6 +217,10 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           }
 
           ws.focusedCardId = newLeafId;
+
+          if (draft.splitAutoLaunch) {
+            draft.launcherOpenForNodeId = newLeafId;
+          }
         }),
 
       closeCard: (cardId) =>
@@ -455,6 +476,23 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           }
         }
       },
+
+      clearLauncherForNode: (nodeId) =>
+        set((draft) => {
+          if (draft.launcherOpenForNodeId === nodeId) {
+            draft.launcherOpenForNodeId = null;
+          }
+        }),
+
+      setSplitAutoLaunch: (v) =>
+        set((draft) => {
+          draft.splitAutoLaunch = v;
+        }),
+
+      setZoomedNodeId: (id) =>
+        set((draft) => {
+          draft.zoomedNodeId = id;
+        }),
     })),
     { name: "WorkspaceStore" },
   ),
