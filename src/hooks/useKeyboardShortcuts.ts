@@ -10,6 +10,16 @@ export function useKeyboardShortcuts(): void {
     function handleKeyDown(e: KeyboardEvent): void {
       if (!e.metaKey) return;
 
+      // ── CMD+Opt+… shortcuts ──────────────────────────────────────────────
+      if (e.altKey) {
+        if (e.code === "Tab") {
+          // CMD+Opt+Tab: toggle last workspace
+          e.preventDefault();
+          useWorkspaceStore.getState().switchToLastWorkspace();
+        }
+        return;
+      }
+
       if (e.key.toLowerCase() === "d") {
         e.preventDefault();
         const state = useWorkspaceStore.getState();

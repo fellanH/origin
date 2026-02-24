@@ -10,6 +10,8 @@ import type { Workspace, WorkspaceId, SavedConfig } from "@/types/workspace";
 type WorkspaceState = {
   workspaces: Workspace[];
   activeWorkspaceId: WorkspaceId;
+  /** Workspace that was active before the current one; enables CMD+Opt+Tab toggle */
+  lastWorkspaceId: WorkspaceId | null;
   savedConfigs: SavedConfig[];
   pendingSaveName: boolean;
   /** Resolved at startup via appDataDir() — never persisted */
@@ -20,6 +22,7 @@ type WorkspaceActions = {
   addWorkspace: () => void;
   closeWorkspace: (id: WorkspaceId) => void;
   setActiveWorkspace: (id: WorkspaceId) => void;
+  switchToLastWorkspace: () => void;
   renameWorkspace: (id: WorkspaceId, name: string) => void;
   addInitialCard: (pluginId?: string) => void;
   splitCard: (cardId: CardId, direction: "horizontal" | "vertical") => void;
@@ -56,6 +59,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
     immer((set) => ({
       workspaces: [emptyWorkspace(INITIAL_ID, "Workspace 1")],
       activeWorkspaceId: INITIAL_ID,
+      lastWorkspaceId: null,
       savedConfigs: [],
       pendingSaveName: false,
       appDataDir: "",
@@ -95,7 +99,21 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
 
       setActiveWorkspace: (id) =>
         set((draft) => {
+          draft.lastWorkspaceId = draft.activeWorkspaceId;
           draft.activeWorkspaceId = id;
+        }),
+
+      switchToLastWorkspace: () =>
+        set((draft) => {
+          if (draft.workspaces.length <= 1) return;
+          if (!draft.lastWorkspaceId) return;
+          const target = draft.workspaces.find(
+            (w) => w.id === draft.lastWorkspaceId,
+          );
+          if (!target) return;
+          const prev = draft.lastWorkspaceId;
+          draft.lastWorkspaceId = draft.activeWorkspaceId;
+          draft.activeWorkspaceId = prev;
         }),
 
       renameWorkspace: (id, name) =>
@@ -295,11 +313,13 @@ export const tauriHandler = createTauriStore(
       "addWorkspace",
       "closeWorkspace",
       "setActiveWorkspace",
+      "switchToLastWorkspace",
       "renameWorkspace",
       "addInitialCard",
       "splitCard",
       "closeCard",
       "setFocus",
+      "moveFocus",
       "resizeSplit",
       "setPlugin",
       "saveConfig",
