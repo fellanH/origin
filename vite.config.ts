@@ -73,6 +73,7 @@ export default defineConfig({
       "@origin/monaco": path.resolve(__dirname, "plugins/monaco/src"),
       "@origin/browser": path.resolve(__dirname, "plugins/browser/src"),
       "@origin/github": path.resolve(__dirname, "plugins/github/src"),
+      "@origin/terminal": path.resolve(__dirname, "plugins/terminal/src"),
       // Internal path alias
       "@": path.resolve(__dirname, "src"),
     },
@@ -89,6 +90,7 @@ export default defineConfig({
       "@origin/monaco",
       "@origin/browser",
       "@origin/github",
+      "@origin/terminal",
     ],
   },
 

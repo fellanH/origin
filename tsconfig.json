@@ -31,7 +31,9 @@
       "@origin/browser": ["./plugins/browser/src"],
       "@origin/browser/*": ["./plugins/browser/src/*"],
       "@origin/github": ["./plugins/github/src"],
-      "@origin/github/*": ["./plugins/github/src/*"]
+      "@origin/github/*": ["./plugins/github/src/*"],
+      "@origin/terminal": ["./plugins/terminal/src"],
+      "@origin/terminal/*": ["./plugins/terminal/src/*"]
     }
   },
   "include": ["src"],

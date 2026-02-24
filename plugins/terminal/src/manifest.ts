@@ -1,7 +1,11 @@
-export const manifest = {
+import type { PluginManifest } from "@origin/api";
+
+export const manifest: PluginManifest = {
   id: "com.origin.terminal",
   name: "Terminal",
-  version: "0.1.0",
-  description: "Full terminal with PTY — run commands, Claude Code, anything",
-  icon: "⌨️",
-} as const;
+  description: "Full PTY terminal",
+  icon: ">_",
+  version: "0.0.1",
+};
+
+export default manifest;

@@ -1,12 +1,14 @@
+// The manifest is re-exported so Origin can read metadata without fully loading the plugin.
 export { manifest } from "./manifest";
 
 import { useEffect, useRef } from "react";
-import { Terminal } from "xterm";
-import { FitAddon } from "@xterm/addon-fit";
-import "xterm/css/xterm.css";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
 import type { PluginContext } from "@origin/api";
+import { Terminal } from "@xterm/xterm";
+import { FitAddon } from "@xterm/addon-fit";
+import { WebglAddon } from "@xterm/addon-webgl";
+import { ClipboardAddon } from "@xterm/addon-clipboard";
+import { invoke, Channel } from "@tauri-apps/api/core";
+import "@xterm/xterm/css/xterm.css";
 
 export default function TerminalPlugin({
   context,
@@ -14,61 +16,75 @@ export default function TerminalPlugin({
   context: PluginContext;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const termRef = useRef<Terminal | null>(null);
-  const fitAddonRef = useRef<FitAddon | null>(null);
-  const ptyId = context.cardId; // one PTY per card
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
 
     const term = new Terminal({
-      cursorBlink: true,
-      fontFamily: "Menlo, Monaco, 'Courier New', monospace",
+      fontFamily: "monospace",
       fontSize: 13,
-      theme:
-        context.theme === "dark"
-          ? { background: "#1a1a1a", foreground: "#d4d4d4" }
-          : { background: "#ffffff", foreground: "#1a1a1a" },
+      theme: { background: "#1e1e1e" },
+      cursorBlink: true,
     });
+
     const fitAddon = new FitAddon();
+    const clipboardAddon = new ClipboardAddon();
     term.loadAddon(fitAddon);
-    term.open(containerRef.current);
+    term.loadAddon(clipboardAddon);
+
+    const webglAddon = new WebglAddon();
+    webglAddon.onContextLoss(() => webglAddon.dispose());
+    term.loadAddon(webglAddon);
+
+    term.open(container);
     fitAddon.fit();
-    termRef.current = term;
-    fitAddonRef.current = fitAddon;
 
-    // Create PTY session in the Rust backend
-    invoke("pty_create", {
-      id: ptyId,
-      cols: term.cols,
-      rows: term.rows,
-    });
+    const { cols, rows } = term;
 
-    // Stream PTY output from Rust events into xterm
-    const unlisten = listen<string>(`pty-data-${ptyId}`, (event) => {
-      term.write(event.payload);
-    });
+    const channel = new Channel<number[]>();
+    channel.onmessage = (data) => term.write(new Uint8Array(data));
 
-    // Forward keystrokes to the PTY
     term.onData((data) => {
-      invoke("pty_write", { id: ptyId, data });
+      invoke("pty_write", {
+        id: context.cardId,
+        data: Array.from(new TextEncoder().encode(data)),
+      }).catch(console.error);
     });
 
-    // Resize the PTY when the card resizes
+    invoke("pty_spawn", {
+      id: context.cardId,
+      cols,
+      rows,
+      onData: channel,
+    }).catch(console.error);
+
+    let resizeTimer: ReturnType<typeof setTimeout> | null = null;
     const ro = new ResizeObserver(() => {
-      fitAddon.fit();
-      invoke("pty_resize", { id: ptyId, cols: term.cols, rows: term.rows });
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        fitAddon.fit();
+        invoke("pty_resize", {
+          id: context.cardId,
+          cols: term.cols,
+          rows: term.rows,
+        }).catch(console.error);
+      }, 50);
     });
-    ro.observe(containerRef.current);
+    ro.observe(container);
 
     return () => {
-      unlisten.then((fn) => fn());
+      if (resizeTimer) clearTimeout(resizeTimer);
       ro.disconnect();
       term.dispose();
-      invoke("pty_destroy", { id: ptyId });
+      invoke("pty_destroy", { id: context.cardId }).catch(console.error);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [context.cardId]);
 
-  return <div ref={containerRef} className="h-full w-full overflow-hidden" />;
+  return (
+    <div
+      ref={containerRef}
+      style={{ width: "100%", height: "100%", background: "#1e1e1e" }}
+    />
+  );
 }

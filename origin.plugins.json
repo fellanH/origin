@@ -5,6 +5,7 @@
     { "id": "com.origin.filetree", "package": "@origin/filetree" },
     { "id": "com.origin.monaco", "package": "@origin/monaco" },
     { "id": "com.origin.browser", "package": "@origin/browser" },
-    { "id": "com.origin.github", "package": "@origin/github" }
+    { "id": "com.origin.github", "package": "@origin/github" },
+    { "id": "com.origin.terminal", "package": "@origin/terminal" }
   ]
 }
