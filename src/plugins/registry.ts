@@ -21,8 +21,8 @@ export interface RegistryEntry {
   load: () => Promise<PluginModule>;
   /**
    * Full manifest for L1 (sandboxed iframe) plugins — used by IframePluginHost
-   * to enforce the capability allow-list for ORIGIN_INVOKE. Absent for L0
-   * plugins (they run in the main React tree and call Tauri directly).
+   * to enforce the capability allow-list for ORIGIN_INVOKE and ORIGIN_EVENT_SUBSCRIBE.
+   * Absent for L0 plugins (they run in the main React tree and call Tauri directly).
    */
   manifest?: PluginManifest;
 }

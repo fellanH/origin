@@ -1,12 +1,19 @@
 import { useRef, useEffect, useCallback } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, Channel } from "@tauri-apps/api/core";
 import { ErrorBoundary } from "react-error-boundary";
-import type { PluginContext, OriginChannelMap, PluginManifest } from "@/types/plugin";
+import type {
+  PluginContext,
+  OriginChannelMap,
+  PluginManifest,
+} from "@/types/plugin";
 import type {
   PluginToHostMessage,
   HostToPluginMessage,
 } from "@/lib/iframeProtocol";
-import { COMMAND_CAPABILITY_MAP } from "@/lib/iframeProtocol";
+import {
+  COMMAND_CAPABILITY_MAP,
+  EVENT_CAPABILITY_MAP,
+} from "@/lib/iframeProtocol";
 
 interface Props {
   pluginId: string;
@@ -20,6 +27,8 @@ function IframePluginHostInner({ pluginId, context, manifest }: Props) {
   const readyRef = useRef(false);
   // Map of channel → unsubscribe fn for channels the plugin has subscribed to
   const channelUnsubs = useRef(new Map<string, () => void>());
+  // Map of subscriptionId → cleanup fn for active event subscriptions
+  const eventUnsubs = useRef(new Map<string, () => void>());
   // Keep manifest in a ref so the onMessage closure always sees the latest value
   const manifestRef = useRef(manifest);
   manifestRef.current = manifest;
@@ -77,26 +86,92 @@ function IframePluginHostInner({ pluginId, context, manifest }: Props) {
         // 1. Command must be in the allow-list
         const requiredCap = COMMAND_CAPABILITY_MAP[command];
         if (requiredCap === undefined) {
-          postToPlugin({ type: "ORIGIN_INVOKE_ERROR", id, error: `Command not allowed: ${command}` });
+          postToPlugin({
+            type: "ORIGIN_INVOKE_ERROR",
+            id,
+            error: `Command not allowed: ${command}`,
+          });
           return;
         }
 
         // 2. Plugin manifest must declare the required capability
         const declared = manifestRef.current?.requiredCapabilities ?? [];
         if (!declared.includes(requiredCap)) {
-          postToPlugin({ type: "ORIGIN_INVOKE_ERROR", id, error: `Missing capability: ${requiredCap}` });
+          postToPlugin({
+            type: "ORIGIN_INVOKE_ERROR",
+            id,
+            error: `Missing capability: ${requiredCap}`,
+          });
           return;
         }
 
         // 3. Proxy the call through Tauri — failures must not crash the host
         invoke(command, args)
-          .then((result) => postToPlugin({ type: "ORIGIN_INVOKE_RESULT", id, result }))
+          .then((result) => {
+            postToPlugin({ type: "ORIGIN_INVOKE_RESULT", id, result });
+          })
           .catch((err: unknown) => {
-            postToPlugin({ type: "ORIGIN_INVOKE_ERROR", id, error: err instanceof Error ? err.message : String(err) });
+            const error = err instanceof Error ? err.message : String(err);
+            postToPlugin({ type: "ORIGIN_INVOKE_ERROR", id, error });
           });
       } else if (msg.type === "ORIGIN_CONFIG_SET") {
         // Plugin requests a config patch — delegate to store via context
         context.setConfig(msg.patch);
+      } else if (msg.type === "ORIGIN_EVENT_SUBSCRIBE") {
+        const { subscriptionId, event, args } = msg;
+
+        // Avoid double-subscribe for the same subscriptionId
+        if (eventUnsubs.current.has(subscriptionId)) return;
+
+        // 1. Event must be in the allow-list
+        const requiredCap = EVENT_CAPABILITY_MAP[event];
+        if (requiredCap === undefined) {
+          // No response type defined for subscribe errors — silently drop
+          return;
+        }
+
+        // 2. Plugin manifest must declare the required capability
+        const declared = manifestRef.current?.requiredCapabilities ?? [];
+        if (!declared.includes(requiredCap)) {
+          return;
+        }
+
+        // 3. Wire up the event source
+        if (event === "pty:data") {
+          const { id, cols, rows } = (args ?? {}) as {
+            id?: string;
+            cols?: number;
+            rows?: number;
+          };
+          if (id === undefined || cols === undefined || rows === undefined) {
+            return;
+          }
+
+          // Tauri Channel<Vec<u8>> — serialized as number[] on the JS side
+          const channel = new Channel<number[]>();
+          channel.onmessage = (data) => {
+            postToPlugin({
+              type: "ORIGIN_EVENT",
+              subscriptionId,
+              payload: { data },
+            });
+          };
+
+          invoke("pty_spawn", { id, cols, rows, onData: channel }).catch(() => {
+            // PTY spawn failure — remove subscription so a retry is possible
+            eventUnsubs.current.delete(subscriptionId);
+          });
+
+          eventUnsubs.current.set(subscriptionId, () => {
+            invoke("pty_destroy", { id }).catch(() => {});
+          });
+        }
+      } else if (msg.type === "ORIGIN_EVENT_UNSUBSCRIBE") {
+        const cleanup = eventUnsubs.current.get(msg.subscriptionId);
+        if (cleanup) {
+          cleanup();
+          eventUnsubs.current.delete(msg.subscriptionId);
+        }
       }
     }
 
@@ -105,6 +180,9 @@ function IframePluginHostInner({ pluginId, context, manifest }: Props) {
       window.removeEventListener("message", onMessage);
       channelUnsubs.current.forEach((unsub) => unsub());
       channelUnsubs.current.clear();
+      // Clean up all event subscriptions (e.g. destroy open PTY sessions)
+      eventUnsubs.current.forEach((cleanup) => cleanup());
+      eventUnsubs.current.clear();
       readyRef.current = false;
     };
   }, [
@@ -139,7 +217,11 @@ function IframePluginHostInner({ pluginId, context, manifest }: Props) {
   );
 }
 
-export default function IframePluginHost({ pluginId, context, manifest }: Props) {
+export default function IframePluginHost({
+  pluginId,
+  context,
+  manifest,
+}: Props) {
   return (
     <ErrorBoundary
       resetKeys={[pluginId]}
@@ -149,7 +231,11 @@ export default function IframePluginHost({ pluginId, context, manifest }: Props)
         </div>
       )}
     >
-      <IframePluginHostInner pluginId={pluginId} context={context} manifest={manifest} />
+      <IframePluginHostInner
+        pluginId={pluginId}
+        context={context}
+        manifest={manifest}
+      />
     </ErrorBoundary>
   );
 }

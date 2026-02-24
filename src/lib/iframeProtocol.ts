@@ -23,7 +23,14 @@ export type PluginToHostMessage =
       args: Record<string, unknown>;
     }
   /** Sent by the plugin to persist a shallow config patch on the host. */
-  | { type: "ORIGIN_CONFIG_SET"; patch: Record<string, unknown> };
+  | { type: "ORIGIN_CONFIG_SET"; patch: Record<string, unknown> }
+  | {
+      type: "ORIGIN_EVENT_SUBSCRIBE";
+      subscriptionId: string;
+      event: string;
+      args?: Record<string, unknown>;
+    }
+  | { type: "ORIGIN_EVENT_UNSUBSCRIBE"; subscriptionId: string };
 
 export interface IframePluginContext {
   cardId: string;
@@ -57,4 +64,14 @@ export const COMMAND_CAPABILITY_MAP: Record<string, string> = {
   pty_write: "pty",
   pty_resize: "pty",
   pty_destroy: "pty",
+};
+
+/**
+ * Maps event names to the required capability string a plugin must declare in
+ * its manifest.requiredCapabilities to subscribe to that event.
+ *
+ * Events not present here are unconditionally denied.
+ */
+export const EVENT_CAPABILITY_MAP: Record<string, string> = {
+  "pty:data": "pty",
 };
