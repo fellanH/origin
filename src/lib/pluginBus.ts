@@ -1,13 +1,6 @@
 /** Shared pub/sub bus for inter-plugin communication. */
 
-export interface PluginBus {
-  /** Broadcast a value on a channel. Cached as the last value. */
-  publish(channel: string, payload: unknown): void;
-  /** Subscribe to a channel. Returns an unsubscribe function. */
-  subscribe(channel: string, handler: (payload: unknown) => void): () => void;
-  /** Synchronously read the last published value on a channel. */
-  read(channel: string): unknown;
-}
+import type { PluginBus } from "@origin/api";
 
 const _subscribers = new Map<string, Set<(payload: unknown) => void>>();
 const _lastValues = new Map<string, unknown>();
