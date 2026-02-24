@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { listen } from "@tauri-apps/api/event";
 import {
   useWorkspaceStore,
@@ -6,10 +6,35 @@ import {
 } from "@/store/workspaceStore";
 import { panelRefs } from "@/lib/panelRefs";
 
-export function useKeyboardShortcuts(): void {
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type KeyboardShortcutsOptions = {
+  /** Called when CMD+, is pressed — toggle settings panel */
+  onToggleSettings: () => void;
+};
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
+export function useKeyboardShortcuts({
+  onToggleSettings,
+}: KeyboardShortcutsOptions): void {
+  // Stable ref so the event listener closure always calls the latest callback
+  // without needing to re-register the listener on every render.
+  const onToggleSettingsRef = useRef(onToggleSettings);
+  useEffect(() => {
+    onToggleSettingsRef.current = onToggleSettings;
+  });
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent): void {
       if (!e.metaKey) return;
+
+      // CMD+, — toggle settings panel (no altKey / shiftKey required)
+      if (e.key === "," && !e.altKey && !e.shiftKey) {
+        e.preventDefault();
+        onToggleSettingsRef.current();
+        return;
+      }
 
       // ── CMD+Opt+… shortcuts ──────────────────────────────────────────────
       if (e.altKey) {
