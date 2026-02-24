@@ -16,31 +16,6 @@ const BUNDLED: Record<
     name: "Notepad",
     icon: "📝",
   },
-  "com.origin.filetree": {
-    load: () => import("@origin/filetree") as Promise<PluginModule>,
-    name: "File Tree",
-    icon: "📁",
-  },
-  "com.origin.monaco": {
-    load: () => import("@origin/monaco") as Promise<PluginModule>,
-    name: "Monaco Editor",
-    icon: "✏️",
-  },
-  "com.origin.browser": {
-    load: () => import("@origin/browser") as Promise<PluginModule>,
-    name: "Browser",
-    icon: "🌐",
-  },
-  "com.origin.github": {
-    load: () => import("@origin/github") as Promise<PluginModule>,
-    name: "GitHub PRs",
-    icon: "🐙",
-  },
-  "com.origin.terminal": {
-    load: () => import("@origin/terminal") as Promise<PluginModule>,
-    name: "Terminal",
-    icon: "⌨️",
-  },
 };
 
 export interface RegistryEntry {
