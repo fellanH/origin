@@ -6,6 +6,8 @@ export interface RegistryPlugin {
   version: string;
   icon?: string;
   github?: string;
+  /** npm package name — used by the install command. Falls back to `id` if absent. */
+  package?: string;
 }
 
 export interface Registry {
