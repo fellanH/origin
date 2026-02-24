@@ -34,7 +34,7 @@ export function useKeyboardShortcuts(): void {
           e.preventDefault();
           const focusedId = selectActiveWorkspace(
             useWorkspaceStore.getState(),
-          ).focusedCardId;
+          )?.focusedCardId;
           if (focusedId) {
             const handle = panelRefs.get(focusedId);
             if (handle) {
@@ -47,7 +47,7 @@ export function useKeyboardShortcuts(): void {
           e.preventDefault();
           const focusedId = selectActiveWorkspace(
             useWorkspaceStore.getState(),
-          ).focusedCardId;
+          )?.focusedCardId;
           if (focusedId) {
             const handle = panelRefs.get(focusedId);
             if (handle) {
@@ -63,7 +63,7 @@ export function useKeyboardShortcuts(): void {
         e.preventDefault();
         const state = useWorkspaceStore.getState();
         const ws = selectActiveWorkspace(state);
-        if (ws.rootId === null) {
+        if (!ws || ws.rootId === null) {
           state.addInitialCard();
           return;
         }
@@ -75,7 +75,7 @@ export function useKeyboardShortcuts(): void {
       } else if (e.key === "w" && !e.shiftKey) {
         e.preventDefault();
         const state = useWorkspaceStore.getState();
-        const { focusedCardId } = selectActiveWorkspace(state);
+        const focusedCardId = selectActiveWorkspace(state)?.focusedCardId;
         if (!focusedCardId) return;
         state.closeCard(focusedCardId);
       } else if (e.key === "t") {

@@ -15,7 +15,9 @@ interface Props {
 }
 
 function CardTree({ nodeId }: Props) {
-  const node = useWorkspaceStore((s) => selectActiveWorkspace(s).nodes[nodeId]);
+  const node = useWorkspaceStore(
+    (s) => selectActiveWorkspace(s)?.nodes[nodeId],
+  );
 
   if (!node) return null;
 

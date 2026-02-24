@@ -46,10 +46,18 @@ function emptyWorkspace(id: WorkspaceId, name: string): Workspace {
   return { id, name, rootId: null, nodes: {}, focusedCardId: null };
 }
 
+function getActiveWs(
+  draft: Pick<WorkspaceState, "workspaces" | "activeWorkspaceId">,
+): Workspace | null {
+  return draft.workspaces.find((w) => w.id === draft.activeWorkspaceId) ?? null;
+}
+
 // ─── Selector ────────────────────────────────────────────────────────────────
 
-export const selectActiveWorkspace = (s: WorkspaceStore): Workspace =>
-  s.workspaces.find((w) => w.id === s.activeWorkspaceId)!;
+export const selectActiveWorkspace = (
+  s: WorkspaceStore,
+): Workspace | undefined =>
+  s.workspaces.find((w) => w.id === s.activeWorkspaceId);
 
 // ─── Store ───────────────────────────────────────────────────────────────────
 
@@ -128,10 +136,8 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
 
       addInitialCard: (pluginId) =>
         set((draft) => {
-          const ws = draft.workspaces.find(
-            (w) => w.id === draft.activeWorkspaceId,
-          )!;
-          if (ws.rootId !== null) return;
+          const ws = getActiveWs(draft);
+          if (!ws || ws.rootId !== null) return;
           const leafId = crypto.randomUUID();
           ws.nodes[leafId] = {
             type: "leaf",
@@ -145,9 +151,8 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
 
       splitCard: (cardId, direction) =>
         set((draft) => {
-          const ws = draft.workspaces.find(
-            (w) => w.id === draft.activeWorkspaceId,
-          )!;
+          const ws = getActiveWs(draft);
+          if (!ws) return;
           const node = ws.nodes[cardId];
           if (!node || node.type !== "leaf") return;
 
@@ -188,9 +193,8 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
 
       closeCard: (cardId) =>
         set((draft) => {
-          const ws = draft.workspaces.find(
-            (w) => w.id === draft.activeWorkspaceId,
-          )!;
+          const ws = getActiveWs(draft);
+          if (!ws) return;
           const node = ws.nodes[cardId];
           if (!node || node.type !== "leaf") return;
 
@@ -230,18 +234,15 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
 
       setFocus: (cardId) =>
         set((draft) => {
-          const ws = draft.workspaces.find(
-            (w) => w.id === draft.activeWorkspaceId,
-          )!;
+          const ws = getActiveWs(draft);
+          if (!ws) return;
           ws.focusedCardId = cardId;
         }),
 
       moveFocus: (direction) =>
         set((draft) => {
-          const ws = draft.workspaces.find(
-            (w) => w.id === draft.activeWorkspaceId,
-          )!;
-          if (!ws.focusedCardId) return;
+          const ws = getActiveWs(draft);
+          if (!ws || !ws.focusedCardId) return;
 
           const nodes = ws.nodes;
           const wantPrev = direction === "left" || direction === "up";
@@ -287,9 +288,8 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
 
       resizeSplit: (splitId, sizes) =>
         set((draft) => {
-          const ws = draft.workspaces.find(
-            (w) => w.id === draft.activeWorkspaceId,
-          )!;
+          const ws = getActiveWs(draft);
+          if (!ws) return;
           const node = ws.nodes[splitId];
           if (node && node.type === "split") {
             node.sizes = sizes;
@@ -298,18 +298,16 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
 
       setPlugin: (cardId, pluginId) =>
         set((draft) => {
-          const ws = draft.workspaces.find(
-            (w) => w.id === draft.activeWorkspaceId,
-          )!;
+          const ws = getActiveWs(draft);
+          if (!ws) return;
           const node = ws.nodes[cardId];
           if (node && node.type === "leaf") node.pluginId = pluginId;
         }),
 
       saveConfig: (name) =>
         set((draft) => {
-          const ws = draft.workspaces.find(
-            (w) => w.id === draft.activeWorkspaceId,
-          )!;
+          const ws = getActiveWs(draft);
+          if (!ws) return;
           draft.savedConfigs.push({
             id: crypto.randomUUID(),
             name,

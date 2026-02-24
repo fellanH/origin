@@ -6,9 +6,9 @@ import EmptyState from "./EmptyState";
 import CardTree from "./CardTree";
 
 function CardLayout() {
-  const rootId = useWorkspaceStore((s) => selectActiveWorkspace(s).rootId);
+  const rootId = useWorkspaceStore((s) => selectActiveWorkspace(s)?.rootId);
 
-  if (rootId === null) {
+  if (!rootId) {
     return <EmptyState />;
   }
 
