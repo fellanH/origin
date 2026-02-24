@@ -6,6 +6,7 @@ import {
 import EmptyState from "@/components/EmptyState";
 import PluginHost from "@/components/PluginHost";
 import type { PluginContext } from "@/types/plugin";
+import { pluginBus } from "@/lib/pluginBus";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -35,7 +36,7 @@ function Card({ nodeId }: Props) {
       tabIndex={-1}
       className={cn(
         "group relative h-full w-full cursor-pointer outline-none",
-        isFocused ? "ring-2 ring-blue-500/80" : "ring-1 ring-white/10",
+        isFocused ? "ring-2 ring-foreground/20" : "ring-1 ring-border",
       )}
       onClick={() => setFocus(nodeId)}
     >
@@ -51,6 +52,7 @@ function Card({ nodeId }: Props) {
               theme: window.matchMedia("(prefers-color-scheme: dark)").matches
                 ? "dark"
                 : "light",
+              bus: pluginBus,
             } satisfies PluginContext
           }
         />
