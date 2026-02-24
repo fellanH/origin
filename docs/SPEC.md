@@ -301,9 +301,19 @@ interface PluginManifest {
 }
 
 interface PluginContext {
-  panelId: string;
+  cardId: string; // unique panel ID — use as per-panel storage key
   workspacePath: string; // see workspacePath note below
   theme: "light" | "dark";
+  bus: PluginBus; // shared pub/sub across all plugins in the workspace
+  on(event: PluginLifecycleEvent, handler: () => void): () => void; // L0 only
+}
+
+type PluginLifecycleEvent = "focus" | "blur" | "resize" | "zoom" | "zoom-exit";
+
+interface PluginBus {
+  publish(channel: string, payload: unknown): void;
+  subscribe(channel: string, handler: (payload: unknown) => void): () => void;
+  read(channel: string): unknown; // synchronous last-value read
 }
 
 type PluginComponent = React.ComponentType<{ context: PluginContext }>;
@@ -316,6 +326,10 @@ interface PluginModule {
 
 **`workspacePath`:** In v1, this is resolved once at startup to the directory containing `origin.plugins.json` (i.e., the project root), using Tauri's `path` plugin. It is stored in the workspace store and injected into every `PluginContext`. A user-facing directory-picker UI is deferred to v2.
 
+**`on()`** is injected by `PluginHost` for L0 bundled plugins only. L1 iframe plugins do not receive it — the iframe boundary prevents passing functions via `postMessage`.
+
+**`bus`** is the shared `pluginBus` singleton — same instance for all panels. L0 plugins use it directly. L1 plugins relay bus calls through `postMessage` via `@origin/sdk`.
+
 ### Plugin Config Format
 
 ```json
@@ -327,9 +341,14 @@ interface PluginModule {
 
 Plugins are npm workspace packages. `@origin/hello` resolves to `plugins/hello/` via workspaces. Vite dynamic `import('@origin/hello')` works in both dev and prod (bundled at build time).
 
-> **v1 limitation — build-time only:** Plugin loading uses Vite's static dynamic import. All plugins must be present in `origin.plugins.json` at build time; Vite bundles them into the app. Adding a new plugin requires a rebuild. Runtime plugin install is architecturally incompatible with this model — it requires a different strategy. This is an intentional v1 constraint.
+> **Two-tier plugin system:**
 >
-> **v2 runtime loading architecture (researched):** On plugin install → `npm install` + `vite build --mode lib` → plugin built to AppData dir. An embedded `axum` Tokio server serves all installed plugin dirs on a random port. At startup, Rust reads the plugin registry, generates an import map, and injects it into the webview HTML before load. The webview resolves `import("plugin-id")` against the import map — no app rebuild needed. For maximum security, prefer a custom `plugin://` URI scheme (Rust protocol handler) over an open localhost port. See `research/vite-plugin-loading.md`.
+> - **L0 (bundled)** — first-party plugins. Static Vite dynamic import literal in `registry.ts`. Built into the app at compile time. Mounted as React components in the main app tree via `PluginHost`. Full `PluginContext` including `on()` lifecycle events.
+> - **L1 (sandboxed)** — community/marketplace plugins. Loaded at runtime from `plugin://localhost/{id}/index.html` into sandboxed iframes via `IframePluginHost`. No app rebuild needed. Context injected via typed `postMessage` protocol (`iframeProtocol.ts`). Use `@origin/sdk` hooks (`usePluginContext`, `useBusChannel`) to consume context. L1 plugins cannot receive lifecycle events (`on()` is unavailable across the iframe boundary) and have no direct Tauri API access.
+>
+> The `tier: "L0" | "L1"` field on `RegistryEntry` in `src/plugins/registry.ts` controls which host is used. `Card.tsx` selects the appropriate host at render time.
+>
+> See `research/vite-plugin-loading.md` for the full architecture rationale. The `plugin://` URI scheme approach described there is the implemented L1 mechanism.
 
 ---
 
@@ -358,10 +377,15 @@ origin/
 │       ├── SavedConfigMenu.tsx # Dropdown: list/open/delete saved configs + save current
 │       ├── PanelGrid.tsx       # Root: renders active workspace's PanelNode tree OR EmptyState
 │       ├── PanelBranch.tsx     # Recursive: leaf → Panel, split → Group + two PanelBranches (react-resizable-panels v4)
-│       ├── Panel.tsx           # A leaf panel: if pluginId → PluginHost, else → EmptyState
-│       ├── PluginHost.tsx      # Loads + mounts a plugin component with PluginContext; wrapped in ErrorBoundary
-│       └── EmptyState.tsx      # Unified empty slot: name + keyboard hints + plugin list; optional panelId prop
+│       ├── Card.tsx            # A leaf panel: selects PluginHost (L0) or IframePluginHost (L1) or EmptyState
+│       ├── PluginHost.tsx      # L0: loads + mounts a plugin component with PluginContext; wrapped in ErrorBoundary
+│       ├── IframePluginHost.tsx # L1: sandboxed iframe host with postMessage protocol + bus relay
+│       └── EmptyState.tsx      # Unified empty slot: name + keyboard hints + plugin list; optional cardId prop
 ├── plugins/
+│   ├── api/
+│   │   └── src/plugin.ts       # Type contract: PluginManifest, PluginContext, PluginBus, PluginModule
+│   ├── sdk/
+│   │   └── src/                # @origin/sdk: usePluginContext(), useBusChannel() for L1 iframe plugins
 │   └── hello/
 │       ├── package.json        # { "name": "@origin/hello", "main": "src/index.tsx" }
 │       └── src/
@@ -538,29 +562,30 @@ This intercepts the native close triggered by the × traffic light button. The w
 
 **`tauri-plugin-window-state`** — add `@tauri-apps/plugin-window-state` (npm) + `tauri-plugin-window-state = "1"` (Cargo) to persist window position and size across restarts. Install via `npm run tauri add window-state`. Register in `lib.rs`: `.plugin(tauri_plugin_window_state::Builder::new().build())`. Set `"visible": false` on the window in `tauri.conf.json` to prevent a flash of the default position before the saved position is restored. No conflict with `@tauri-store/zustand` — they persist separate concerns.
 
-**CSP:** Since plugins are bundled at build time (no runtime remote fetching), a restrictive policy is appropriate:
+**CSP:** L1 plugins are served via the `plugin://` custom URI scheme. The CSP must allowlist `plugin:` in `script-src`:
 
 ```json
 "security": {
-  "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'"
+  "csp": "default-src 'self'; script-src 'self' plugin:; style-src 'self' 'unsafe-inline'"
 }
 ```
 
-Do not use `unsafe-eval`. Adjust if first-party plugins load remote assets.
+Do not use `unsafe-eval`. The `plugin:` entry is required for L1 iframe plugin scripts to execute. L0 bundled plugins require only `'self'`.
 
 ---
 
 ## Tech Stack
 
-| Layer     | Choice                                                                         |
-| --------- | ------------------------------------------------------------------------------ |
-| Desktop   | Tauri 2.10.2 + `@tauri-apps/plugin-window-state` (window geometry persistence) |
-| Frontend  | React 19 + Vite 7 + TypeScript                                                 |
-| Styling   | Tailwind CSS 4 + shadcn/ui                                                     |
-| Layout    | `react-resizable-panels` v4 (resize handles) + Zustand tree (topology)         |
-| State     | Zustand v5 + `@tauri-store/zustand` (file-backed; upgrade to SQLite in v2)     |
-| Build     | Vite 7 + `@tailwindcss/vite`, npm workspaces                                   |
-| Utilities | `react-error-boundary` v6 (plugin isolation)                                   |
+| Layer      | Choice                                                                         |
+| ---------- | ------------------------------------------------------------------------------ |
+| Desktop    | Tauri 2.10.2 + `@tauri-apps/plugin-window-state` (window geometry persistence) |
+| Frontend   | React 19 + Vite 7 + TypeScript                                                 |
+| Styling    | Tailwind CSS 4 + shadcn/ui                                                     |
+| Layout     | `react-resizable-panels` v4 (resize handles) + Zustand tree (topology)         |
+| State      | Zustand v5 + `@tauri-store/zustand` (file-backed; upgrade to SQLite in v2)     |
+| Build      | Vite 7 + `@tailwindcss/vite`, npm workspaces                                   |
+| Utilities  | `react-error-boundary` v6 (plugin isolation)                                   |
+| Plugin SDK | `@origin/sdk` — `usePluginContext()` + `useBusChannel()` for L1 iframe authors |
 
 ---
 
@@ -604,7 +629,11 @@ Do not use `unsafe-eval`. Adjust if first-party plugins load remote assets.
 | `src-tauri/Cargo.toml`                | Rust deps (tauri 2, tauri-plugin-zustand, tauri-plugin-window-state)                     |
 | `src-tauri/capabilities/default.json` | Tauri permissions — required for IPC (`core:default`, `zustand:default`)                 |
 | `src/store/workspaceStore.ts`         | All state — workspaces, panel ops, saved configs (`@tauri-store/zustand` + immer)        |
-| `src/plugins/registry.ts`             | Maps plugin IDs → dynamic import factories                                               |
+| `src/plugins/registry.ts`             | Maps plugin IDs → `{ load, tier }` entries; `tier: "L0" \| "L1"` selects host component  |
+| `src/components/PluginHost.tsx`       | L0 host — direct React mount, full `PluginContext` including `on()` lifecycle events     |
+| `src/components/IframePluginHost.tsx` | L1 host — sandboxed iframe, postMessage handshake, bus relay, theme forwarding           |
+| `src/lib/iframeProtocol.ts`           | Typed postMessage schema (`HostToPluginMessage`, `PluginToHostMessage`)                  |
+| `plugins/sdk/src/`                    | `@origin/sdk`: `usePluginContext()` + `useBusChannel()` for L1 plugin authors            |
 | `src/components/TabBar.tsx`           | Tab strip — workspace switching + new/close tab                                          |
 | `src/components/SavedConfigMenu.tsx`  | Save/load/delete named layout configs                                                    |
 | `src/components/PanelGrid.tsx`        | Root component — starts the render tree                                                  |

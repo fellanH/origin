@@ -9,9 +9,16 @@ Adding a new `@origin/*` plugin to the app — whether a first-party plugin or a
 - `@origin/api` (`plugins/api/`) provides the type contract for all plugins. It is already a workspace package and requires no setup steps.
 - Types are available at `plugins/api/src/plugin.ts`: `PluginManifest`, `PluginContext`, `PluginComponent`, `PluginModule`.
 
-## Build-time constraint (v1)
+## Plugin tiers
 
-Plugin loading v1 uses **build-time Vite dynamic imports**. Every plugin must have a static literal `import()` in `registry.ts` so Vite can emit the chunk at build time. Plugins cannot be installed at runtime without a rebuild.
+There are two plugin execution tiers:
+
+| Tier   | Who                     | Loading                                                  | Isolation                    | Lifecycle events                         |
+| ------ | ----------------------- | -------------------------------------------------------- | ---------------------------- | ---------------------------------------- |
+| **L0** | First-party (this repo) | Build-time Vite dynamic import (static literal required) | None — runs in main app tree | Full (`focus`, `blur`, `resize`, `zoom`) |
+| **L1** | Community / marketplace | Runtime via `plugin://` URI scheme into sandboxed iframe | Null-origin iframe           | None (iframe boundary)                   |
+
+This SOP covers **L0 plugins**. L1 plugin authors use `@origin/sdk` (`usePluginContext`, `useBusChannel`) instead of `PluginContext` directly — they do not need to touch the core repo.
 
 ---
 

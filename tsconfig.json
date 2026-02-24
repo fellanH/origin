@@ -24,7 +24,9 @@
       "@origin/hello": ["./plugins/hello/src"],
       "@origin/hello/*": ["./plugins/hello/src/*"],
       "@origin/notepad": ["./plugins/notepad/src"],
-      "@origin/notepad/*": ["./plugins/notepad/src/*"]
+      "@origin/notepad/*": ["./plugins/notepad/src/*"],
+      "@origin/sdk": ["./plugins/sdk/src/index.ts"],
+      "@origin/sdk/*": ["./plugins/sdk/src/*"]
     }
   },
   "include": ["src"],

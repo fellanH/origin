@@ -17,6 +17,7 @@ src-tauri/gen/schemas/
 Thumbs.db
 
 # Dev artifacts
+.claude/worktrees/
 *.log
 
 # Project-local config (not committed)

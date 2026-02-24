@@ -1518,7 +1518,10 @@ describe("saveConfig / loadConfig / deleteConfig", () => {
     get().deleteConfig("nonexistent");
 
     expect(useWorkspaceStore.getState().savedConfigs).toHaveLength(1);
+  });
+});
 
+// ---------------------------------------------------------------------------
 // swapPanel
 // ---------------------------------------------------------------------------
 
