@@ -106,6 +106,30 @@ export interface PluginContext {
    * useEffect(() => context.on('focus', () => console.log('focused')), []);
    */
   on(event: PluginLifecycleEvent, handler: () => void): () => void;
+  /**
+   * Proxy a Tauri command through the shell.
+   * The plugin must declare the required capability in its manifest
+   * (`requiredCapabilities`) — the shell will reject the call otherwise.
+   *
+   * @example
+   * const result = await context.invoke<string>("plugin:fs|read_text_file", { path: "/etc/hosts" });
+   */
+  invoke<T = unknown>(
+    command: string,
+    args?: Record<string, unknown>,
+  ): Promise<T>;
+  /**
+   * Subscribe to a named host-push event stream (e.g. `"pty:data"`).
+   * Returns an unsubscribe function — call it in your plugin's cleanup.
+   *
+   * @example
+   * useEffect(() => context.onEvent("pty:data", { sessionId }, ({ data }) => xterm.write(data)), []);
+   */
+  onEvent(
+    event: string,
+    args: Record<string, unknown>,
+    handler: (payload: unknown) => void,
+  ): () => void;
 }
 
 export type PluginComponent = React.ComponentType<{ context: PluginContext }>;

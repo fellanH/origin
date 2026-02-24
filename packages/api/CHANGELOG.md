@@ -6,6 +6,32 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [0.7.0] — 2026-02-25
+
+Issue: #146
+
+### Added
+
+- `PluginContext.invoke<T>(command, args?)` — proxy a Tauri command through the
+  shell. Implemented in `@origin/sdk` via the `ORIGIN_INVOKE` / `ORIGIN_INVOKE_RESULT`
+  / `ORIGIN_INVOKE_ERROR` postMessage protocol. The plugin must declare the
+  required capability in `PluginManifest.requiredCapabilities`; the shell rejects
+  calls for undeclared capabilities.
+- `PluginContext.onEvent(event, args, handler)` — subscribe to a named
+  host-push event stream (e.g. `"pty:data"`). Implemented in `@origin/sdk` via
+  the `ORIGIN_EVENT_SUBSCRIBE` / `ORIGIN_EVENT` / `ORIGIN_EVENT_UNSUBSCRIBE`
+  postMessage protocol. Returns an unsubscribe function.
+- `@origin/sdk`: `invoke<T>(command, args?)` — standalone function wrapping the
+  ORIGIN_INVOKE protocol. Uses `crypto.randomUUID()` for correlation IDs.
+  Cleans up the message listener on resolve/reject.
+- `@origin/sdk`: `onEvent(event, args, handler)` — standalone function wrapping
+  the ORIGIN_EVENT_SUBSCRIBE protocol. Returns a cleanup function that sends
+  ORIGIN_EVENT_UNSUBSCRIBE.
+- `@origin/sdk`: `useOriginEvent(event, args, handler)` — React hook wrapping
+  `onEvent` with `useEffect` cleanup for React plugin components.
+
+---
+
 ## [0.6.0] — 2026-02-24
 
 Issue: #141
@@ -138,6 +164,7 @@ a standalone `@origin-cards/api` workspace package.
 
 ---
 
+[0.7.0]: https://github.com/fellanH/origin/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/fellanH/origin/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/fellanH/origin/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/fellanH/origin/compare/v0.3.0...v0.4.0
