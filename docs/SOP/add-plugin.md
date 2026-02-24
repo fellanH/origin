@@ -6,8 +6,8 @@ Adding a new `@origin/*` plugin to the app — whether a first-party plugin or a
 
 ## Prerequisites
 
-- `@origin/api` (`plugins/api/`) provides the type contract for all plugins. It is already a workspace package and requires no setup steps.
-- Types are available at `plugins/api/src/plugin.ts`: `PluginManifest`, `PluginContext`, `PluginComponent`, `PluginModule`.
+- `@origin/api` (`packages/api/`) provides the type contract for all plugins. It is already a workspace package and requires no setup steps.
+- Types are available at `packages/api/src/plugin.ts`: `PluginManifest`, `PluginContext`, `PluginComponent`, `PluginModule`.
 
 ## Plugin tiers
 
@@ -27,10 +27,10 @@ This SOP covers **L0 plugins**. L1 plugin authors use `@origin/sdk` (`usePluginC
 ### 1. Copy the template package
 
 ```
-cp -r plugins/template plugins/your-plugin
+cp -r packages/template packages/your-plugin
 ```
 
-Update `plugins/your-plugin/package.json`:
+Update `packages/your-plugin/package.json`:
 
 ```json
 {
@@ -102,9 +102,9 @@ Two places — both required:
 ```ts
 resolve: {
   alias: {
-    "@origin/api": path.resolve(__dirname, "plugins/api/src"),
-    "@origin/hello": path.resolve(__dirname, "plugins/hello/src"),
-    "@origin/your-plugin": path.resolve(__dirname, "plugins/your-plugin/src"), // ← add
+    "@origin/api": path.resolve(__dirname, "packages/api/src"),
+    "@origin/hello": path.resolve(__dirname, "packages/hello/src"),
+    "@origin/your-plugin": path.resolve(__dirname, "packages/your-plugin/src"), // ← add
   },
 },
 optimizeDeps: {
@@ -125,10 +125,10 @@ Mirror the Vite alias so the IDE resolves imports correctly:
 {
   "compilerOptions": {
     "paths": {
-      "@origin/api": ["./plugins/api/src"],
-      "@origin/hello": ["./plugins/hello/src"],
-      "@origin/your-plugin": ["./plugins/your-plugin/src"],
-      "@origin/your-plugin/*": ["./plugins/your-plugin/src/*"]
+      "@origin/api": ["./packages/api/src"],
+      "@origin/hello": ["./packages/hello/src"],
+      "@origin/your-plugin": ["./packages/your-plugin/src"],
+      "@origin/your-plugin/*": ["./packages/your-plugin/src/*"]
     }
   }
 }
@@ -167,7 +167,7 @@ Open the Launcher in an empty panel — the plugin should appear. Click it to co
 
 ## Type contract
 
-See `plugins/api/src/plugin.ts` for the authoritative type definitions:
+See `packages/api/src/plugin.ts` for the authoritative type definitions:
 
 - `PluginManifest` — metadata shown in the Launcher
 - `PluginContext` — runtime context injected by `PluginHost` into every plugin component
@@ -178,7 +178,7 @@ See `plugins/api/src/plugin.ts` for the authoritative type definitions:
 
 ## Checklist
 
-- [ ] `plugins/<name>/package.json` created with correct `name` and `@origin/api` dependency
+- [ ] `packages/<name>/package.json` created with correct `name` and `@origin/api` dependency
 - [ ] `src/manifest.ts` — unique reverse-domain `id`, display `name`, `icon`, `description`
 - [ ] `src/index.tsx` — default export satisfies `PluginComponent`; re-exports `manifest`
 - [ ] `origin.plugins.json` entry added

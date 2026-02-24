@@ -1,0 +1,8 @@
+{
+  "entryPoints": ["src/index.ts"],
+  "tsconfig": "tsconfig.json",
+  "json": "dist/api-docs.json",
+  "readme": "none",
+  "excludeInternal": true,
+  "skipErrorChecking": true
+}
