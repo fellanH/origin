@@ -5,9 +5,9 @@ import {
   selectActiveWorkspace,
 } from "@/store/workspaceStore";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
-import CardLayout from "@/components/CardLayout";
-import TabBar from "@/components/TabBar";
-import WorkspaceOverlay from "@/components/WorkspaceOverlay";
+import CardLayout from "@/components/workspace/CardLayout";
+import TabBar from "@/components/workspace/TabBar";
+import WorkspaceOverlay from "@/components/workspace/WorkspaceOverlay";
 
 function App() {
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);

@@ -3,9 +3,9 @@ import {
   useWorkspaceStore,
   selectActiveWorkspace,
 } from "@/store/workspaceStore";
-import EmptyState from "@/components/EmptyState";
-import PluginHost from "@/components/PluginHost";
-import IframePluginHost from "@/components/IframePluginHost";
+import EmptyState from "./EmptyState";
+import PluginHost from "./PluginHost";
+import IframePluginHost from "./IframePluginHost";
 import { getPlugin } from "@/plugins/registry";
 import { cn } from "@/lib/utils";
 import { useSystemTheme } from "@/hooks/useSystemTheme";

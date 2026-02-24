@@ -2,9 +2,9 @@ import {
   useWorkspaceStore,
   selectActiveWorkspace,
 } from "@/store/workspaceStore";
-import EmptyState from "./EmptyState";
+import EmptyState from "@/components/card/EmptyState";
 import CardTree from "./CardTree";
-import Card from "./Card";
+import Card from "@/components/card/Card";
 
 function CardLayout() {
   const rootId = useWorkspaceStore((s) => selectActiveWorkspace(s)?.rootId);
