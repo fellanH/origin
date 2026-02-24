@@ -16,6 +16,18 @@ export function useKeyboardShortcuts(): void {
           // CMD+Opt+Tab: toggle last workspace
           e.preventDefault();
           useWorkspaceStore.getState().switchToLastWorkspace();
+        } else if (e.code === "KeyH" || e.code === "ArrowLeft") {
+          e.preventDefault();
+          useWorkspaceStore.getState().moveFocus("left");
+        } else if (e.code === "KeyL" || e.code === "ArrowRight") {
+          e.preventDefault();
+          useWorkspaceStore.getState().moveFocus("right");
+        } else if (e.code === "KeyK" || e.code === "ArrowUp") {
+          e.preventDefault();
+          useWorkspaceStore.getState().moveFocus("up");
+        } else if (e.code === "KeyJ" || e.code === "ArrowDown") {
+          e.preventDefault();
+          useWorkspaceStore.getState().moveFocus("down");
         }
         return;
       }

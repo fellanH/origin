@@ -28,6 +28,7 @@ type WorkspaceActions = {
   splitCard: (cardId: CardId, direction: "horizontal" | "vertical") => void;
   closeCard: (cardId: CardId) => void;
   setFocus: (cardId: CardId | null) => void;
+  moveFocus: (direction: "left" | "right" | "up" | "down") => void;
   resizeSplit: (splitId: CardId, sizes: [number, number]) => void;
   setPlugin: (cardId: CardId, pluginId: string) => void;
   saveConfig: (name: string) => void;
@@ -231,6 +232,55 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
             (w) => w.id === draft.activeWorkspaceId,
           )!;
           ws.focusedCardId = cardId;
+        }),
+
+      moveFocus: (direction) =>
+        set((draft) => {
+          const ws = draft.workspaces.find(
+            (w) => w.id === draft.activeWorkspaceId,
+          )!;
+          if (!ws.focusedCardId) return;
+
+          const nodes = ws.nodes;
+          const wantPrev = direction === "left" || direction === "up";
+          const wantHorizontal = direction === "left" || direction === "right";
+
+          // Walk up the tree to find an ancestor split that handles this direction
+          let currentId = ws.focusedCardId;
+          while (true) {
+            const currentNode = nodes[currentId];
+            if (!currentNode || currentNode.parentId === null) return;
+
+            const parentNode = nodes[currentNode.parentId];
+            if (!parentNode || parentNode.type !== "split") return;
+
+            const orientationMatches = wantHorizontal
+              ? parentNode.direction === "horizontal"
+              : parentNode.direction === "vertical";
+
+            if (orientationMatches) {
+              const childIndex = parentNode.childIds.indexOf(currentId);
+              const canMove = wantPrev ? childIndex === 1 : childIndex === 0;
+
+              if (canMove) {
+                // Navigate into the sibling subtree, landing on first leaf
+                const siblingRoot = wantPrev
+                  ? parentNode.childIds[0]
+                  : parentNode.childIds[1];
+                let target = siblingRoot;
+                while (true) {
+                  const t = nodes[target];
+                  if (!t || t.type !== "split") break;
+                  target = t.childIds[0];
+                }
+                ws.focusedCardId = target;
+                return;
+              }
+            }
+
+            // Climb to the next ancestor
+            currentId = currentNode.parentId;
+          }
         }),
 
       resizeSplit: (splitId, sizes) =>
