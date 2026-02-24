@@ -35,8 +35,8 @@ function Card({ nodeId }: Props) {
       ref={divRef}
       tabIndex={-1}
       className={cn(
-        "group relative h-full w-full cursor-pointer outline-none",
-        isFocused ? "ring-2 ring-foreground/20" : "ring-1 ring-border",
+        "group relative h-full w-full cursor-pointer overflow-hidden outline-none",
+        isFocused ? "ring-2 ring-inset ring-foreground/30" : "",
       )}
       onClick={() => setFocus(nodeId)}
     >

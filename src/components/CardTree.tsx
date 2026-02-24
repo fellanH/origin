@@ -36,6 +36,7 @@ function CardTree({ nodeId }: Props) {
     >
       <ResizablePanel
         defaultSize={node.sizes[0]}
+        className="overflow-hidden"
         panelRef={(handle) => {
           if (handle) panelRefs.set(node.childIds[0], handle);
           else panelRefs.delete(node.childIds[0]);
@@ -43,9 +44,10 @@ function CardTree({ nodeId }: Props) {
       >
         <CardTree nodeId={node.childIds[0]} />
       </ResizablePanel>
-      <Separator className="w-px bg-border/30 hover:bg-border transition-colors" />
+      <Separator className="shrink-0 bg-border hover:bg-foreground/30 active:bg-foreground/50 transition-colors aria-[orientation=vertical]:w-[3px] aria-[orientation=vertical]:h-full aria-[orientation=horizontal]:h-[3px] aria-[orientation=horizontal]:w-full" />
       <ResizablePanel
         defaultSize={node.sizes[1]}
+        className="overflow-hidden"
         panelRef={(handle) => {
           if (handle) panelRefs.set(node.childIds[1], handle);
           else panelRefs.delete(node.childIds[1]);
