@@ -11,6 +11,9 @@
     "dialog:default",
     "updater:default",
     "fs:default",
-    { "identifier": "fs:scope", "allow": [{ "path": "$APPDATA/**" }, { "path": "$APPDATA" }] }
+    {
+      "identifier": "fs:scope",
+      "allow": [{ "path": "$APPDATA/**" }, { "path": "$APPDATA" }]
+    }
   ]
 }

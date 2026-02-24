@@ -69,6 +69,8 @@ export default defineConfig({
       // Plugin workspace packages — activated in issue #12
       "@origin/hello": path.resolve(__dirname, "plugins/hello/src"),
       "@origin/notepad": path.resolve(__dirname, "plugins/notepad/src"),
+      "@origin/filetree": path.resolve(__dirname, "plugins/filetree/src"),
+      "@origin/monaco": path.resolve(__dirname, "plugins/monaco/src"),
       // Internal path alias
       "@": path.resolve(__dirname, "src"),
     },
@@ -78,7 +80,12 @@ export default defineConfig({
 
   // Pre-bundle dynamically imported plugins to prevent page reload on first load in dev
   optimizeDeps: {
-    include: ["@origin/hello", "@origin/notepad"],
+    include: [
+      "@origin/hello",
+      "@origin/notepad",
+      "@origin/filetree",
+      "@origin/monaco",
+    ],
   },
 
   clearScreen: false,
