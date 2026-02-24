@@ -33,7 +33,7 @@ export default function TabBar() {
   }
 
   return (
-    <div className="flex h-[38px] shrink-0 items-center pl-[80px]" data-tauri-drag-region>
+    <div className="flex h-[38px] shrink-0 items-center pl-[80px]">
       {workspaces.map((ws) => {
         const isActive = ws.id === activeWorkspaceId;
         const isEditing = editingId === ws.id;

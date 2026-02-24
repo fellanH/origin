@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* ─── Window drag region ─────────────────────────────────────────── */
+[data-tauri-drag-region] {
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
 /* ─── Semantic tokens — light mode ─────────────────────────────────── */
 :root {
   color-scheme: light dark;
