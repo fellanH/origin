@@ -27,7 +27,9 @@
       "@origin/filetree": ["./plugins/filetree/src"],
       "@origin/filetree/*": ["./plugins/filetree/src/*"],
       "@origin/monaco": ["./plugins/monaco/src"],
-      "@origin/monaco/*": ["./plugins/monaco/src/*"]
+      "@origin/monaco/*": ["./plugins/monaco/src/*"],
+      "@origin/browser": ["./plugins/browser/src"],
+      "@origin/browser/*": ["./plugins/browser/src/*"]
     }
   },
   "include": ["src"],

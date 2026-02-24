@@ -71,6 +71,7 @@ export default defineConfig({
       "@origin/notepad": path.resolve(__dirname, "plugins/notepad/src"),
       "@origin/filetree": path.resolve(__dirname, "plugins/filetree/src"),
       "@origin/monaco": path.resolve(__dirname, "plugins/monaco/src"),
+      "@origin/browser": path.resolve(__dirname, "plugins/browser/src"),
       // Internal path alias
       "@": path.resolve(__dirname, "src"),
     },
@@ -85,6 +86,7 @@ export default defineConfig({
       "@origin/notepad",
       "@origin/filetree",
       "@origin/monaco",
+      "@origin/browser",
     ],
   },
 

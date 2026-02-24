@@ -26,6 +26,11 @@ const BUNDLED: Record<
     name: "Monaco Editor",
     icon: "✏️",
   },
+  "com.origin.browser": {
+    load: () => import("@origin/browser") as Promise<PluginModule>,
+    name: "Browser",
+    icon: "🌐",
+  },
 };
 
 export interface RegistryEntry {
