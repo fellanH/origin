@@ -13,6 +13,7 @@ pub fn run() {
                 .autosave(std::time::Duration::from_secs(300))
                 .build(),
         )
+        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .manage(pty::PtyStore::default())

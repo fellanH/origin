@@ -1,6 +1,7 @@
 {
   "plugins": [
     { "id": "com.origin.hello", "package": "@origin/hello" },
+    { "id": "com.origin.notepad", "package": "@origin/notepad" },
     { "id": "com.origin.filetree", "package": "@origin/filetree" },
     { "id": "com.origin.monaco", "package": "@origin/monaco" }
   ]

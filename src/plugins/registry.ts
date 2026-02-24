@@ -11,6 +11,11 @@ const BUNDLED: Record<
     name: "Hello",
     icon: "👋",
   },
+  "com.origin.notepad": {
+    load: () => import("@origin/notepad") as Promise<PluginModule>,
+    name: "Notepad",
+    icon: "📝",
+  },
   "com.origin.filetree": {
     load: () => import("@origin/filetree") as Promise<PluginModule>,
     name: "File Tree",
