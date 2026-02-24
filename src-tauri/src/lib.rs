@@ -49,6 +49,7 @@ pub fn run() {
             commands::plugins::install_plugin,
             commands::plugins::restart_app,
             commands::plugins::save_plugin_bundle,
+            commands::plugins::seed_bundled_plugins,
             pty::pty_spawn,
             pty::pty_write,
             pty::pty_resize,
