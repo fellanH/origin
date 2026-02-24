@@ -181,8 +181,12 @@ function PluginCard({ plugin, installState, onInstall }: PluginCardProps) {
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-1.5">
           <span className="text-sm font-medium">{plugin.name}</span>
-          <span className="text-xs text-muted-foreground">v{plugin.version}</span>
-          <span className="text-xs text-muted-foreground">by {plugin.author}</span>
+          <span className="text-xs text-muted-foreground">
+            v{plugin.version}
+          </span>
+          <span className="text-xs text-muted-foreground">
+            by {plugin.author}
+          </span>
         </div>
         <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
           {plugin.description}
@@ -224,7 +228,9 @@ function PluginCard({ plugin, installState, onInstall }: PluginCardProps) {
           </button>
         </div>
         {isSuccess && (
-          <span className="text-xs text-muted-foreground">Restart to activate</span>
+          <span className="text-xs text-muted-foreground">
+            Restart to activate
+          </span>
         )}
         {isError && (
           <span className="text-xs text-destructive">Install failed</span>
