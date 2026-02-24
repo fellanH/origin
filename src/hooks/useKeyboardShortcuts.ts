@@ -81,6 +81,14 @@ export function useKeyboardShortcuts(): void {
           // CMD+Opt+M : main + sidebar (focused 60%, sibling 40%)
           e.preventDefault();
           useWorkspaceStore.getState().applyLayoutPreset("main-sidebar");
+        } else if (e.code === "KeyF") {
+          // CMD+Opt+F : toggle zoom on focused panel
+          e.preventDefault();
+          const state = useWorkspaceStore.getState();
+          const focusedCardId = selectActiveWorkspace(state)?.focusedCardId;
+          if (!focusedCardId) return;
+          const current = state.zoomedNodeId;
+          state.setZoomedNodeId(current === focusedCardId ? null : focusedCardId);
         }
         return;
       }
@@ -101,6 +109,11 @@ export function useKeyboardShortcuts(): void {
       } else if (e.key === "w" && !e.shiftKey) {
         e.preventDefault();
         const state = useWorkspaceStore.getState();
+        // If a zoom overlay is active, dismiss it first instead of closing the panel
+        if (state.zoomedNodeId !== null) {
+          state.setZoomedNodeId(null);
+          return;
+        }
         const focusedCardId = selectActiveWorkspace(state)?.focusedCardId;
         if (!focusedCardId) return;
         state.closeCard(focusedCardId);
