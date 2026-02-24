@@ -1,24 +1,23 @@
 /**
- * workspaceStore — Phase 1 (PoC) tests
+ * workspaceStore — card operation tests
  *
  * Tests the flat CardMap card operations: splitCard, closeCard, resizeSplit, setFocus.
- * Store shape: { rootId, nodes, focusedCardId } — plain Zustand, no persistence.
- *
- * Phase 3 extension (multi-workspace + persistence mock) will be added in this file
- * when issue #3 upgrade begins. Add the following mock at the top of this file then:
- *
- *   vi.mock("@tauri-store/zustand", () => ({
- *     createTauriStore: vi.fn().mockReturnValue({
- *       start: vi.fn().mockResolvedValue(undefined),
- *       save: vi.fn().mockResolvedValue(undefined),
- *       saveNow: vi.fn().mockResolvedValue(undefined),
- *     }),
- *   }));
+ * Store shape: workspaces[].{ rootId, nodes, focusedCardId } — multi-workspace.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
+
+vi.mock("@tauri-store/zustand", () => ({
+  createTauriStore: vi.fn().mockReturnValue({
+    start: vi.fn().mockResolvedValue(undefined),
+    save: vi.fn().mockResolvedValue(undefined),
+    saveNow: vi.fn().mockResolvedValue(undefined),
+  }),
+}));
+
 import { useWorkspaceStore } from "./workspaceStore";
 import type { CardLeaf, CardSplit } from "../types/card";
+import type { Workspace } from "../types/workspace";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -37,8 +36,22 @@ function makeSplit(
   return { id, type: "split", parentId, childIds, direction, sizes: [50, 50] };
 }
 
+/** Returns store actions merged with the active workspace's state fields. */
 function get() {
-  return useWorkspaceStore.getState();
+  const store = useWorkspaceStore.getState();
+  const ws = store.workspaces.find((w) => w.id === store.activeWorkspaceId)!;
+  return { ...store, ...ws };
+}
+
+/** Patches the active workspace — use instead of bare useWorkspaceStore.setState. */
+function setWorkspace(
+  patch: Partial<Pick<Workspace, "rootId" | "nodes" | "focusedCardId">>,
+) {
+  useWorkspaceStore.setState((state) => ({
+    workspaces: state.workspaces.map((w) =>
+      w.id === state.activeWorkspaceId ? { ...w, ...patch } : w,
+    ),
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -46,7 +59,7 @@ function get() {
 // ---------------------------------------------------------------------------
 
 beforeEach(() => {
-  useWorkspaceStore.setState({ rootId: null, nodes: {}, focusedCardId: null });
+  setWorkspace({ rootId: null, nodes: {}, focusedCardId: null });
 });
 
 // ---------------------------------------------------------------------------
@@ -56,7 +69,7 @@ beforeEach(() => {
 describe("splitCard", () => {
   it("creates a split node and a new leaf sibling from a single root leaf", () => {
     const leaf = makeLeaf("root-leaf");
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "root-leaf",
       nodes: { "root-leaf": leaf },
       focusedCardId: "root-leaf",
@@ -80,7 +93,7 @@ describe("splitCard", () => {
 
   it("sets focusedCardId to the new sibling leaf after split", () => {
     const leaf = makeLeaf("root-leaf");
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "root-leaf",
       nodes: { "root-leaf": leaf },
       focusedCardId: "root-leaf",
@@ -96,7 +109,7 @@ describe("splitCard", () => {
 
   it("splits vertically when direction is 'vertical'", () => {
     const leaf = makeLeaf("root-leaf");
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "root-leaf",
       nodes: { "root-leaf": leaf },
       focusedCardId: "root-leaf",
@@ -113,7 +126,7 @@ describe("splitCard", () => {
     const leafA = makeLeaf("leafA", "root-split");
     const leafB = makeLeaf("leafB", "root-split");
     const rootSplit = makeSplit("root-split", ["leafA", "leafB"]);
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "root-split",
       nodes: { "root-split": rootSplit, leafA, leafB },
       focusedCardId: "leafA",
@@ -134,7 +147,7 @@ describe("splitCard", () => {
 
   it("supports 3 levels of nesting without corrupting parentId chains", () => {
     const leaf = makeLeaf("leaf0");
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "leaf0",
       nodes: { leaf0: leaf },
       focusedCardId: "leaf0",
@@ -156,7 +169,7 @@ describe("splitCard", () => {
   });
 
   it("does nothing when cardId does not exist in nodes", () => {
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: null,
       nodes: {},
       focusedCardId: null,
@@ -175,7 +188,7 @@ describe("splitCard", () => {
 describe("closeCard", () => {
   it("resets to empty state when closing the only card", () => {
     const leaf = makeLeaf("root-leaf");
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "root-leaf",
       nodes: { "root-leaf": leaf },
       focusedCardId: "root-leaf",
@@ -193,7 +206,7 @@ describe("closeCard", () => {
     const leafA = makeLeaf("leafA", "root-split");
     const leafB = makeLeaf("leafB", "root-split");
     const rootSplit = makeSplit("root-split", ["leafA", "leafB"]);
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "root-split",
       nodes: { "root-split": rootSplit, leafA, leafB },
       focusedCardId: "leafB",
@@ -211,7 +224,7 @@ describe("closeCard", () => {
     const leafA = makeLeaf("leafA", "root-split");
     const leafB = makeLeaf("leafB", "root-split");
     const rootSplit = makeSplit("root-split", ["leafA", "leafB"]);
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "root-split",
       nodes: { "root-split": rootSplit, leafA, leafB },
       focusedCardId: "leafA",
@@ -235,7 +248,7 @@ describe("closeCard", () => {
       "root-split",
     );
     const rootSplit = makeSplit("root-split", ["leafA", "nested-split"]);
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "root-split",
       nodes: {
         "root-split": rootSplit,
@@ -266,7 +279,7 @@ describe("closeCard", () => {
     const leafB2 = makeLeaf("leafB2", "splitB");
     const splitB = makeSplit("splitB", ["leafB1", "leafB2"], "root-split");
     const rootSplit = makeSplit("root-split", ["leafA", "splitB"]);
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "root-split",
       nodes: { "root-split": rootSplit, leafA, splitB, leafB1, leafB2 },
       focusedCardId: "leafA",
@@ -287,7 +300,7 @@ describe("closeCard", () => {
     const leafA = makeLeaf("leafA", "root-split");
     const leafB = makeLeaf("leafB", "root-split");
     const rootSplit = makeSplit("root-split", ["leafA", "leafB"]);
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "root-split",
       nodes: { "root-split": rootSplit, leafA, leafB },
       focusedCardId: "leafA",
@@ -300,7 +313,7 @@ describe("closeCard", () => {
 
   it("does nothing when cardId does not exist in nodes", () => {
     const leaf = makeLeaf("root-leaf");
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "root-leaf",
       nodes: { "root-leaf": leaf },
       focusedCardId: "root-leaf",
@@ -321,7 +334,7 @@ describe("resizeSplit", () => {
     const leafA = makeLeaf("leafA", "root-split");
     const leafB = makeLeaf("leafB", "root-split");
     const rootSplit = makeSplit("root-split", ["leafA", "leafB"]);
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "root-split",
       nodes: { "root-split": rootSplit, leafA, leafB },
       focusedCardId: "leafA",
@@ -342,7 +355,7 @@ describe("resizeSplit", () => {
       null,
       "vertical",
     );
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "root-split",
       nodes: { "root-split": rootSplit, leafA, leafB },
       focusedCardId: "leafA",
@@ -358,7 +371,7 @@ describe("resizeSplit", () => {
   });
 
   it("does nothing when splitId does not exist", () => {
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: null,
       nodes: {},
       focusedCardId: null,
@@ -375,7 +388,7 @@ describe("resizeSplit", () => {
 describe("setFocus", () => {
   it("sets focusedCardId to the given cardId", () => {
     const leaf = makeLeaf("leaf1");
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "leaf1",
       nodes: { leaf1: leaf },
       focusedCardId: null,
@@ -388,7 +401,7 @@ describe("setFocus", () => {
 
   it("accepts null to clear focus", () => {
     const leaf = makeLeaf("leaf1");
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "leaf1",
       nodes: { leaf1: leaf },
       focusedCardId: "leaf1",
@@ -426,7 +439,7 @@ describe("CardMap invariants", () => {
 
   it("every non-root node's parentId points to an existing node after a series of splits", () => {
     const leaf = makeLeaf("leaf0");
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "leaf0",
       nodes: { leaf0: leaf },
       focusedCardId: "leaf0",
@@ -450,7 +463,7 @@ describe("CardMap invariants", () => {
 
   it("every non-root node's parentId points to an existing node after split + close sequence", () => {
     const leaf = makeLeaf("leaf0");
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "leaf0",
       nodes: { leaf0: leaf },
       focusedCardId: "leaf0",
@@ -474,7 +487,7 @@ describe("CardMap invariants", () => {
 
   it("split node's childIds both exist in the map", () => {
     const leaf = makeLeaf("leaf0");
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "leaf0",
       nodes: { leaf0: leaf },
       focusedCardId: "leaf0",
@@ -495,7 +508,7 @@ describe("CardMap invariants", () => {
 
   it("no orphaned nodes remain after close", () => {
     const leaf = makeLeaf("leaf0");
-    useWorkspaceStore.setState({
+    setWorkspace({
       rootId: "leaf0",
       nodes: { leaf0: leaf },
       focusedCardId: "leaf0",
