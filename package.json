@@ -13,6 +13,8 @@
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
     "test": "vitest run",
     "claude": "claude --plugin-dir .claude/plugin --dangerously-skip-permissions"
   },
@@ -34,12 +36,15 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.2.1",
     "@tauri-apps/cli": "^2",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.4.1",
+    "eslint": "^10.0.2",
     "typescript": "~5.7.2",
+    "typescript-eslint": "^8.56.1",
     "vite": "^7.0.0",
     "vitest": "^4.0.18"
   }

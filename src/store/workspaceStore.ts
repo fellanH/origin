@@ -286,9 +286,9 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
 
 // ─── Tauri persistence ───────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const tauriHandler = createTauriStore(
   "workspace-store",
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   useWorkspaceStore as any,
   {
     filterKeys: [
