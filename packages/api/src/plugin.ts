@@ -45,6 +45,13 @@ export interface PluginManifest {
   description?: string;
   /** Emoji or relative image path shown in the Launcher grid */
   icon?: string;
+  /**
+   * Tauri capabilities this plugin uses. Declarative only in v0.x — displayed
+   * in the plugin install UI so users can see what a plugin claims to need.
+   * Enforced by the capability broker at marketplace launch (v1.0).
+   * @example ["fs:read", "fs:write", "dialog:open"]
+   */
+  requiredCapabilities?: string[];
 }
 
 /** Panel lifecycle event names emitted by PluginHost. */
