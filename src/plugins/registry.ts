@@ -11,6 +11,16 @@ const BUNDLED: Record<
     name: "Hello",
     icon: "👋",
   },
+  "com.origin.filetree": {
+    load: () => import("@origin/filetree") as Promise<PluginModule>,
+    name: "File Tree",
+    icon: "📁",
+  },
+  "com.origin.monaco": {
+    load: () => import("@origin/monaco") as Promise<PluginModule>,
+    name: "Monaco Editor",
+    icon: "✏️",
+  },
 };
 
 export interface RegistryEntry {

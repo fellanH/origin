@@ -9,6 +9,7 @@
     "core:window:deny-toggle-maximize",
     "core:window:deny-internal-toggle-maximize",
     "dialog:default",
+    "fs:default",
     "updater:default"
   ]
 }

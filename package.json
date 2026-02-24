@@ -21,6 +21,7 @@
   "dependencies": {
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2",
+    "@tauri-apps/plugin-fs": "^2",
     "@tauri-apps/plugin-window-state": "^2.4.1",
     "@tauri-store/zustand": "^1.2.0",
     "class-variance-authority": "^0.7.1",

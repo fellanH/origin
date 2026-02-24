@@ -1,0 +1,11 @@
+{
+  "name": "@origin/monaco",
+  "version": "0.1.0",
+  "private": true,
+  "main": "src/index.tsx",
+  "types": "src/index.tsx",
+  "dependencies": {
+    "@origin/api": "*",
+    "@monaco-editor/react": "^4.7.0"
+  }
+}

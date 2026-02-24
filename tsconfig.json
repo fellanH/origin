@@ -21,7 +21,11 @@
       "@origin/api": ["./plugins/api/src"],
       "@origin/api/*": ["./plugins/api/src/*"],
       "@origin/hello": ["./plugins/hello/src"],
-      "@origin/hello/*": ["./plugins/hello/src/*"]
+      "@origin/hello/*": ["./plugins/hello/src/*"],
+      "@origin/filetree": ["./plugins/filetree/src"],
+      "@origin/filetree/*": ["./plugins/filetree/src/*"],
+      "@origin/monaco": ["./plugins/monaco/src"],
+      "@origin/monaco/*": ["./plugins/monaco/src/*"]
     }
   },
   "include": ["src"],
