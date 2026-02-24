@@ -3,20 +3,6 @@ mod pty;
 
 use tauri::{menu::{MenuBuilder, MenuItemBuilder}, Emitter, Manager};
 
-/// Run `npm install -g <package>` and return stdout, or an error string.
-#[tauri::command]
-async fn npm_install_plugin(package: String) -> Result<String, String> {
-    let output = tokio::process::Command::new("npm")
-        .args(["install", "-g", &package])
-        .output()
-        .await
-        .map_err(|e| e.to_string())?;
-    if output.status.success() {
-        Ok(String::from_utf8_lossy(&output.stdout).to_string())
-    } else {
-        Err(String::from_utf8_lossy(&output.stderr).to_string())
-    }
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -54,7 +40,7 @@ pub fn run() {
             plugin_manager::list_installed_plugins,
             plugin_manager::install_plugin,
             plugin_manager::restart_app,
-            npm_install_plugin,
+            plugin_manager::save_plugin_bundle,
             pty::pty_spawn,
             pty::pty_write,
             pty::pty_resize,

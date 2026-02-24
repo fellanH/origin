@@ -113,12 +113,32 @@ function DiscoverTab({ fetchState }: { fetchState: FetchState }) {
     Record<string, InstallState>
   >({});
 
-  function handleInstall(plugin: RegistryPlugin) {
-    const pkg = plugin.package ?? plugin.id;
+  async function handleInstall(plugin: RegistryPlugin) {
+    if (!plugin.bundle_url) {
+      setInstallStates((s) => ({ ...s, [plugin.id]: "error" }));
+      return;
+    }
     setInstallStates((s) => ({ ...s, [plugin.id]: "installing" }));
-    invoke<string>("npm_install_plugin", { package: pkg })
-      .then(() => setInstallStates((s) => ({ ...s, [plugin.id]: "success" })))
-      .catch(() => setInstallStates((s) => ({ ...s, [plugin.id]: "error" })));
+    try {
+      const res = await fetch(plugin.bundle_url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const jsSource = await res.text();
+      const manifestJson = JSON.stringify({
+        id: plugin.id,
+        name: plugin.name,
+        version: plugin.version,
+        description: plugin.description ?? "",
+        icon: plugin.icon ?? "",
+      });
+      await invoke("save_plugin_bundle", {
+        id: plugin.id,
+        manifestJson,
+        jsSource,
+      });
+      setInstallStates((s) => ({ ...s, [plugin.id]: "success" }));
+    } catch {
+      setInstallStates((s) => ({ ...s, [plugin.id]: "error" }));
+    }
   }
 
   if (fetchState.status === "idle" || fetchState.status === "loading") {

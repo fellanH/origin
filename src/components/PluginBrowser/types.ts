@@ -6,8 +6,10 @@ export interface RegistryPlugin {
   version: string;
   icon?: string;
   github?: string;
-  /** npm package name — used by the install command. Falls back to `id` if absent. */
+  /** @deprecated npm package name — superseded by bundle_url in v2 install flow */
   package?: string;
+  /** URL to the pre-built JS bundle for download-and-install */
+  bundle_url?: string;
 }
 
 export interface Registry {
