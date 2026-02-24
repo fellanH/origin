@@ -24,6 +24,13 @@ async function bootstrap() {
     );
   }
 
+  // Seed bundled plugin assets from the Tauri resource bundle into AppData on
+  // first launch (or when a newer version is bundled). Graceful no-op in dev
+  // builds where assets/plugins/ is empty or absent.
+  await invoke("seed_bundled_plugins").catch((e) => {
+    console.warn("[origin] seed_bundled_plugins failed:", e);
+  });
+
   // Load persisted state from (possibly just-recovered) file.
   await Promise.all([tauriHandler.start(), initRegistry()]);
 
