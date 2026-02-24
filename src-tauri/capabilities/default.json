@@ -9,8 +9,12 @@
     "core:window:deny-toggle-maximize",
     "core:window:deny-internal-toggle-maximize",
     "dialog:default",
+    "updater:default",
     "fs:default",
-    "opener:default",
-    "updater:default"
+    {
+      "identifier": "fs:scope",
+      "allow": [{ "path": "$APPDATA/**" }, { "path": "$APPDATA" }]
+    },
+    "opener:default"
   ]
 }
