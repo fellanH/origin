@@ -20,6 +20,8 @@ There are two plugin execution tiers:
 
 This SOP covers **L0 plugins**. L1 plugin authors use `@origin/sdk` (`usePluginContext`, `useBusChannel`) instead of `PluginContext` directly — they do not need to touch the core repo.
 
+> **Building a community or marketplace plugin?** Use [`origin-plugin-starter`](https://github.com/fellanH/origin-plugin-starter) — a standalone repo with full L1 build setup, TypeScript config, and live-reload dev tooling. `packages/template/` in this repo is deprecated and covers L0 only.
+
 ---
 
 ## Steps

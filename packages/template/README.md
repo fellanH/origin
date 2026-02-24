@@ -1,16 +1,23 @@
-# @origin/template — Plugin Starter
+# @origin/template — DEPRECATED
 
-Use this as the starting point for any new `@origin/*` plugin.
+> **This package is deprecated.** Use [`origin-plugin-starter`](https://github.com/fellanH/origin-plugin-starter) instead.
+>
+> `origin-plugin-starter` is the canonical starting point for new plugin authors. It includes a full build setup, TypeScript config, L1 sandbox support via `@origin/sdk`, and live-reload dev tooling.
+>
+> This in-tree template will be removed in the next major version.
 
-## Quickstart
+---
 
-1. **Copy** `plugins/template/` to `plugins/your-plugin/`
-2. **Update** `package.json` — set `"name"` to `"@origin/your-plugin"`
-3. **Edit** `src/manifest.ts` — set `id` (reverse-domain, e.g. `"com.yourco.yourplugin"`), `name`, `icon`, and `description`
-4. **Build** your component in `src/index.tsx` — default export must accept `{ context: PluginContext }`
-5. **Register** the plugin in the app:
-   - Add an entry to `origin.plugins.json`
-   - Add a literal `import()` to the `IMPORT_MAP` in `src/plugins/registry.ts`
-   - Run `npm install` to link the workspace package
+## What's here
 
-See `docs/SOP/add-plugin.md` for the full walkthrough.
+`packages/template/` is a minimal in-tree **L0 plugin skeleton** kept for reference. L0 plugins are first-party bundled plugins that run inside the main app process (no isolation). External plugin authors should use the starter repo, which produces a standalone L1 (sandboxed iframe) plugin.
+
+|          | `packages/template/`                     | `origin-plugin-starter`                 |
+| -------- | ---------------------------------------- | --------------------------------------- |
+| Tier     | L0 (bundled, in-tree)                    | L1 (sandboxed iframe)                   |
+| Status   | **Deprecated**                           | Active                                  |
+| Use when | Adding a first-party plugin to this repo | Building a community/marketplace plugin |
+
+## For first-party (L0) plugins in this repo
+
+See `docs/SOP/add-plugin.md` for the full walkthrough. L0 plugins must be registered in `src/plugins/registry.ts` and bundled at build time.
