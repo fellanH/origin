@@ -94,17 +94,25 @@ export function useKeyboardShortcuts(): void {
 
     window.addEventListener("keydown", handleKeyDown);
 
-    let unlistenMenu: (() => void) | undefined;
+    let cancelled = false;
+    let unlisten: (() => void) | undefined;
+
     listen("close-workspace", () => {
       const state = useWorkspaceStore.getState();
       state.closeWorkspace(state.activeWorkspaceId);
     }).then((fn) => {
-      unlistenMenu = fn;
+      if (!cancelled) {
+        unlisten = fn;
+      } else {
+        // Component already unmounted — clean up the listener immediately
+        fn();
+      }
     });
 
     return () => {
+      cancelled = true;
       window.removeEventListener("keydown", handleKeyDown);
-      unlistenMenu?.();
+      unlisten?.();
     };
   }, []);
 }
