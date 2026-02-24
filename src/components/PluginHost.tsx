@@ -10,7 +10,7 @@ interface Props {
 
 function PluginHostInner({ pluginId, context }: Props) {
   const [Component, setComponent] = useState<PluginComponent | null>(
-    () => getCachedPlugin(pluginId)?.default ?? null
+    () => getCachedPlugin(pluginId)?.default ?? null,
   );
   const [error, setError] = useState<string | null>(null);
 

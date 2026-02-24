@@ -16,8 +16,11 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean",
+    "build": "tsup src/index.ts --format esm --dts --clean --external react",
     "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=18"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",

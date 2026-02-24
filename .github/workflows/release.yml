@@ -7,6 +7,12 @@
 # APPLE_PASSWORD             — App-specific password (appleid.apple.com → Security)
 # TAURI_SIGNING_PRIVATE_KEY  — output of: npx tauri signer generate
 # TAURI_SIGNING_PRIVATE_KEY_PASSWORD — password chosen during key generation
+#
+# One-time setup:
+#   1. Replace (TEAMID) in tauri.conf.json bundle.macOS.signingIdentity
+#   2. Run: npx tauri signer generate
+#      → paste public key into tauri.conf.json plugins.updater.pubkey
+#      → add private key + password to GitHub Secrets
 
 name: Release
 on:
@@ -14,7 +20,25 @@ on:
     tags: ["v*"]
 
 jobs:
-  release:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      release-id: ${{ steps.create-release.outputs.id }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create GitHub release draft
+        id: create-release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ github.ref_name }}
+          name: "Origin ${{ github.ref_name }}"
+          draft: true
+          prerelease: false
+          generateReleaseNotes: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    needs: create-release
     strategy:
       matrix:
         target: [aarch64-apple-darwin, x86_64-apple-darwin]
@@ -32,7 +56,8 @@ jobs:
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "" $KEYCHAIN_PATH
           echo "$APPLE_CERTIFICATE" | base64 --decode > $RUNNER_TEMP/cert.p12
-          security import $RUNNER_TEMP/cert.p12 -k $KEYCHAIN_PATH -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security import $RUNNER_TEMP/cert.p12 -k $KEYCHAIN_PATH \
+            -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
           security list-keychain -d user -s $KEYCHAIN_PATH
           security set-key-partition-list -S apple-tool:,apple: -s -k "" $KEYCHAIN_PATH
 
@@ -56,9 +81,6 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "Origin ${{ github.ref_name }}"
-          releaseDraft: true
-          prerelease: false
+          releaseId: ${{ needs.create-release.outputs.release-id }}
           args: --target ${{ matrix.target }}
           createUpdaterArtifacts: true

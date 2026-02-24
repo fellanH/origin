@@ -6,11 +6,6 @@ const BUNDLED: Record<
   string,
   { load: () => Promise<PluginModule>; name: string; icon?: string }
 > = {
-  "com.origin.hello": {
-    load: () => import("@origin/hello") as Promise<PluginModule>,
-    name: "Hello",
-    icon: "👋",
-  },
   "com.origin.notepad": {
     load: () => import("@origin/notepad") as Promise<PluginModule>,
     name: "Notepad",

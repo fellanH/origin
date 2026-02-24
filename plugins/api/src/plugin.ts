@@ -1,5 +1,15 @@
 import type React from "react";
 
+/** Pub/sub bus injected into every plugin via PluginContext. */
+export interface PluginBus {
+  /** Broadcast a value on a channel. Cached as the last value. */
+  publish(channel: string, payload: unknown): void;
+  /** Subscribe to a channel. Returns an unsubscribe function. */
+  subscribe(channel: string, handler: (payload: unknown) => void): () => void;
+  /** Synchronously read the last published value on a channel. */
+  read(channel: string): unknown;
+}
+
 /** Metadata declared by every plugin. Shown in the Launcher UI. */
 export interface PluginManifest {
   /** Reverse-domain unique identifier, e.g. "com.example.myplugin" */
@@ -20,6 +30,8 @@ export interface PluginContext {
   workspacePath: string;
   /** Current app theme */
   theme: "light" | "dark";
+  /** Inter-plugin communication bus */
+  bus: PluginBus;
 }
 
 export type PluginComponent = React.ComponentType<{ context: PluginContext }>;

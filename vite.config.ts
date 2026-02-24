@@ -67,7 +67,6 @@ export default defineConfig({
       // Plugin API type contract
       "@origin/api": path.resolve(__dirname, "plugins/api/src"),
       // Plugin workspace packages — activated in issue #12
-      "@origin/hello": path.resolve(__dirname, "plugins/hello/src"),
       "@origin/notepad": path.resolve(__dirname, "plugins/notepad/src"),
       // Internal path alias
       "@": path.resolve(__dirname, "src"),
@@ -78,10 +77,7 @@ export default defineConfig({
 
   // Pre-bundle dynamically imported plugins to prevent page reload on first load in dev
   optimizeDeps: {
-    include: [
-      "@origin/hello",
-      "@origin/notepad",
-    ],
+    include: ["@origin/notepad"],
   },
 
   clearScreen: false,

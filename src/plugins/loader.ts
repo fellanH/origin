@@ -12,13 +12,16 @@ export function loadPlugin(id: string): Promise<PluginModule | null> {
   if (_promiseCache.has(id)) return _promiseCache.get(id)!;
   const entry = getPlugin(id);
   if (!entry) return Promise.resolve(null);
-  const promise = entry.load().then((mod) => {
-    _cache.set(id, mod);
-    return mod;
-  }).catch((e: unknown) => {
-    console.error(`[origin] Plugin "${id}" failed to load:`, e);
-    return null;
-  });
+  const promise = entry
+    .load()
+    .then((mod) => {
+      _cache.set(id, mod);
+      return mod;
+    })
+    .catch((e: unknown) => {
+      console.error(`[origin] Plugin "${id}" failed to load:`, e);
+      return null;
+    });
   _promiseCache.set(id, promise);
   return promise;
 }

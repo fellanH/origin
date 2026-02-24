@@ -1,8 +1,6 @@
 import { useEffect } from "react";
 import { appDataDir } from "@tauri-apps/api/path";
-import {
-  useWorkspaceStore,
-} from "@/store/workspaceStore";
+import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import CardLayout from "@/components/CardLayout";
 import TabBar from "@/components/TabBar";
