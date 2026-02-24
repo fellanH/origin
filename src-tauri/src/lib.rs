@@ -1,4 +1,5 @@
 mod plugin_manager;
+mod pty;
 
 use tauri::{menu::{MenuBuilder, MenuItemBuilder}, Emitter, Manager};
 
@@ -13,6 +14,8 @@ pub fn run() {
                 .build(),
         )
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
+        .manage(pty::PtyStore::default())
         .register_uri_scheme_protocol("plugin", plugin_manager::plugin_protocol_handler)
         .setup(|app| {
             let close_tab = MenuItemBuilder::with_id("close-workspace", "Close Tab")
@@ -33,6 +36,10 @@ pub fn run() {
             plugin_manager::list_installed_plugins,
             plugin_manager::install_plugin,
             plugin_manager::restart_app,
+            pty::pty_create,
+            pty::pty_write,
+            pty::pty_resize,
+            pty::pty_destroy,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

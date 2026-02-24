@@ -11,6 +11,21 @@ const BUNDLED: Record<
     name: "Hello",
     icon: "👋",
   },
+  "com.origin.terminal": {
+    load: () => import("@origin/terminal") as Promise<PluginModule>,
+    name: "Terminal",
+    icon: "⌨️",
+  },
+  "com.origin.browser": {
+    load: () => import("@origin/browser") as Promise<PluginModule>,
+    name: "Browser",
+    icon: "🌐",
+  },
+  "com.origin.github": {
+    load: () => import("@origin/github") as Promise<PluginModule>,
+    name: "GitHub PRs",
+    icon: "🐙",
+  },
 };
 
 export interface RegistryEntry {

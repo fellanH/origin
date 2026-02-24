@@ -68,6 +68,9 @@ export default defineConfig({
       "@origin/api": path.resolve(__dirname, "plugins/api/src"),
       // Plugin workspace packages — activated in issue #12
       "@origin/hello": path.resolve(__dirname, "plugins/hello/src"),
+      "@origin/terminal": path.resolve(__dirname, "plugins/terminal/src"),
+      "@origin/browser": path.resolve(__dirname, "plugins/browser/src"),
+      "@origin/github": path.resolve(__dirname, "plugins/github/src"),
       // Internal path alias
       "@": path.resolve(__dirname, "src"),
     },
@@ -77,7 +80,12 @@ export default defineConfig({
 
   // Pre-bundle dynamically imported plugins to prevent page reload on first load in dev
   optimizeDeps: {
-    include: ["@origin/hello"],
+    include: [
+      "@origin/hello",
+      "@origin/terminal",
+      "@origin/browser",
+      "@origin/github",
+    ],
   },
 
   clearScreen: false,
