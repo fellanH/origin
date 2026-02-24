@@ -217,6 +217,46 @@ return () => unlisten();
 
 ---
 
+## Plugin State Preservation
+
+### Root cause — why plugins lose state on adjacent panel split
+
+When `splitCard(cardId, direction)` is called, a new intermediate `split` node is inserted between the old parent and `cardId`. The surrounding `<ResizablePanel>` hierarchy changes shape (a new `<Group>` + `<ResizablePanel>` wraps where a bare `<Card>` previously sat). Without a stable React `key`, React reconciles by tree position and **remounts** the `<Card>` — destroying all plugin component state (open file, URL, terminal session, expanded tree nodes, etc.).
+
+### Fix — stable key on leaf `<Card>` in `CardTree`
+
+`CardTree.tsx` passes `key={nodeId}` on the `<Card>` it renders for leaf nodes. Because `nodeId` is a stable UUID that never changes for the lifetime of that card, React can reuse (not remount) the component instance even when the wrapping panel tree restructures around it.
+
+```tsx
+// CardTree.tsx — leaf branch
+if (node.type === "leaf") {
+  return <Card key={nodeId} nodeId={nodeId} />;
+}
+```
+
+This is the **preferred** fix and requires no plugin-side changes.
+
+### Fallback — module-level cache (notepad pattern)
+
+If a plugin has state that genuinely cannot be preserved through React identity (e.g. it wraps a non-React imperative library like xterm that must be recreated on DOM remount), use a module-level `Map` keyed by `cardId` to survive remounts:
+
+```tsx
+// Module-level — survives component remounts within the same JS module lifetime
+const _stateCache = new Map<string, PluginState>();
+
+export default function MyPlugin({ context }: { context: PluginContext }) {
+  const [state, setState] = useState<PluginState>(
+    () => _stateCache.get(context.cardId) ?? defaultState,
+  );
+  // Update cache on every change:
+  //   _stateCache.set(context.cardId, newState);
+}
+```
+
+Use this pattern **only** when the stable-key fix in `CardTree` is insufficient (e.g. xterm requires a real DOM node across remounts and cannot be recovered from a cache snapshot). The `notepad` plugin uses this pattern as belt-and-suspenders because it also persists to disk.
+
+---
+
 ## File naming
 
 | Type                | Convention          | Example                    |
