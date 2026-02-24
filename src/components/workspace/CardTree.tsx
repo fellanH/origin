@@ -23,7 +23,10 @@ function CardTree({ nodeId }: Props) {
   if (!node) return null;
 
   if (node.type === "leaf") {
-    return <Card nodeId={nodeId} />;
+    // key={nodeId} ensures React preserves this component instance (and all
+    // plugin state inside it) when an adjacent panel splits and the surrounding
+    // PanelGroup/ResizablePanel tree is restructured around this leaf.
+    return <Card key={nodeId} nodeId={nodeId} />;
   }
 
   // node.type === "split" — N-ary children
