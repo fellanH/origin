@@ -21,7 +21,9 @@
       "@origin/api": ["./plugins/api/src"],
       "@origin/api/*": ["./plugins/api/src/*"],
       "@origin/hello": ["./plugins/hello/src"],
-      "@origin/hello/*": ["./plugins/hello/src/*"]
+      "@origin/hello/*": ["./plugins/hello/src/*"],
+      "@origin/notepad": ["./plugins/notepad/src"],
+      "@origin/notepad/*": ["./plugins/notepad/src/*"]
     }
   },
   "include": ["src"],

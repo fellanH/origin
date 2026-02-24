@@ -1,3 +1,6 @@
 {
-  "plugins": [{ "id": "com.origin.hello", "package": "@origin/hello" }]
+  "plugins": [
+    { "id": "com.origin.hello", "package": "@origin/hello" },
+    { "id": "com.origin.notepad", "package": "@origin/notepad" }
+  ]
 }
