@@ -39,7 +39,7 @@ export function useKeyboardShortcuts(): void {
             const handle = panelRefs.get(focusedId);
             if (handle) {
               const pct = handle.getSize().asPercentage;
-              handle.resize(String(Math.min(pct + 5, 95)));
+              handle.resize(Math.min(pct + 5, 95));
             }
           }
         } else if (e.code === "Minus") {
@@ -52,7 +52,7 @@ export function useKeyboardShortcuts(): void {
             const handle = panelRefs.get(focusedId);
             if (handle) {
               const pct = handle.getSize().asPercentage;
-              handle.resize(String(Math.max(pct - 5, 5)));
+              handle.resize(Math.max(pct - 5, 5));
             }
           }
         }
