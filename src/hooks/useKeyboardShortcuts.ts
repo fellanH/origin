@@ -88,7 +88,9 @@ export function useKeyboardShortcuts(): void {
           const focusedCardId = selectActiveWorkspace(state)?.focusedCardId;
           if (!focusedCardId) return;
           const current = state.zoomedNodeId;
-          state.setZoomedNodeId(current === focusedCardId ? null : focusedCardId);
+          state.setZoomedNodeId(
+            current === focusedCardId ? null : focusedCardId,
+          );
         }
         return;
       }

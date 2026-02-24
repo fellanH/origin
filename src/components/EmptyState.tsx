@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { getPluginRegistry } from "@/plugins/registry";
@@ -7,19 +7,34 @@ import type { PluginManifest } from "@/types/plugin";
 
 interface Props {
   cardId?: string;
+  /**
+   * When true the launcher was just created via a split; focus the first
+   * plugin button so the user can immediately press Enter or arrow-navigate.
+   */
+  autoOpen?: boolean;
 }
 
 type InstallStatus =
   | { type: "success"; name: string }
   | { type: "error"; message: string };
 
-export default function EmptyState({ cardId }: Props) {
+export default function EmptyState({ cardId, autoOpen }: Props) {
   const setPlugin = useWorkspaceStore((s) => s.setPlugin);
   const addInitialCard = useWorkspaceStore((s) => s.addInitialCard);
+  const clearLauncherForNode = useWorkspaceStore((s) => s.clearLauncherForNode);
+  const firstButtonRef = useRef<HTMLButtonElement>(null);
   const [installing, setInstalling] = useState(false);
   const [installStatus, setInstallStatus] = useState<InstallStatus | null>(
     null,
   );
+
+  useEffect(() => {
+    if (autoOpen) {
+      firstButtonRef.current?.focus();
+      // Clear the trigger so a remount doesn't re-focus
+      if (cardId) clearLauncherForNode(cardId);
+    }
+  }, [autoOpen, cardId, clearLauncherForNode]);
 
   function handleSelect(pluginId: string) {
     setInstallStatus(null);
@@ -54,9 +69,10 @@ export default function EmptyState({ cardId }: Props) {
         <span>⌘⇧D — split vertically</span>
       </div>
       <div className="flex flex-col gap-1">
-        {getPluginRegistry().map((entry) => (
+        {getPluginRegistry().map((entry, i) => (
           <button
             key={entry.id}
+            ref={i === 0 ? firstButtonRef : undefined}
             className="rounded px-3 py-1.5 text-sm text-foreground hover:bg-muted"
             onClick={() => handleSelect(entry.id)}
           >
