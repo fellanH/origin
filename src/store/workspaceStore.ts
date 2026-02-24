@@ -35,6 +35,7 @@ type WorkspaceActions = {
   saveConfig: (name: string) => void;
   loadConfig: (configId: string) => void;
   deleteConfig: (configId: string) => void;
+  setZoom: (cardId: CardId | null) => void;
   setPendingSaveName: (v: boolean) => void;
   setAppDataDir: (path: string) => void;
   applyLayoutPreset: (preset: "equal" | "main-sidebar") => void;
@@ -45,7 +46,14 @@ export type WorkspaceStore = WorkspaceState & WorkspaceActions;
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function emptyWorkspace(id: WorkspaceId, name: string): Workspace {
-  return { id, name, rootId: null, nodes: {}, focusedCardId: null };
+  return {
+    id,
+    name,
+    rootId: null,
+    nodes: {},
+    focusedCardId: null,
+    zoomedCardId: null,
+  };
 }
 
 function getActiveWs(
@@ -241,6 +249,14 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           ws.focusedCardId = cardId;
         }),
 
+      setZoom: (cardId) =>
+        set((draft) => {
+          const ws = draft.workspaces.find(
+            (w) => w.id === draft.activeWorkspaceId,
+          )!;
+          ws.zoomedCardId = cardId;
+        }),
+
       moveFocus: (direction) =>
         set((draft) => {
           const ws = getActiveWs(draft);
@@ -329,6 +345,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
             rootId: config.snapshot.rootId,
             nodes: { ...config.snapshot.nodes },
             focusedCardId: null,
+            zoomedCardId: null,
           });
           draft.activeWorkspaceId = newId;
         }),

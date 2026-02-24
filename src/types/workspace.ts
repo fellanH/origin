@@ -8,6 +8,8 @@ export interface Workspace {
   rootId: CardId | null;
   nodes: CardMap;
   focusedCardId: CardId | null;
+  /** Card currently expanded to fill the workspace; null when no card is zoomed. */
+  zoomedCardId: CardId | null;
 }
 
 export interface SavedConfig {

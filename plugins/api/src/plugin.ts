@@ -22,6 +22,14 @@ export interface PluginManifest {
   icon?: string;
 }
 
+/** Panel lifecycle event names emitted by PluginHost. */
+export type PluginLifecycleEvent =
+  | "focus"
+  | "blur"
+  | "resize"
+  | "zoom"
+  | "zoom-exit";
+
 /** Runtime context injected by PluginHost into every plugin component */
 export interface PluginContext {
   /** Unique ID of the card this instance is mounted in */
@@ -32,6 +40,14 @@ export interface PluginContext {
   theme: "light" | "dark";
   /** Inter-plugin communication bus */
   bus: PluginBus;
+  /**
+   * Subscribe to a panel lifecycle event.
+   * Returns an unsubscribe function — call it in your plugin's cleanup.
+   *
+   * @example
+   * useEffect(() => context.on('focus', () => console.log('focused')), []);
+   */
+  on(event: PluginLifecycleEvent, handler: () => void): () => void;
 }
 
 export type PluginComponent = React.ComponentType<{ context: PluginContext }>;
