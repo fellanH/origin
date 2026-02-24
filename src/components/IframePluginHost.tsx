@@ -1,7 +1,6 @@
 import { useRef, useEffect, useCallback } from "react";
 import { ErrorBoundary } from "react-error-boundary";
-import { pluginBus } from "@/lib/pluginBus";
-import type { PluginContext } from "@/types/plugin";
+import type { PluginContext, OriginChannelMap } from "@/types/plugin";
 import type {
   PluginToHostMessage,
   HostToPluginMessage,
@@ -42,17 +41,25 @@ function IframePluginHostInner({ pluginId, context }: Props) {
           },
         });
       } else if (msg.type === "ORIGIN_BUS_PUBLISH") {
-        pluginBus.publish(msg.channel, msg.payload);
+        // Cast dynamic iframe channel to typed key — safe because the bus
+        // implementation accepts any string; this is the iframe trust boundary.
+        context.bus.publish(
+          msg.channel as keyof OriginChannelMap,
+          msg.payload as OriginChannelMap[keyof OriginChannelMap],
+        );
       } else if (msg.type === "ORIGIN_BUS_SUBSCRIBE") {
         // Avoid double-subscribe if plugin re-subscribes
         if (channelUnsubs.current.has(msg.channel)) return;
-        const unsub = pluginBus.subscribe(msg.channel, (payload) => {
-          postToPlugin({
-            type: "ORIGIN_BUS_EVENT",
-            channel: msg.channel,
-            payload,
-          });
-        });
+        const unsub = context.bus.subscribe(
+          msg.channel as keyof OriginChannelMap,
+          (payload) => {
+            postToPlugin({
+              type: "ORIGIN_BUS_EVENT",
+              channel: msg.channel,
+              payload,
+            });
+          },
+        );
         channelUnsubs.current.set(msg.channel, unsub);
       } else if (msg.type === "ORIGIN_BUS_UNSUBSCRIBE") {
         const unsub = channelUnsubs.current.get(msg.channel);
@@ -71,7 +78,13 @@ function IframePluginHostInner({ pluginId, context }: Props) {
       channelUnsubs.current.clear();
       readyRef.current = false;
     };
-  }, [pluginId, context.cardId, context.workspacePath, postToPlugin]);
+  }, [
+    pluginId,
+    context.cardId,
+    context.workspacePath,
+    context.bus,
+    postToPlugin,
+  ]);
 
   // Forward theme changes after READY
   useEffect(() => {

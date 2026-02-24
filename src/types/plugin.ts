@@ -1,4 +1,5 @@
 export type {
+  OriginChannelMap,
   PluginManifest,
   PluginContext,
   PluginLifecycleEvent,
