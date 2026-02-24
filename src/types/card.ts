@@ -12,8 +12,8 @@ export type CardSplit = {
   id: CardId;
   parentId: CardId | null;
   direction: "horizontal" | "vertical";
-  sizes: [number, number];
-  childIds: [CardId, CardId];
+  sizes: number[];
+  childIds: CardId[];
 };
 
 export type CardNode = CardLeaf | CardSplit;
