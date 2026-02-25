@@ -1,4 +1,4 @@
-import type { PluginBus, OriginChannelMap } from "@origin/api";
+import type { PluginBus, OriginChannelMap } from "@/types/plugin";
 
 /**
  * Create a new isolated PluginBus instance.
