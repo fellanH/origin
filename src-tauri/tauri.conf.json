@@ -58,7 +58,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk4MTI1QjRDREJFOTRFRDkKUldUWlR1bmJURnNTbUZnVEhyL05IS2RRMFZFelhKZjJyMXg4VmF5NEFQUjNkWmZnOVFpbzZ0YTAK",
       "endpoints": [
         "https://github.com/fellanH/origin/releases/latest/download/latest.json"
       ]
