@@ -3,9 +3,6 @@
   "private": true,
   "version": "0.2.0",
   "type": "module",
-  "workspaces": [
-    "packages/*"
-  ],
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -20,6 +17,7 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
+    "@origin-cards/api": "^0.7.0",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-dialog": "^2",
     "@tauri-apps/plugin-fs": "^2",

@@ -25,6 +25,7 @@ Built-in channels defined by the Origin app. Reserved in the `origin:` namespace
 - **`<event>`** — specific event name in kebab-case
 
 **Examples:**
+
 - `origin:workspace/active-path` — the user selected a file
 - `origin:app/theme-changed` — the app theme switched
 - `origin:editor/selection-changed` — text editor selection changed
@@ -40,6 +41,7 @@ Channels defined by third-party plugins. Use reverse-domain + plugin identifier.
 - Channel names are lowercase with hyphens (kebab-case)
 
 **Examples:**
+
 - `com.example.filetree:file-selected`
 - `com.notion.sync:page-changed`
 - `org.myteam.logger:log-event`
@@ -64,9 +66,9 @@ Standard channels are built-in, guaranteed to exist in every workspace, and docu
 
 ```typescript
 {
-  path: string;           // Absolute file path
+  path: string; // Absolute file path
   type: "file" | "directory";
-  source: string;         // Plugin ID that initiated the selection (informational)
+  source: string; // Plugin ID that initiated the selection (informational)
 }
 ```
 
@@ -95,8 +97,8 @@ const publishPath = useBusChannel("origin:workspace/active-path", (payload) => {
 
 ```typescript
 {
-  text: string;           // Selected text
-  source: string;         // Plugin ID or app component that has focus
+  text: string; // Selected text
+  source: string; // Plugin ID or app component that has focus
 }
 ```
 
@@ -474,14 +476,18 @@ If you have many channels, split them across multiple files:
 // packages/logger/src/channels/logging.d.ts
 declare module "@origin/api" {
   interface OriginChannelMap {
-    "com.example.logger:log-event": { /* ... */ };
+    "com.example.logger:log-event": {
+      /* ... */
+    };
   }
 }
 
 // packages/logger/src/channels/aggregation.d.ts
 declare module "@origin/api" {
   interface OriginChannelMap {
-    "com.example.logger:stats-updated": { /* ... */ };
+    "com.example.logger:stats-updated": {
+      /* ... */
+    };
   }
 }
 
@@ -548,13 +554,10 @@ context.bus.publish("origin:app/theme-changed", { theme: "dark" });
 
 // ... later ...
 
-const unsub = context.bus.subscribe(
-  "origin:app/theme-changed",
-  (payload) => {
-    // This handler fires immediately with the cached value if one exists
-    console.log(payload.theme); // prints "dark"
-  }
-);
+const unsub = context.bus.subscribe("origin:app/theme-changed", (payload) => {
+  // This handler fires immediately with the cached value if one exists
+  console.log(payload.theme); // prints "dark"
+});
 
 // Or read synchronously without subscribing
 const currentTheme = context.bus.read("origin:app/theme-changed");
@@ -691,7 +694,7 @@ If future use cases require request/response, a separate `RequestBus` could be a
 // Hypothetical v2 API (NOT in v1)
 const response = await context.requestBus.invoke(
   "com.example.plugin:ask-for-data",
-  { query: "..." }
+  { query: "..." },
 );
 ```
 
@@ -701,18 +704,18 @@ However, this would be a **separate interface** — the existing pub/sub bus rem
 
 ## Summary
 
-| Aspect | Decision |
-| --- | --- |
-| **Naming** | `origin:<domain>/<event>` for standard, `com.plugin.id:channel` for plugin-owned |
+| Aspect                | Decision                                                                                 |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| **Naming**            | `origin:<domain>/<event>` for standard, `com.plugin.id:channel` for plugin-owned         |
 | **Standard Channels** | `origin:workspace/active-path`, `origin:workspace/selection`, `origin:app/theme-changed` |
-| **Direction** | Pub/sub broadcast only; no request/response |
-| **L0 vs L1** | Same API surface; relayed via postMessage for iframes |
-| **Discovery** | Declaration merging in `channels.d.ts`; optional manifest field for v1 |
-| **Typed Extension** | Each plugin extends `OriginChannelMap` in its own file |
-| **Scoping** | Per-workspace; events never cross workspace boundaries |
-| **Caching** | Last published value cached; accessible via `read()` |
-| **L1 Protocol** | Defined in `src/lib/iframeProtocol.ts`; four message types |
-| **Enforcement** | v1: informational only; v2+: capability broker enforces |
+| **Direction**         | Pub/sub broadcast only; no request/response                                              |
+| **L0 vs L1**          | Same API surface; relayed via postMessage for iframes                                    |
+| **Discovery**         | Declaration merging in `channels.d.ts`; optional manifest field for v1                   |
+| **Typed Extension**   | Each plugin extends `OriginChannelMap` in its own file                                   |
+| **Scoping**           | Per-workspace; events never cross workspace boundaries                                   |
+| **Caching**           | Last published value cached; accessible via `read()`                                     |
+| **L1 Protocol**       | Defined in `src/lib/iframeProtocol.ts`; four message types                               |
+| **Enforcement**       | v1: informational only; v2+: capability broker enforces                                  |
 
 ---
 

@@ -64,8 +64,6 @@ export default defineConfig({
 
   resolve: {
     alias: {
-      // Plugin API type contract — keep until @origin/api imports are migrated to @origin-cards/api
-      "@origin/api": path.resolve(__dirname, "packages/api/src"),
       // Internal path alias
       "@": path.resolve(__dirname, "src"),
     },
