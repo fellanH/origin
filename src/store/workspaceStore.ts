@@ -4,7 +4,7 @@ import { immer } from "zustand/middleware/immer";
 import { createTauriStore } from "@tauri-store/zustand";
 import type { CardId, CardLeaf, CardSplit } from "@/types/card";
 import type { Workspace, WorkspaceId, SavedConfig } from "@/types/workspace";
-import type { PluginBus } from "@origin/api";
+import type { PluginBus } from "@/types/plugin";
 import { createPluginBus } from "@/lib/pluginBus";
 import { panelRefs } from "@/lib/panelRefs";
 

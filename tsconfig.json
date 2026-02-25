@@ -18,13 +18,7 @@
     "noUncheckedIndexedAccess": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@origin/api": ["./packages/api/src"],
-      "@origin/api/*": ["./packages/api/src/*"],
-      "@origin/hello": ["./packages/hello/src"],
-      "@origin/hello/*": ["./packages/hello/src/*"],
-      "@origin/notepad": ["./packages/notepad/src"],
-      "@origin/notepad/*": ["./packages/notepad/src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src"],
