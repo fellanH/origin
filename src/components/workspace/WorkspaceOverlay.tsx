@@ -101,7 +101,6 @@ export default function WorkspaceOverlay({
       onKeyDown={(e) => {
         if (e.key === "Escape") onClose();
       }}
-      // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
       role="dialog"
       aria-modal="true"
       aria-label="Workspace overview"

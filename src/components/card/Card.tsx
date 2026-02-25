@@ -30,7 +30,6 @@ function Card({ nodeId }: Props) {
     (s) => s.launcherOpenForNodeId,
   );
   // Per-workspace bus: isolates events between workspace tabs
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const bus = useWorkspaceStore((s) => s.buses[s.activeWorkspaceId])!;
   const setPluginConfig = useWorkspaceStore((s) => s.setPluginConfig);
 

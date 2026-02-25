@@ -46,7 +46,10 @@ describe("getPluginRegistry", () => {
         typeof entry.load,
         `entry "${entry.id}" load is not a function`,
       ).toBe("function");
-      const result = entry.load();
+      // Call load() but suppress the unhandled rejection — Node's ESM loader
+      // does not support the plugin:// scheme, so the import will reject at
+      // runtime. We only need to verify the return value is thenable (Promise).
+      const result = entry.load().catch(() => undefined);
       expect(typeof result.then).toBe("function");
     }
   });
