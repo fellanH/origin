@@ -601,7 +601,7 @@ export const tauriHandler = createTauriStore(
       "lastWorkspaceId",
       "savedConfigs",
     ],
-    filterKeysStrategy: "include",
+    filterKeysStrategy: "pick",
     saveOnChange: true,
     saveStrategy: "debounce",
     saveInterval: 500,

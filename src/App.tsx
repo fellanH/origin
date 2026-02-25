@@ -73,7 +73,7 @@ function App() {
         <CardLayout key={activeWorkspaceId} />
       </div>
 
-      {showOverlay && (
+      {showOverlay && workspace && (
         <WorkspaceOverlay
           nodes={workspace.nodes}
           rootId={workspace.rootId}
