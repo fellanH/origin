@@ -1,6 +1,61 @@
 use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Manager, Runtime};
 
+/// Validate a plugin ID against a strict allowlist of characters.
+///
+/// Allowed characters: ASCII alphanumerics, dots, hyphens, underscores.
+/// The ID must not be empty and must not contain path separators or traversal
+/// sequences (`..`, `/`, `\`).
+///
+/// Examples of valid IDs:  `com.example.myplugin`, `org.foo-bar.baz_2`
+/// Examples of invalid IDs: `../evil`, `com/evil`, `com\evil`, ``, `..`
+fn validate_plugin_id(id: &str) -> Result<(), String> {
+    if id.is_empty() {
+        return Err("Plugin ID must not be empty".to_string());
+    }
+    // Block traversal and path separator characters explicitly.
+    if id.contains("..") || id.contains('/') || id.contains('\\') {
+        return Err(format!("Plugin ID contains invalid characters: {id}"));
+    }
+    // Allow only: a-z A-Z 0-9 . - _
+    if !id
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-' || c == '_')
+    {
+        return Err(format!(
+            "Plugin ID '{id}' contains characters outside [a-zA-Z0-9._-]"
+        ));
+    }
+    Ok(())
+}
+
+/// Verify that `dest` is strictly inside `root` after canonicalization.
+///
+/// `root` must already exist. `dest` is created (as an empty dir) if it does
+/// not yet exist so that `canonicalize` can resolve it; the caller is
+/// responsible for populating it afterward.
+fn assert_dest_within_root(root: &Path, dest: &Path) -> Result<(), String> {
+    let canon_root = root
+        .canonicalize()
+        .map_err(|e| format!("Failed to canonicalize plugins dir: {e}"))?;
+
+    // Ensure `dest` exists so canonicalize works on it.
+    std::fs::create_dir_all(dest)
+        .map_err(|e| format!("Failed to create destination directory: {e}"))?;
+
+    let canon_dest = dest
+        .canonicalize()
+        .map_err(|e| format!("Failed to canonicalize destination path: {e}"))?;
+
+    if !canon_dest.starts_with(&canon_root) {
+        return Err(format!(
+            "Destination path escapes the plugins directory: {}",
+            dest.display()
+        ));
+    }
+    Ok(())
+}
+
 /// Recursively copy a directory and all its contents.
 fn copy_dir_recursive(src: &Path, dest: &Path) -> std::io::Result<()> {
     std::fs::create_dir_all(dest)?;
@@ -108,6 +163,118 @@ mod tests {
         let json = serde_json::to_string(&manifest).unwrap();
         assert!(!json.contains("requiredCapabilities"), "key must be absent when None: {json}");
     }
+
+    // ------------------------------------------------------------------
+    // validate_plugin_id — security tests
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn valid_reverse_domain_ids_pass() {
+        let valid_ids = [
+            "com.example.myplugin",
+            "org.foo-bar.baz",
+            "io.origin.notepad",
+            "com.example.plugin_v2",
+            "a",
+            "com.UPPER.case",
+        ];
+        for id in &valid_ids {
+            assert!(
+                super::validate_plugin_id(id).is_ok(),
+                "Expected '{id}' to be valid"
+            );
+        }
+    }
+
+    #[test]
+    fn empty_id_is_rejected() {
+        assert!(
+            super::validate_plugin_id("").is_err(),
+            "Empty ID should be invalid"
+        );
+    }
+
+    #[test]
+    fn dotdot_traversal_in_id_is_rejected() {
+        let traversal_ids = ["../evil", "com/../evil", "..", "a/../b"];
+        for id in &traversal_ids {
+            assert!(
+                super::validate_plugin_id(id).is_err(),
+                "Expected '{id}' to be rejected"
+            );
+        }
+    }
+
+    #[test]
+    fn slash_in_id_is_rejected() {
+        assert!(
+            super::validate_plugin_id("com/evil").is_err(),
+            "ID with '/' should be rejected"
+        );
+    }
+
+    #[test]
+    fn backslash_in_id_is_rejected() {
+        assert!(
+            super::validate_plugin_id("com\\evil").is_err(),
+            "ID with '\\\\' should be rejected"
+        );
+    }
+
+    #[test]
+    fn special_characters_in_id_are_rejected() {
+        let bad_ids = ["com.example;drop", "com.example$evil"];
+        for id in &bad_ids {
+            assert!(
+                super::validate_plugin_id(id).is_err(),
+                "Expected '{id}' to be rejected"
+            );
+        }
+    }
+
+    // ------------------------------------------------------------------
+    // assert_dest_within_root — security tests
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn valid_dest_inside_root_passes() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        let root = tmp.path().join("plugins");
+        std::fs::create_dir_all(&root).unwrap();
+        let dest = root.join("com.example.plugin");
+
+        let result = super::assert_dest_within_root(&root, &dest);
+        assert!(result.is_ok(), "A valid destination should pass: {result:?}");
+    }
+
+    #[test]
+    fn dest_outside_root_is_rejected() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        let root = tmp.path().join("plugins");
+        std::fs::create_dir_all(&root).unwrap();
+        // Create a sibling directory that is outside the plugins root
+        let outside = tmp.path().join("outside");
+        std::fs::create_dir_all(&outside).unwrap();
+
+        let result = super::assert_dest_within_root(&root, &outside);
+        assert!(result.is_err(), "A path outside the root should be rejected");
+    }
+
+    #[test]
+    fn traversal_dest_is_rejected() {
+        let tmp = tempfile::TempDir::new().unwrap();
+        let root = tmp.path().join("plugins");
+        std::fs::create_dir_all(&root).unwrap();
+        // Construct a traversal path: plugins/../outside_dir
+        let traversal = root.join("../outside_dir");
+        std::fs::create_dir_all(&traversal).unwrap();
+
+        let result = super::assert_dest_within_root(&root, &traversal);
+        assert!(
+            result.is_err(),
+            "A traversal path that escapes the root should be rejected"
+        );
+    }
 }
 
 pub(super) fn plugins_dir<R: Runtime>(app: &AppHandle<R>) -> Option<PathBuf> {
@@ -213,11 +380,22 @@ pub fn install_plugin(app: AppHandle, src_path: String) -> Result<PluginManifest
     let manifest: PluginManifest = serde_json::from_str(&manifest_str)
         .map_err(|e| format!("Invalid manifest.json: {e}"))?;
 
+    // Validate the plugin ID before constructing any paths from it.
+    validate_plugin_id(&manifest.id)?;
+
     let Some(plugins_dir) = plugins_dir(&app) else {
         return Err("Failed to resolve app data directory".to_string());
     };
 
+    // Ensure the plugins directory exists before canonicalization.
+    std::fs::create_dir_all(&plugins_dir)
+        .map_err(|e| format!("Failed to create plugins directory: {e}"))?;
+
     let dest = plugins_dir.join(&manifest.id);
+
+    // Hard containment check: confirm the resolved destination is inside the
+    // plugins directory even after the OS resolves the full path.
+    assert_dest_within_root(&plugins_dir, &dest)?;
 
     // Recursively copy the plugin directory (including assets/ subdirs)
     copy_dir_recursive(&src, &dest)
@@ -276,6 +454,11 @@ pub async fn seed_bundled_plugins(app: tauri::AppHandle) -> Result<Vec<String>, 
             Err(_) => continue, // Skip dirs with invalid manifest.json
         };
 
+        // Validate the plugin ID before using it to construct paths.
+        if validate_plugin_id(&src_manifest.id).is_err() {
+            continue; // Skip plugins with invalid IDs
+        }
+
         let dest_dir = dest_plugins_dir.join(&src_manifest.id);
 
         // If the plugin is already installed, compare versions and skip if up to date.
@@ -294,10 +477,14 @@ pub async fn seed_bundled_plugins(app: tauri::AppHandle) -> Result<Vec<String>, 
             }
         }
 
-        // Copy the entire plugin directory to the destination.
-        std::fs::create_dir_all(&dest_dir)
-            .map_err(|e| format!("Failed to create dir for {}: {e}", src_manifest.id))?;
+        // Containment check before writing.
+        if let Err(e) = assert_dest_within_root(&dest_plugins_dir, &dest_dir) {
+            // This should never happen for valid IDs, but be defensive.
+            eprintln!("Skipping plugin {}: {e}", src_manifest.id);
+            continue;
+        }
 
+        // Copy the entire plugin directory to the destination.
         copy_dir_recursive(&src_dir, &dest_dir)
             .map_err(|e| format!("Failed to copy plugin {}: {e}", src_manifest.id))?;
 
@@ -314,13 +501,22 @@ pub fn save_plugin_bundle(
     manifest_json: String,
     js_source: String,
 ) -> Result<(), String> {
+    // Validate the plugin ID before constructing any filesystem paths.
+    validate_plugin_id(&id)?;
+
     let Some(plugins_dir) = plugins_dir(&app) else {
         return Err("Failed to resolve app data directory".to_string());
     };
 
+    // Ensure the plugins directory exists before canonicalization.
+    std::fs::create_dir_all(&plugins_dir)
+        .map_err(|e| format!("Failed to create plugins directory: {e}"))?;
+
     let dest = plugins_dir.join(&id);
-    std::fs::create_dir_all(&dest)
-        .map_err(|e| format!("Failed to create plugin directory: {e}"))?;
+
+    // Hard containment check: confirm the resolved destination is inside the
+    // plugins directory even after the OS resolves the full path.
+    assert_dest_within_root(&plugins_dir, &dest)?;
 
     std::fs::write(dest.join("manifest.json"), &manifest_json)
         .map_err(|e| format!("Failed to write manifest.json: {e}"))?;
