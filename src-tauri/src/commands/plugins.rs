@@ -468,10 +468,30 @@ pub async fn seed_bundled_plugins(app: tauri::AppHandle) -> Result<Vec<String>, 
                 if let Ok(dest_manifest) =
                     serde_json::from_str::<MinimalManifest>(&dest_manifest_str)
                 {
-                    // Simple lexicographic semver compare — acceptable for single-digit
-                    // minor/patch versions (e.g. "0.1.0" < "0.2.0").
-                    if dest_manifest.version >= src_manifest.version {
-                        continue; // Installed version is same or newer; skip.
+                    // Use semver comparison so that multi-digit components compare
+                    // correctly (e.g. "0.10.0" > "0.9.0").  If either version string
+                    // is invalid we cannot be sure the installed copy is current, so
+                    // we fall through and re-seed rather than silently doing nothing.
+                    match (
+                        semver::Version::parse(&dest_manifest.version),
+                        semver::Version::parse(&src_manifest.version),
+                    ) {
+                        (Ok(installed), Ok(bundled)) => {
+                            if installed >= bundled {
+                                continue; // Installed version is same or newer; skip.
+                            }
+                        }
+                        _ => {
+                            // One or both version strings is not valid semver.
+                            // Log a warning and fall through to re-seed.
+                            eprintln!(
+                                "[seed_bundled_plugins] WARNING: unparseable version for \
+                                 plugin '{}' (installed={:?}, bundled={:?}); re-seeding.",
+                                src_manifest.id,
+                                dest_manifest.version,
+                                src_manifest.version,
+                            );
+                        }
                     }
                 }
             }
@@ -525,4 +545,86 @@ pub fn save_plugin_bundle(
         .map_err(|e| format!("Failed to write index.js: {e}"))?;
 
     Ok(())
+}
+
+// ---------------------------------------------------------------------------
+// Unit tests for semver comparison logic used in seed_bundled_plugins
+// ---------------------------------------------------------------------------
+#[cfg(test)]
+mod tests {
+    /// Helper that mirrors the comparison logic in `seed_bundled_plugins`:
+    /// returns `true` when the installed version is considered current (i.e.
+    /// we should *skip* re-seeding), `false` when we should seed, and `None`
+    /// when either string is invalid semver.
+    fn should_skip(installed: &str, bundled: &str) -> Option<bool> {
+        match (
+            semver::Version::parse(installed),
+            semver::Version::parse(bundled),
+        ) {
+            (Ok(inst), Ok(bund)) => Some(inst >= bund),
+            _ => None,
+        }
+    }
+
+    // --- basic ordering ---
+
+    #[test]
+    fn same_version_skips() {
+        assert_eq!(should_skip("1.0.0", "1.0.0"), Some(true));
+    }
+
+    #[test]
+    fn older_installed_seeds() {
+        assert_eq!(should_skip("0.1.0", "0.2.0"), Some(false));
+    }
+
+    #[test]
+    fn newer_installed_skips() {
+        assert_eq!(should_skip("0.3.0", "0.2.0"), Some(true));
+    }
+
+    // --- multi-digit components (the bug this fix addresses) ---
+
+    #[test]
+    fn multi_digit_minor_bundled_newer_seeds() {
+        // "0.10.0" > "0.9.0" semantically; lexicographic order gives the wrong answer.
+        assert_eq!(should_skip("0.9.0", "0.10.0"), Some(false));
+    }
+
+    #[test]
+    fn multi_digit_minor_installed_newer_skips() {
+        assert_eq!(should_skip("0.10.0", "0.9.0"), Some(true));
+    }
+
+    #[test]
+    fn multi_digit_patch_bundled_newer_seeds() {
+        assert_eq!(should_skip("1.0.9", "1.0.10"), Some(false));
+    }
+
+    #[test]
+    fn multi_digit_patch_installed_newer_skips() {
+        assert_eq!(should_skip("1.0.10", "1.0.9"), Some(true));
+    }
+
+    #[test]
+    fn multi_digit_major_bundled_newer_seeds() {
+        assert_eq!(should_skip("9.0.0", "10.0.0"), Some(false));
+    }
+
+    // --- invalid version strings fall back to re-seed (None) ---
+
+    #[test]
+    fn invalid_installed_version_returns_none() {
+        assert_eq!(should_skip("not-semver", "1.0.0"), None);
+    }
+
+    #[test]
+    fn invalid_bundled_version_returns_none() {
+        assert_eq!(should_skip("1.0.0", "bad"), None);
+    }
+
+    #[test]
+    fn both_invalid_returns_none() {
+        assert_eq!(should_skip("???", "!!!"), None);
+    }
 }
