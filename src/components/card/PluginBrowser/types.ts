@@ -10,6 +10,13 @@ export interface RegistryPlugin {
   package?: string;
   /** URL to the pre-built JS bundle for download-and-install */
   bundle_url?: string;
+  /**
+   * Tauri capabilities declared by the plugin author in the registry.
+   * Forwarded verbatim into the saved manifest so the capability broker
+   * in IframePluginHost can enforce them without a re-install.
+   * @example ["fs:read", "shell:execute"]
+   */
+  requiredCapabilities?: string[];
 }
 
 export interface Registry {

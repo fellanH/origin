@@ -129,6 +129,9 @@ function DiscoverTab({ fetchState }: { fetchState: FetchState }) {
         version: plugin.version,
         description: plugin.description ?? "",
         icon: plugin.icon ?? "",
+        ...(plugin.requiredCapabilities && plugin.requiredCapabilities.length > 0
+          ? { requiredCapabilities: plugin.requiredCapabilities }
+          : {}),
       });
       await invoke("save_plugin_bundle", {
         id: plugin.id,
