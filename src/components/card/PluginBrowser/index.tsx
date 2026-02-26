@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import {
   Dialog,
   DialogContent,
@@ -8,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { Registry, RegistryPlugin } from "./types";
+import type { PluginManifest } from "@/types/plugin";
 
 const REGISTRY_URL = "https://fellanH.github.io/origin-plugin-registry/registry.json";
 
@@ -42,8 +44,25 @@ const STEPS = [
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
-export default function PluginBrowser() {
-  const [open, setOpen] = useState(false);
+interface PluginBrowserProps {
+  /**
+   * Controlled open state. When provided, the built-in DialogTrigger is
+   * suppressed and the caller owns open/close.
+   */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export default function PluginBrowser({ open: controlledOpen, onOpenChange }: PluginBrowserProps) {
+  const isControlled = controlledOpen !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isControlled ? controlledOpen : internalOpen;
+
+  function handleOpenChange(next: boolean) {
+    if (!isControlled) setInternalOpen(next);
+    onOpenChange?.(next);
+  }
+
   const [tab, setTab] = useState<Tab>("discover");
   const [fetchState, setFetchState] = useState<FetchState>({ status: "idle" });
 
@@ -61,13 +80,15 @@ export default function PluginBrowser() {
   }, [open]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger
-        tabIndex={-1}
-        className="flex h-full select-none items-center px-2 text-xs opacity-60 hover:opacity-100"
-      >
-        ＋ Add Plugin
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      {!isControlled && (
+        <DialogTrigger
+          tabIndex={-1}
+          className="flex h-full select-none items-center px-2 text-xs opacity-60 hover:opacity-100"
+        >
+          ＋ Add Plugin
+        </DialogTrigger>
+      )}
 
       <DialogContent className="flex max-w-2xl flex-col gap-0 overflow-hidden p-0">
         {/* Title row — pr-10 leaves room for the built-in close button */}
@@ -112,6 +133,12 @@ function DiscoverTab({ fetchState }: { fetchState: FetchState }) {
   const [installStates, setInstallStates] = useState<
     Record<string, InstallState>
   >({});
+  const [folderInstalling, setFolderInstalling] = useState(false);
+  const [folderStatus, setFolderStatus] = useState<
+    | { type: "success"; name: string }
+    | { type: "error"; message: string }
+    | null
+  >(null);
 
   async function handleInstall(plugin: RegistryPlugin) {
     if (!plugin.bundle_url) {
@@ -144,42 +171,94 @@ function DiscoverTab({ fetchState }: { fetchState: FetchState }) {
     }
   }
 
-  if (fetchState.status === "idle" || fetchState.status === "loading") {
-    return (
-      <div className="space-y-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="h-[72px] animate-pulse rounded-lg bg-muted" />
-        ))}
-      </div>
-    );
-  }
-
-  if (fetchState.status === "error") {
-    return (
-      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-        Could not load registry — check your internet connection.
-      </div>
-    );
-  }
-
-  if (fetchState.plugins.length === 0) {
-    return (
-      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-        No plugins yet — be the first to publish one.
-      </div>
-    );
+  async function handleInstallFromFolder() {
+    const dir = await openDialog({ directory: true, title: "Select plugin folder" });
+    if (!dir) return;
+    setFolderInstalling(true);
+    setFolderStatus(null);
+    try {
+      const manifest = await invoke<PluginManifest>("install_plugin", {
+        srcPath: dir,
+      });
+      setFolderStatus({ type: "success", name: manifest.name });
+    } catch (e) {
+      setFolderStatus({ type: "error", message: String(e) });
+    } finally {
+      setFolderInstalling(false);
+    }
   }
 
   return (
-    <div className="space-y-2">
-      {fetchState.plugins.map((plugin) => (
-        <PluginCard
-          key={plugin.id}
-          plugin={plugin}
-          installState={installStates[plugin.id] ?? "idle"}
-          onInstall={handleInstall}
-        />
-      ))}
+    <div className="flex flex-col gap-4">
+      {/* Registry plugins list */}
+      <div>
+        {(fetchState.status === "idle" || fetchState.status === "loading") && (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-[72px] animate-pulse rounded-lg bg-muted" />
+            ))}
+          </div>
+        )}
+
+        {fetchState.status === "error" && (
+          <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+            Could not load registry — check your internet connection.
+          </div>
+        )}
+
+        {fetchState.status === "ok" && fetchState.plugins.length === 0 && (
+          <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+            No plugins yet — be the first to publish one.
+          </div>
+        )}
+
+        {fetchState.status === "ok" && fetchState.plugins.length > 0 && (
+          <div className="space-y-2">
+            {fetchState.plugins.map((plugin) => (
+              <PluginCard
+                key={plugin.id}
+                plugin={plugin}
+                installState={installStates[plugin.id] ?? "idle"}
+                onInstall={handleInstall}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Install from folder */}
+      <div className="border-t border-border pt-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium">Install from folder</p>
+            <p className="text-xs text-muted-foreground">
+              Point to a plugin directory containing a built bundle and manifest.
+            </p>
+          </div>
+          <button
+            onClick={handleInstallFromFolder}
+            disabled={folderInstalling}
+            className="shrink-0 rounded-md border border-border px-3 py-1.5 text-xs transition-colors hover:bg-muted disabled:opacity-50"
+          >
+            {folderInstalling ? "Installing…" : "Choose folder…"}
+          </button>
+        </div>
+        {folderStatus?.type === "success" && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            &lsquo;{folderStatus.name}&rsquo; installed —{" "}
+            <button
+              className="underline hover:text-foreground"
+              onClick={() => invoke("restart_app")}
+            >
+              Restart now
+            </button>{" "}
+            to activate
+          </p>
+        )}
+        {folderStatus?.type === "error" && (
+          <p className="mt-2 text-xs text-destructive">{folderStatus.message}</p>
+        )}
+      </div>
     </div>
   );
 }

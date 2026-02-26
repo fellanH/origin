@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo, useCallback } from "react";
+import { useRef, useEffect, useMemo, useCallback, useState } from "react";
 import { invoke as tauriInvoke } from "@tauri-apps/api/core";
 import {
   useWorkspaceStore,
@@ -7,6 +7,7 @@ import {
 import { useShallow } from "zustand/shallow";
 import EmptyState from "./EmptyState";
 import IframePluginHost from "./IframePluginHost";
+import PluginBrowser from "./PluginBrowser";
 import { getPlugin } from "@/plugins/registry";
 import { cn } from "@/lib/utils";
 import { useResolvedTheme } from "@/hooks/useResolvedTheme";
@@ -45,6 +46,9 @@ function Card({ nodeId }: Props) {
   const pluginId = node?.type === "leaf" ? node.pluginId : null;
   const pluginEntry = pluginId ? (getPlugin(pluginId) ?? null) : null;
   const theme = useResolvedTheme();
+
+  // PluginBrowser open state — controlled from EmptyState's "Add plugin +" button
+  const [pluginBrowserOpen, setPluginBrowserOpen] = useState(false);
 
   // Stable setConfig callback — avoids unnecessary re-renders of the plugin
   const setConfig = useCallback(
@@ -104,10 +108,17 @@ function Card({ nodeId }: Props) {
       onClick={() => setFocus(nodeId)}
     >
       {pluginId === null ? (
-        <EmptyState
-          cardId={nodeId}
-          autoOpen={launcherOpenForNodeId === nodeId}
-        />
+        <>
+          <EmptyState
+            cardId={nodeId}
+            autoOpen={launcherOpenForNodeId === nodeId}
+            onOpenPluginBrowser={() => setPluginBrowserOpen(true)}
+          />
+          <PluginBrowser
+            open={pluginBrowserOpen}
+            onOpenChange={setPluginBrowserOpen}
+          />
+        </>
       ) : (
         <IframePluginHost
           pluginId={pluginId}

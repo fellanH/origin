@@ -1,9 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
+import { useEffect, useRef } from "react";
 import { getPluginRegistry } from "@/plugins/registry";
 import { useWorkspaceStore } from "@/store/workspaceStore";
-import type { PluginManifest } from "@/types/plugin";
 
 interface Props {
   cardId?: string;
@@ -12,21 +9,15 @@ interface Props {
    * plugin button so the user can immediately press Enter or arrow-navigate.
    */
   autoOpen?: boolean;
+  /** Called when the user clicks "Add Plugin +" — opens the PluginBrowser modal. */
+  onOpenPluginBrowser?: () => void;
 }
 
-type InstallStatus =
-  | { type: "success"; name: string }
-  | { type: "error"; message: string };
-
-export default function EmptyState({ cardId, autoOpen }: Props) {
+export default function EmptyState({ cardId, autoOpen, onOpenPluginBrowser }: Props) {
   const setPlugin = useWorkspaceStore((s) => s.setPlugin);
   const addInitialCard = useWorkspaceStore((s) => s.addInitialCard);
   const clearLauncherForNode = useWorkspaceStore((s) => s.clearLauncherForNode);
   const firstButtonRef = useRef<HTMLButtonElement>(null);
-  const [installing, setInstalling] = useState(false);
-  const [installStatus, setInstallStatus] = useState<InstallStatus | null>(
-    null,
-  );
 
   useEffect(() => {
     if (autoOpen) {
@@ -37,27 +28,10 @@ export default function EmptyState({ cardId, autoOpen }: Props) {
   }, [autoOpen, cardId, clearLauncherForNode]);
 
   function handleSelect(pluginId: string) {
-    setInstallStatus(null);
     if (cardId) {
       setPlugin(cardId, pluginId);
     } else {
       addInitialCard(pluginId);
-    }
-  }
-
-  async function handleAddPlugin() {
-    const dir = await open({ directory: true, title: "Select plugin folder" });
-    if (!dir) return; // user cancelled
-    setInstalling(true);
-    try {
-      const manifest = await invoke<PluginManifest>("install_plugin", {
-        srcPath: dir,
-      });
-      setInstallStatus({ type: "success", name: manifest.name });
-    } catch (e) {
-      setInstallStatus({ type: "error", message: String(e) });
-    } finally {
-      setInstalling(false);
     }
   }
 
@@ -83,27 +57,11 @@ export default function EmptyState({ cardId, autoOpen }: Props) {
       </div>
       <div className="flex flex-col items-center gap-1">
         <button
-          className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
-          onClick={handleAddPlugin}
-          disabled={installing}
+          className="text-xs text-muted-foreground hover:text-foreground"
+          onClick={onOpenPluginBrowser}
         >
-          {installing ? "Installing…" : "Add plugin +"}
+          Add plugin +
         </button>
-        {installStatus?.type === "success" && (
-          <p className="text-xs text-muted-foreground">
-            &lsquo;{installStatus.name}&rsquo; installed —{" "}
-            <button
-              className="underline hover:text-foreground"
-              onClick={() => invoke("restart_app")}
-            >
-              Restart now
-            </button>{" "}
-            to activate
-          </p>
-        )}
-        {installStatus?.type === "error" && (
-          <p className="text-xs text-destructive">{installStatus.message}</p>
-        )}
       </div>
     </div>
   );
