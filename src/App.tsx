@@ -5,12 +5,11 @@ import {
   selectActiveWorkspace,
 } from "@/store/workspaceStore";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useResolvedTheme } from "@/hooks/useResolvedTheme";
 import CardLayout from "@/components/workspace/CardLayout";
 import TabBar from "@/components/workspace/TabBar";
 import WorkspaceOverlay from "@/components/workspace/WorkspaceOverlay";
-import SettingsPanel, {
-  type ThemePreference,
-} from "@/components/settings/SettingsPanel";
+import SettingsPanel from "@/components/settings/SettingsPanel";
 
 function App() {
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
@@ -20,7 +19,9 @@ function App() {
 
   const [showOverlay, setShowOverlay] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [theme, setTheme] = useState<ThemePreference>("system");
+
+  // Resolved effective theme — single source of truth for shell + plugins.
+  const resolvedTheme = useResolvedTheme();
 
   useKeyboardShortcuts({ onToggleSettings: () => setShowSettings((p) => !p) });
 
@@ -28,16 +29,22 @@ function App() {
     appDataDir().then(setAppDataDir);
   }, [setAppDataDir]);
 
-  // Apply theme class to <html> whenever the preference changes.
-  // "system" removes the manual override so prefers-color-scheme takes effect.
+  // Apply theme class to <html> whenever the resolved theme changes.
+  // Both .dark and .light are managed so CSS can target either class
+  // and override the prefers-color-scheme fallback.
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") {
+    if (resolvedTheme === "dark") {
       root.classList.add("dark");
+      root.classList.remove("light");
     } else {
+      root.classList.add("light");
       root.classList.remove("dark");
     }
-  }, [theme]);
+    // Keep color-scheme in sync so native controls (scrollbars, inputs)
+    // render in the correct mode.
+    root.style.colorScheme = resolvedTheme;
+  }, [resolvedTheme]);
 
   // CMD+Opt+G — toggle workspace overview HUD
   useEffect(() => {
@@ -85,9 +92,7 @@ function App() {
 
       <SettingsPanel
         open={showSettings}
-        theme={theme}
         onClose={() => setShowSettings(false)}
-        onThemeChange={setTheme}
       />
     </div>
   );

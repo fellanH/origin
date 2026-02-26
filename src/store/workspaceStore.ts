@@ -8,6 +8,11 @@ import type { PluginBus } from "@/types/plugin";
 import { createPluginBus } from "@/lib/pluginBus";
 import { panelRefs } from "@/lib/panelRefs";
 
+// ─── Theme ───────────────────────────────────────────────────────────────────
+
+/** User-visible theme preference stored in the workspace store. */
+export type ThemePreference = "system" | "light" | "dark";
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 type WorkspaceState = {
@@ -40,6 +45,12 @@ type WorkspaceState = {
   splitAutoLaunch: boolean;
   /** Ephemeral zoom overlay — never persisted. null means no zoom active. */
   zoomedNodeId: string | null;
+  /**
+   * User's theme preference. Resolved to an effective "light" | "dark" by
+   * useResolvedTheme — "system" defers to the OS prefers-color-scheme.
+   * Persisted so the preference survives restarts.
+   */
+  themePreference: ThemePreference;
 };
 
 type WorkspaceActions = {
@@ -77,6 +88,8 @@ type WorkspaceActions = {
    * for workspaces that were deserialized from disk (functions are not persisted).
    */
   hydrateBuses: () => void;
+  /** Persist the user's theme preference. */
+  setThemePreference: (preference: ThemePreference) => void;
 };
 
 export type WorkspaceStore = WorkspaceState & WorkspaceActions;
@@ -124,6 +137,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
       launcherOpenForNodeId: null,
       splitAutoLaunch: true,
       zoomedNodeId: null,
+      themePreference: "system",
       buses: { [INITIAL_ID]: createPluginBus() },
 
       // ── Tab actions ──────────────────────────────────────────────────────
@@ -565,6 +579,11 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           draft.zoomedNodeId = id;
         }),
 
+      setThemePreference: (preference) =>
+        set((draft) => {
+          draft.themePreference = preference;
+        }),
+
       setPluginConfig: (cardId, patch) =>
         set((draft) => {
           const ws = getActiveWs(draft);
@@ -600,6 +619,8 @@ export const tauriHandler = createTauriStore(
       "activeWorkspaceId",
       "lastWorkspaceId",
       "savedConfigs",
+      "themePreference",
+      "splitAutoLaunch",
     ],
     filterKeysStrategy: "pick",
     saveOnChange: true,

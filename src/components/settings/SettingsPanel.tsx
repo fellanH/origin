@@ -1,18 +1,8 @@
 import { useEffect, useRef } from "react";
 import { useWorkspaceStore } from "@/store/workspaceStore";
+import type { ThemePreference } from "@/store/workspaceStore";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-export type ThemePreference = "system" | "light" | "dark";
-
-type SettingsPanelProps = {
-  open: boolean;
-  theme: ThemePreference;
-  onClose: () => void;
-  onThemeChange: (theme: ThemePreference) => void;
-};
 
 // ─── Section ─────────────────────────────────────────────────────────────────
 
@@ -128,14 +118,16 @@ function ThemeSelector({ value, onChange }: ThemeSelectorProps) {
 
 // ─── SettingsPanel ────────────────────────────────────────────────────────────
 
-export default function SettingsPanel({
-  open,
-  theme,
-  onClose,
-  onThemeChange,
-}: SettingsPanelProps) {
+type SettingsPanelProps = {
+  open: boolean;
+  onClose: () => void;
+};
+
+export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
   const splitAutoLaunch = useWorkspaceStore((s) => s.splitAutoLaunch);
   const setSplitAutoLaunch = useWorkspaceStore((s) => s.setSplitAutoLaunch);
+  const themePreference = useWorkspaceStore((s) => s.themePreference);
+  const setThemePreference = useWorkspaceStore((s) => s.setThemePreference);
 
   // Close on Escape
   const panelRef = useRef<HTMLDivElement>(null);
@@ -193,7 +185,10 @@ export default function SettingsPanel({
           {/* Appearance */}
           <Section title="Appearance">
             <Row label="Theme" description="Controls the colour scheme">
-              <ThemeSelector value={theme} onChange={onThemeChange} />
+              <ThemeSelector
+                value={themePreference}
+                onChange={setThemePreference}
+              />
             </Row>
           </Section>
 

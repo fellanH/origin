@@ -9,7 +9,7 @@ import EmptyState from "./EmptyState";
 import IframePluginHost from "./IframePluginHost";
 import { getPlugin } from "@/plugins/registry";
 import { cn } from "@/lib/utils";
-import { useSystemTheme } from "@/hooks/useSystemTheme";
+import { useResolvedTheme } from "@/hooks/useResolvedTheme";
 import type { PluginContext } from "@/types/plugin";
 
 interface Props {
@@ -44,7 +44,7 @@ function Card({ nodeId }: Props) {
 
   const pluginId = node?.type === "leaf" ? node.pluginId : null;
   const pluginEntry = pluginId ? (getPlugin(pluginId) ?? null) : null;
-  const theme = useSystemTheme();
+  const theme = useResolvedTheme();
 
   // Stable setConfig callback — avoids unnecessary re-renders of the plugin
   const setConfig = useCallback(
