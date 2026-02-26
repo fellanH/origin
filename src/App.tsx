@@ -41,6 +41,9 @@ function App() {
       root.classList.add("light");
       root.classList.remove("dark");
     }
+    // Keep color-scheme in sync so native controls (scrollbars, inputs)
+    // render in the correct mode.
+    root.style.colorScheme = resolvedTheme;
   }, [resolvedTheme]);
 
   // CMD+Opt+G — toggle workspace overview HUD

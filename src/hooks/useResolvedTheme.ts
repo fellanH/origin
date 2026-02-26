@@ -23,7 +23,10 @@ export function useResolvedTheme(): "light" | "dark" {
 
   useEffect(() => {
     if (themePreference !== "system") return;
+    // Re-read current OS value when re-entering system mode (may have changed
+    // while an explicit light/dark override was active and no listener was attached).
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    setSystemTheme(mq.matches ? "dark" : "light");
     const handler = (e: MediaQueryListEvent): void =>
       setSystemTheme(e.matches ? "dark" : "light");
     mq.addEventListener("change", handler);
