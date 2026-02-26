@@ -29,6 +29,16 @@ export function useKeyboardShortcuts({
     function handleKeyDown(e: KeyboardEvent): void {
       if (!e.metaKey) return;
 
+      // Standard clipboard shortcuts — never intercept these; let the browser handle them.
+      // CMD+C (copy), CMD+V (paste), CMD+X (cut), CMD+A (select all)
+      if (
+        !e.altKey &&
+        !e.shiftKey &&
+        (e.key === "c" || e.key === "v" || e.key === "x" || e.key === "a")
+      ) {
+        return;
+      }
+
       // CMD+, — toggle settings panel (no altKey / shiftKey required)
       if (e.key === "," && !e.altKey && !e.shiftKey) {
         e.preventDefault();
