@@ -9,7 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { Registry, RegistryPlugin } from "./types";
 
-const REGISTRY_URL = "https://fellanH.github.io/note-plugins/registry.json";
+const REGISTRY_URL = "https://fellanH.github.io/origin-plugin-registry/registry.json";
 
 type Tab = "discover" | "create";
 
