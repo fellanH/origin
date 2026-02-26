@@ -54,8 +54,10 @@ export const COMMAND_CAPABILITY_MAP: Record<string, string> = {
   "plugin:fs|read_file": "fs:read",
   "plugin:fs|read_text_file": "fs:read",
   "plugin:fs|read_dir": "fs:read",
+  "plugin:fs|exists": "fs:read",
   "plugin:fs|write_file": "fs:write",
   "plugin:fs|write_text_file": "fs:write",
+  "plugin:fs|mkdir": "fs:write",
   // tauri-plugin-dialog
   "plugin:dialog|open": "dialog:open",
   "plugin:dialog|save": "dialog:save",
