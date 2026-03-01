@@ -18,9 +18,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Scan source for secrets
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: detect --source . --config .gitleaks.toml --verbose
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Build
         working-directory: plugins/api
         run: npm run build
+
+      - name: Scan plugin build artifacts for secrets
+        run: |
+          # Install gitleaks for artifact scanning (no-git mode)
+          GITLEAKS_VERSION="8.30.0"
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /usr/local/bin gitleaks
+          gitleaks detect --source plugins/api/dist --no-git --config .gitleaks.toml --verbose
 
       - name: Publish to npm
         working-directory: plugins/api
