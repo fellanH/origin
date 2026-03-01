@@ -13,6 +13,9 @@
 
 title = "origin secret scanning"
 
+# Minimum gitleaks version required to parse this config
+minVersion = "8.21.0"
+
 [extend]
 # Use the default gitleaks ruleset as the base
 useDefault = true
