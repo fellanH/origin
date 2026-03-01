@@ -3,8 +3,15 @@ import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import { createTauriStore } from "@tauri-store/zustand";
 import type { CardId, CardLeaf, CardSplit } from "@/types/card";
-import type { Workspace, WorkspaceId, SavedConfig } from "@/types/workspace";
+import type {
+  Workspace,
+  WorkspaceId,
+  SavedConfig,
+  ViewMode,
+  CanvasViewport,
+} from "@/types/workspace";
 import type { PluginBus } from "@/types/plugin";
+import type { UpdateChannel } from "@/types/updater";
 import { createPluginBus } from "@/lib/pluginBus";
 import { panelRefs } from "@/lib/panelRefs";
 
@@ -51,6 +58,8 @@ type WorkspaceState = {
    * Persisted so the preference survives restarts.
    */
   themePreference: ThemePreference;
+  /** Selected update channel. Persisted so it survives restarts. */
+  updateChannel: UpdateChannel;
 };
 
 type WorkspaceActions = {
@@ -90,11 +99,35 @@ type WorkspaceActions = {
   hydrateBuses: () => void;
   /** Persist the user's theme preference. */
   setThemePreference: (preference: ThemePreference) => void;
+  /** Persist the user's update channel preference. */
+  setUpdateChannel: (channel: UpdateChannel) => void;
+  // ── Canvas actions ───────────────────────────────────────────────────────
+  /** Toggle between tiling and canvas view mode for the active workspace. */
+  setViewMode: (mode: ViewMode) => void;
+  /** Update the canvas pan/zoom viewport for the active workspace. */
+  setCanvasViewport: (viewport: Partial<CanvasViewport>) => void;
+  /** Move a card to a new position on the canvas. */
+  moveCanvasCard: (cardId: CardId, x: number, y: number) => void;
+  /** Resize a card on the canvas. */
+  resizeCanvasCard: (
+    cardId: CardId,
+    width: number,
+    height: number,
+  ) => void;
+  /** Add a new card at a specific canvas position. */
+  addCanvasCard: (x: number, y: number, pluginId?: string) => void;
 };
 
 export type WorkspaceStore = WorkspaceState & WorkspaceActions;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Default canvas viewport — centered at origin, 100% zoom. */
+const DEFAULT_CANVAS_VIEWPORT: CanvasViewport = {
+  offsetX: 0,
+  offsetY: 0,
+  scale: 1,
+};
 
 function emptyWorkspace(id: WorkspaceId, name: string): Workspace {
   return {
@@ -104,6 +137,8 @@ function emptyWorkspace(id: WorkspaceId, name: string): Workspace {
     nodes: {},
     focusedCardId: null,
     zoomedCardId: null,
+    viewMode: "tiling",
+    canvasViewport: { ...DEFAULT_CANVAS_VIEWPORT },
   };
 }
 
@@ -138,6 +173,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
       splitAutoLaunch: true,
       zoomedNodeId: null,
       themePreference: "system",
+      updateChannel: "stable",
       buses: { [INITIAL_ID]: createPluginBus() },
 
       // ── Tab actions ──────────────────────────────────────────────────────
@@ -491,6 +527,8 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
             nodes: { ...config.snapshot.nodes },
             focusedCardId: null,
             zoomedCardId: null,
+            viewMode: "tiling",
+            canvasViewport: { ...DEFAULT_CANVAS_VIEWPORT },
           });
           draft.activeWorkspaceId = newId;
           draft.buses[newId] = createPluginBus();
@@ -584,6 +622,11 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           draft.themePreference = preference;
         }),
 
+      setUpdateChannel: (channel) =>
+        set((draft) => {
+          draft.updateChannel = channel;
+        }),
+
       setPluginConfig: (cardId, patch) =>
         set((draft) => {
           const ws = getActiveWs(draft);
@@ -600,6 +643,81 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
               draft.buses[ws.id] = createPluginBus();
             }
           }
+        }),
+
+      // ── Canvas actions ─────────────────────────────────────────────────────
+
+      setViewMode: (mode) =>
+        set((draft) => {
+          const ws = getActiveWs(draft);
+          if (!ws) return;
+          ws.viewMode = mode;
+          // When switching to canvas, ensure all leaf nodes have canvas coordinates
+          if (mode === "canvas") {
+            let col = 0;
+            for (const node of Object.values(ws.nodes)) {
+              if (node.type !== "leaf") continue;
+              if (node.canvasX === undefined) {
+                node.canvasX = 40 + col * 440;
+                node.canvasY = 40;
+                node.canvasWidth = 400;
+                node.canvasHeight = 300;
+                col++;
+              }
+            }
+          }
+        }),
+
+      setCanvasViewport: (viewport) =>
+        set((draft) => {
+          const ws = getActiveWs(draft);
+          if (!ws) return;
+          if (viewport.offsetX !== undefined)
+            ws.canvasViewport.offsetX = viewport.offsetX;
+          if (viewport.offsetY !== undefined)
+            ws.canvasViewport.offsetY = viewport.offsetY;
+          if (viewport.scale !== undefined)
+            ws.canvasViewport.scale = viewport.scale;
+        }),
+
+      moveCanvasCard: (cardId, x, y) =>
+        set((draft) => {
+          const ws = getActiveWs(draft);
+          if (!ws) return;
+          const node = ws.nodes[cardId];
+          if (!node || node.type !== "leaf") return;
+          node.canvasX = x;
+          node.canvasY = y;
+        }),
+
+      resizeCanvasCard: (cardId, width, height) =>
+        set((draft) => {
+          const ws = getActiveWs(draft);
+          if (!ws) return;
+          const node = ws.nodes[cardId];
+          if (!node || node.type !== "leaf") return;
+          node.canvasWidth = Math.max(200, width);
+          node.canvasHeight = Math.max(150, height);
+        }),
+
+      addCanvasCard: (x, y, pluginId) =>
+        set((draft) => {
+          const ws = getActiveWs(draft);
+          if (!ws) return;
+          const leafId = crypto.randomUUID();
+          ws.nodes[leafId] = {
+            type: "leaf",
+            id: leafId,
+            parentId: null,
+            pluginId: pluginId ?? null,
+            canvasX: x,
+            canvasY: y,
+            canvasWidth: 400,
+            canvasHeight: 300,
+          } satisfies CardLeaf;
+          // In canvas mode, rootId is used as a sentinel — set it if empty
+          if (ws.rootId === null) ws.rootId = leafId;
+          ws.focusedCardId = leafId;
         }),
     })),
     { name: "WorkspaceStore" },
@@ -620,6 +738,7 @@ export const tauriHandler = createTauriStore(
       "lastWorkspaceId",
       "savedConfigs",
       "themePreference",
+      "updateChannel",
       "splitAutoLaunch",
     ],
     filterKeysStrategy: "pick",
