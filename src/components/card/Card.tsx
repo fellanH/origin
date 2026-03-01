@@ -43,6 +43,7 @@ function Card({ nodeId }: Props) {
     }),
   );
 
+  const registryVersion = useWorkspaceStore((s) => s.registryVersion);
   const pluginId = node?.type === "leaf" ? node.pluginId : null;
   const pluginEntry = pluginId ? (getPlugin(pluginId) ?? null) : null;
   const theme = useResolvedTheme();
@@ -121,6 +122,7 @@ function Card({ nodeId }: Props) {
         </>
       ) : (
         <IframePluginHost
+          key={`${pluginId}-${registryVersion}`}
           pluginId={pluginId}
           context={pluginContext}
           manifest={pluginEntry?.manifest}

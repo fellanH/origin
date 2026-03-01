@@ -63,6 +63,14 @@ type WorkspaceState = {
   /** Selected update channel. Persisted so it survives restarts. */
   updateChannel: UpdateChannel;
   animationSpeed: AnimationSpeed;
+  /** Developer mode — enables plugin hot-reload via filesystem watcher. */
+  devMode: boolean;
+  /**
+   * Monotonically increasing counter bumped on plugin registry reload.
+   * Used as a React key suffix to force iframe remounts after hot-reload.
+   * NOT persisted — resets to 0 on app start.
+   */
+  registryVersion: number;
 };
 
 type WorkspaceActions = {
@@ -105,6 +113,10 @@ type WorkspaceActions = {
   /** Persist the user's update channel preference. */
   setUpdateChannel: (channel: UpdateChannel) => void;
   setAnimationSpeed: (speed: AnimationSpeed) => void;
+  /** Toggle developer mode (enables plugin hot-reload). */
+  setDevMode: (enabled: boolean) => void;
+  /** Bump the registry version counter to force plugin remounts. */
+  bumpRegistryVersion: () => void;
   // ── Canvas actions ───────────────────────────────────────────────────────
   /** Toggle between tiling and canvas view mode for the active workspace. */
   setViewMode: (mode: ViewMode) => void;
@@ -178,6 +190,8 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
       zoomedNodeId: null,
       themePreference: "system",
       updateChannel: "stable",
+      devMode: false,
+      registryVersion: 0,
       animationSpeed: "standard" as AnimationSpeed,
       buses: { [INITIAL_ID]: createPluginBus() },
 
@@ -637,6 +651,16 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           draft.animationSpeed = speed;
         }),
 
+      setDevMode: (enabled) =>
+        set((draft) => {
+          draft.devMode = enabled;
+        }),
+
+      bumpRegistryVersion: () =>
+        set((draft) => {
+          draft.registryVersion += 1;
+        }),
+
       setPluginConfig: (cardId, patch) =>
         set((draft) => {
           const ws = getActiveWs(draft);
@@ -750,6 +774,7 @@ export const tauriHandler = createTauriStore(
       "updateChannel",
       "splitAutoLaunch",
       "animationSpeed",
+      "devMode",
     ],
     filterKeysStrategy: "pick",
     saveOnChange: true,

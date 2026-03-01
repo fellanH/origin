@@ -1897,3 +1897,36 @@ describe("addCanvasCard", () => {
     expect(leaves[0]!.pluginId).toBe("com.origin.hello");
   });
 });
+
+describe("devMode", () => {
+  it("defaults to false", () => {
+    const { devMode } = useWorkspaceStore.getState();
+    expect(devMode).toBe(false);
+  });
+
+  it("can be toggled on", () => {
+    useWorkspaceStore.getState().setDevMode(true);
+    expect(useWorkspaceStore.getState().devMode).toBe(true);
+    useWorkspaceStore.getState().setDevMode(false);
+  });
+});
+
+describe("registryVersion", () => {
+  it("defaults to 0", () => {
+    expect(useWorkspaceStore.getState().registryVersion).toBe(0);
+  });
+
+  it("increments on bumpRegistryVersion", () => {
+    const before = useWorkspaceStore.getState().registryVersion;
+    useWorkspaceStore.getState().bumpRegistryVersion();
+    expect(useWorkspaceStore.getState().registryVersion).toBe(before + 1);
+  });
+
+  it("increments monotonically across multiple bumps", () => {
+    const start = useWorkspaceStore.getState().registryVersion;
+    useWorkspaceStore.getState().bumpRegistryVersion();
+    useWorkspaceStore.getState().bumpRegistryVersion();
+    useWorkspaceStore.getState().bumpRegistryVersion();
+    expect(useWorkspaceStore.getState().registryVersion).toBe(start + 3);
+  });
+});

@@ -12,6 +12,7 @@ import CardLayout from "@/components/workspace/CardLayout";
 import TabBar from "@/components/workspace/TabBar";
 import WorkspaceOverlay from "@/components/workspace/WorkspaceOverlay";
 import SettingsPanel from "@/components/settings/SettingsPanel";
+import { usePluginWatcher } from "@/hooks/usePluginWatcher";
 
 function App() {
   const activeWorkspaceId = useWorkspaceStore((s) => s.activeWorkspaceId);
@@ -27,6 +28,9 @@ function App() {
   const motion = useMotion();
 
   useKeyboardShortcuts({ onToggleSettings: () => setShowSettings((p) => !p) });
+
+  // Plugin hot-reload watcher — active only when devMode is on in Settings.
+  usePluginWatcher();
 
   useEffect(() => {
     appDataDir().then(setAppDataDir);
