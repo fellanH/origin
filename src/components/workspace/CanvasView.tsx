@@ -37,6 +37,7 @@ interface CanvasCardProps {
   leaf: CardLeaf;
   onDragStart: (cardId: CardId, e: React.PointerEvent) => void;
   onResizeStart: (cardId: CardId, e: React.PointerEvent) => void;
+  isTransitioning?: boolean;
 }
 
 function CanvasCard({
@@ -44,6 +45,7 @@ function CanvasCard({
   leaf,
   onDragStart,
   onResizeStart,
+  isTransitioning = false,
 }: CanvasCardProps) {
   const isFocused = useWorkspaceStore(
     (s) => selectActiveWorkspace(s)?.focusedCardId === nodeId,
@@ -69,6 +71,9 @@ function CanvasCard({
         top: y,
         width: w,
         height: h,
+        ...(isTransitioning
+          ? { transition: "left var(--motion-duration-slow) var(--motion-easing-out), top var(--motion-duration-slow) var(--motion-easing-out), width var(--motion-duration-slow) var(--motion-easing-out), height var(--motion-duration-slow) var(--motion-easing-out)" }
+          : {}),
       }}
       onClick={(e) => {
         e.stopPropagation();
@@ -170,7 +175,9 @@ function CanvasGrid({
 
 // ─── CanvasView ───────────────────────────────────────────────────────────────
 
-export default function CanvasView() {
+interface CanvasViewProps { isTransitioning?: boolean; }
+
+export default function CanvasView({ isTransitioning = false }: CanvasViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Read canvas viewport state
@@ -439,6 +446,7 @@ export default function CanvasView() {
             leaf={leaf}
             onDragStart={handleCardDragStart}
             onResizeStart={handleCardResizeStart}
+            isTransitioning={isTransitioning}
           />
         ))}
       </div>
