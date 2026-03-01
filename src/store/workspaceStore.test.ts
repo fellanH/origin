@@ -1745,47 +1745,43 @@ describe("setViewMode", () => {
     expect(get().viewMode).toBe("canvas");
   });
 
-  it("auto-assigns canvas coordinates to existing leaves when switching to canvas", () => {
-    const leafA = makeLeaf("leafA");
-    const leafB = makeLeaf("leafB");
-    setWorkspace({
-      rootId: "leafA",
-      nodes: { leafA, leafB },
-    });
-
+  it("deterministic canvas coords from tiled rects (#180)", () => {
+    const split = makeSplit("split1", ["leafA", "leafB"], null, "horizontal");
+    setWorkspace({ rootId: "split1", nodes: { split1: split, leafA: makeLeaf("leafA", "split1"), leafB: makeLeaf("leafB", "split1") } });
     get().setViewMode("canvas");
-
-    const { nodes } = get();
-    const a = nodes["leafA"] as CardLeaf;
-    const b = nodes["leafB"] as CardLeaf;
-    expect(a.canvasX).toBeDefined();
-    expect(a.canvasY).toBeDefined();
-    expect(a.canvasWidth).toBe(400);
-    expect(a.canvasHeight).toBe(300);
-    // Each leaf gets a different x position
-    expect(a.canvasX).not.toBe(b.canvasX);
+    const a = get().nodes["leafA"] as CardLeaf;
+    const b = get().nodes["leafB"] as CardLeaf;
+    expect(a.canvasX).toBe(0); expect(a.canvasWidth).toBe(600); expect(a.canvasHeight).toBe(800);
+    expect(b.canvasX).toBe(600); expect(b.canvasWidth).toBe(600);
   });
 
-  it("does not overwrite existing canvas coordinates when switching to canvas", () => {
-    const leaf: CardLeaf = {
-      ...makeLeaf("leafA"),
-      canvasX: 100,
-      canvasY: 200,
-      canvasWidth: 500,
-      canvasHeight: 400,
-    };
-    setWorkspace({
-      rootId: "leafA",
-      nodes: { leafA: leaf },
-    });
-
+  it("overwrites old canvas coords (#180)", () => {
+    const leaf: CardLeaf = { ...makeLeaf("leafA"), canvasX: 999, canvasY: 999, canvasWidth: 999, canvasHeight: 999 };
+    setWorkspace({ rootId: "leafA", nodes: { leafA: leaf } });
     get().setViewMode("canvas");
-
     const a = get().nodes["leafA"] as CardLeaf;
-    expect(a.canvasX).toBe(100);
-    expect(a.canvasY).toBe(200);
-    expect(a.canvasWidth).toBe(500);
-    expect(a.canvasHeight).toBe(400);
+    expect(a.canvasX).toBe(0); expect(a.canvasWidth).toBe(1200); expect(a.canvasHeight).toBe(800);
+  });
+
+  it("preserves focusedCardId across transitions (#180)", () => {
+    setWorkspace({ rootId: "leafA", nodes: { leafA: makeLeaf("leafA") }, focusedCardId: "leafA" });
+    get().setViewMode("canvas"); expect(get().focusedCardId).toBe("leafA");
+    get().setViewMode("tiling"); expect(get().focusedCardId).toBe("leafA");
+  });
+
+  it("resets viewport on canvas entry (#180)", () => {
+    setWorkspace({ rootId: "leafA", nodes: { leafA: makeLeaf("leafA") } });
+    get().setCanvasViewport({ offsetX: 500, offsetY: 300, scale: 2 });
+    get().setViewMode("canvas");
+    expect(get().canvasViewport.offsetX).toBe(0); expect(get().canvasViewport.scale).toBe(1);
+  });
+
+  it("preserves viewport on tiling return (#180)", () => {
+    setWorkspace({ rootId: "leafA", nodes: { leafA: makeLeaf("leafA") } });
+    get().setViewMode("canvas");
+    get().setCanvasViewport({ offsetX: 42, offsetY: 99, scale: 1.5 });
+    get().setViewMode("tiling");
+    expect(get().canvasViewport.offsetX).toBe(42); expect(get().canvasViewport.scale).toBe(1.5);
   });
 });
 

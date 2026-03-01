@@ -15,6 +15,7 @@ import type { UpdateChannel } from "@/types/updater";
 import type { AnimationSpeed } from "@/lib/motion";
 import { createPluginBus } from "@/lib/pluginBus";
 import { panelRefs } from "@/lib/panelRefs";
+import { computeTiledRects } from "@/lib/tiledRects";
 
 // ─── Theme ───────────────────────────────────────────────────────────────────
 
@@ -660,20 +661,19 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
         set((draft) => {
           const ws = getActiveWs(draft);
           if (!ws) return;
+          const prevMode = ws.viewMode;
           ws.viewMode = mode;
-          // When switching to canvas, ensure all leaf nodes have canvas coordinates
-          if (mode === "canvas") {
-            let col = 0;
+          if (mode === "canvas" && prevMode === "tiling") {
+            const CW = 1200, CH = 800;
+            const rects = computeTiledRects(ws.nodes as Parameters<typeof computeTiledRects>[0], ws.rootId, CW, CH);
+            let fc = 0;
             for (const node of Object.values(ws.nodes)) {
               if (node.type !== "leaf") continue;
-              if (node.canvasX === undefined) {
-                node.canvasX = 40 + col * 440;
-                node.canvasY = 40;
-                node.canvasWidth = 400;
-                node.canvasHeight = 300;
-                col++;
-              }
+              const rect = rects[node.id];
+              if (rect) { node.canvasX = rect.x; node.canvasY = rect.y; node.canvasWidth = rect.width; node.canvasHeight = rect.height; }
+              else if (node.canvasX === undefined) { node.canvasX = 40 + fc * 440; node.canvasY = 40; node.canvasWidth = 400; node.canvasHeight = 300; fc++; }
             }
+            ws.canvasViewport = { offsetX: 0, offsetY: 0, scale: 1 };
           }
         }),
 
