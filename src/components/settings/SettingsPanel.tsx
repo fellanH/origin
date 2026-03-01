@@ -145,6 +145,8 @@ type SettingsPanelProps = {
 };
 
 export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
+  const devMode = useWorkspaceStore((s) => s.devMode);
+  const setDevMode = useWorkspaceStore((s) => s.setDevMode);
   const splitAutoLaunch = useWorkspaceStore((s) => s.splitAutoLaunch);
   const setSplitAutoLaunch = useWorkspaceStore((s) => s.setSplitAutoLaunch);
   const themePreference = useWorkspaceStore((s) => s.themePreference);
@@ -237,6 +239,22 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
           {/* Updates */}
           <Section title="Updates">
             <UpdateSettings />
+          </Section>
+
+          <div className="border-t border-border" />
+
+          {/* Developer */}
+          <Section title="Developer">
+            <Row
+              label="Dev mode"
+              description="Watch plugins directory for changes and auto-reload"
+            >
+              <Toggle
+                checked={devMode}
+                onChange={setDevMode}
+                label="Dev mode"
+              />
+            </Row>
           </Section>
 
           <div className="border-t border-border" />

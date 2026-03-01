@@ -116,3 +116,10 @@ describe("initRegistry", () => {
     expect(typeof entry!.load).toBe("function");
   });
 });
+
+describe("reloadRegistry", () => {
+  it("is exported as a function", async () => {
+    const mod = await import("@/plugins/registry");
+    expect(typeof mod.reloadRegistry).toBe("function");
+  });
+});

@@ -7,17 +7,16 @@ export interface RegistryEntry {
   icon?: string;
   tier: "L1";
   load: () => Promise<PluginModule>;
-  /**
-   * Full manifest for L1 (sandboxed iframe) plugins — used by IframePluginHost
-   * to enforce the capability allow-list for ORIGIN_INVOKE and ORIGIN_EVENT_SUBSCRIBE.
-   */
   manifest?: PluginManifest;
 }
 
 let _registry: RegistryEntry[] = [];
 
-// Called once at bootstrap, before React mounts.
-// Fetches all installed plugins from Tauri and populates the registry.
+function pluginImportUrl(pluginId: string, bustCache: boolean): string {
+  const base = `plugin://localhost/${pluginId}/index.js`;
+  return bustCache ? `${base}?v=${Date.now()}` : base;
+}
+
 export async function initRegistry(): Promise<void> {
   const installed = await invoke<PluginManifest[]>("list_installed_plugins");
   _registry = installed.map(
@@ -29,7 +28,24 @@ export async function initRegistry(): Promise<void> {
       manifest: p,
       load: () =>
         import(
-          /* @vite-ignore */ `plugin://localhost/${p.id}/index.js`
+          /* @vite-ignore */ pluginImportUrl(p.id, false)
+        ) as Promise<PluginModule>,
+    }),
+  );
+}
+
+export async function reloadRegistry(): Promise<void> {
+  const installed = await invoke<PluginManifest[]>("list_installed_plugins");
+  _registry = installed.map(
+    (p): RegistryEntry => ({
+      id: p.id,
+      name: p.name,
+      icon: p.icon,
+      tier: "L1",
+      manifest: p,
+      load: () =>
+        import(
+          /* @vite-ignore */ pluginImportUrl(p.id, true)
         ) as Promise<PluginModule>,
     }),
   );
