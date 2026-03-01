@@ -44,7 +44,7 @@ function CardTree({ nodeId }: Props) {
       {node.childIds.map((childId, idx) => (
         <Fragment key={childId}>
           {idx > 0 && (
-            <Separator className="shrink-0 bg-border hover:bg-foreground/30 active:bg-foreground/50 transition-colors aria-[orientation=vertical]:w-[3px] aria-[orientation=vertical]:h-full aria-[orientation=horizontal]:h-[3px] aria-[orientation=horizontal]:w-full" />
+            <Separator style={{ transitionDuration: "var(--motion-duration-fast)", transitionTimingFunction: "var(--motion-easing-default)" }} className="shrink-0 bg-border hover:bg-foreground/30 active:bg-foreground/50 transition-colors aria-[orientation=vertical]:w-[3px] aria-[orientation=vertical]:h-full aria-[orientation=horizontal]:h-[3px] aria-[orientation=horizontal]:w-full" />
           )}
           <ResizablePanel
             defaultSize={node.sizes[idx] ?? 50}

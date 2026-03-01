@@ -128,6 +128,7 @@ function Card({ nodeId }: Props) {
       )}
 
       <button
+        style={{ transitionDuration: "var(--motion-duration-fast)", transitionTimingFunction: "var(--motion-easing-default)" }}
         className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded text-xs text-muted-foreground/50 opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100 focus-visible:opacity-100"
         onClick={(e) => {
           e.stopPropagation();
