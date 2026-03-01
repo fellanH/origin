@@ -1,0 +1,25 @@
+{
+  "name": "origin-plugin-starter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@origin-cards/api": "^0.7.0",
+    "@origin-cards/sdk": "^0.7.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.4.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "typescript": "~5.7.2",
+    "vite": "^7.0.0"
+  }
+}
