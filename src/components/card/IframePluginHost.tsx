@@ -14,6 +14,7 @@ import {
   COMMAND_CAPABILITY_MAP,
   EVENT_CAPABILITY_MAP,
 } from "@/lib/iframeProtocol";
+import { assertIframeSafety } from "@/lib/assertPluginSafety";
 
 interface Props {
   pluginId: string;
@@ -37,6 +38,17 @@ function IframePluginHostInner({ pluginId, context, manifest }: Props) {
     // sandboxed iframes without allow-same-origin have a null origin — must use "*"
     iframeRef.current?.contentWindow?.postMessage(msg, "*");
   }, []);
+
+  // Webview hardening: assert iframe safety at mount time (see docs/security/webview-guardrails.md)
+  useEffect(() => {
+    if (iframeRef.current) {
+      const safe = assertIframeSafety(iframeRef.current);
+      if (!safe) {
+        // In production, clear the src to prevent the plugin from loading
+        iframeRef.current.removeAttribute("src");
+      }
+    }
+  }, [pluginId]);
 
   useEffect(() => {
     function onMessage(event: MessageEvent) {

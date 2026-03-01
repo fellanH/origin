@@ -6,10 +6,11 @@ You are a Claude Code agent working within this project. `README.md` is the huma
 
 | What                                         | Where                  |
 | -------------------------------------------- | ---------------------- |
-| Full spec, UX, types, verification checklist | `docs/SPEC.md`         |
-| Coding standards and conventions             | `docs/STANDARDS.md`    |
-| Pre-code checklist (run before every task)   | `docs/SOP/pre-code.md` |
-| Architecture research                        | `docs/research/`       |
+| Full spec, UX, types, verification checklist | `docs/SPEC.md`                          |
+| Coding standards and conventions             | `docs/STANDARDS.md`                      |
+| Pre-code checklist (run before every task)   | `docs/SOP/pre-code.md`                   |
+| Architecture research                        | `docs/research/`                         |
+| L1 plugin security guardrails                | `docs/security/webview-guardrails.md`    |
 
 ## Architecture Decisions
 
