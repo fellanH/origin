@@ -1,3 +1,4 @@
+import type React from "react";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import { useUpdater } from "@/hooks/useUpdater";
 import { CHANNEL_INFO } from "@/types/updater";
@@ -13,7 +14,7 @@ const RISK_COLORS: Record<string, string> = {
 
 type RiskBadgeProps = { level: string };
 
-function RiskBadge({ level }: RiskBadgeProps): JSX.Element {
+function RiskBadge({ level }: RiskBadgeProps): React.JSX.Element {
   return (
     <span
       className={cn(
@@ -34,7 +35,7 @@ type ChannelSelectorProps = {
 function ChannelSelector({
   value,
   onChange,
-}: ChannelSelectorProps): JSX.Element {
+}: ChannelSelectorProps): React.JSX.Element {
   return (
     <div className="flex flex-col gap-2">
       {CHANNEL_INFO.map((info) => (
@@ -97,7 +98,7 @@ function statusLabel(status: UpdateStatus): string {
 
 type ProgressBarProps = { value: number };
 
-function ProgressBar({ value }: ProgressBarProps): JSX.Element {
+function ProgressBar({ value }: ProgressBarProps): React.JSX.Element {
   return (
     <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
       <div
@@ -110,7 +111,7 @@ function ProgressBar({ value }: ProgressBarProps): JSX.Element {
 
 type ChangelogProps = { body: string };
 
-function Changelog({ body }: ChangelogProps): JSX.Element {
+function Changelog({ body }: ChangelogProps): React.JSX.Element {
   if (!body.trim()) return <></>;
   return (
     <div className="mt-2 rounded-md border border-border bg-muted/50 p-3">
@@ -124,7 +125,7 @@ function Changelog({ body }: ChangelogProps): JSX.Element {
   );
 }
 
-export default function UpdateSettings(): JSX.Element {
+export default function UpdateSettings(): React.JSX.Element {
   const updateChannel = useWorkspaceStore((s) => s.updateChannel);
   const setUpdateChannel = useWorkspaceStore((s) => s.setUpdateChannel);
 

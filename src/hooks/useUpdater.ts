@@ -2,14 +2,11 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { check } from "@tauri-apps/plugin-updater";
 import { invoke } from "@tauri-apps/api/core";
 
-import { useWorkspaceStore } from "@/store/workspaceStore";
 import type {
-  UpdateChannel,
   UpdateStatus,
   UpdateInfo,
   RollbackInfo,
 } from "@/types/updater";
-import { channelEndpoint } from "@/types/updater";
 
 type UseUpdaterReturn = {
   status: UpdateStatus;
@@ -41,9 +38,6 @@ export function useUpdater(): UseUpdaterReturn {
   }, []);
 
   const checkForUpdates = useCallback(async () => {
-    const channel: UpdateChannel = useWorkspaceStore.getState().updateChannel;
-    const endpoint = channelEndpoint(channel);
-
     setStatus("checking");
     setError(null);
     setUpdateInfo(null);
@@ -53,7 +47,6 @@ export function useUpdater(): UseUpdaterReturn {
       const update = await check({
         headers: { Accept: "application/json" },
         timeout: 30,
-        endpoints: [endpoint],
       });
 
       if (update) {
