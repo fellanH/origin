@@ -1,0 +1,45 @@
+# Gitleaks configuration for origin
+# https://github.com/gitleaks/gitleaks
+#
+# This config extends the built-in ruleset. Add project-specific allowlist
+# entries below. Every allowlist addition MUST include a comment explaining
+# why the entry is safe and who approved it.
+#
+# To add an allowlist entry:
+#   1. Confirm the match is a false positive (not a real secret)
+#   2. Add the entry below with a justifying comment
+#   3. Open a PR — the PR description must note the allowlist change
+#   4. Require explicit approval from a maintainer before merge
+
+title = "origin secret scanning"
+
+# Minimum gitleaks version required to parse this config
+minVersion = "8.21.0"
+
+[extend]
+# Use the default gitleaks ruleset as the base
+useDefault = true
+
+[allowlist]
+description = "Project-wide allowlist — keep entries minimal and documented"
+
+# Known test/placeholder values that are not real secrets.
+# Each regex must match only the specific known-safe value.
+regexTarget = "match"
+regexes = [
+  # Tauri conf placeholder signing identity (not a real credential)
+  '''Developer ID Application:.*\(TEAMID\)''',
+]
+
+# Paths that never contain real secrets.
+paths = [
+  '''(^|/)node_modules/''',
+  '''(^|/)\.git/''',
+  '''package-lock\.json$''',
+  '''Cargo\.lock$''',
+  # Minified xterm terminal plugin contains ANSI escape sequences that trigger
+  # generic-api-key false positives (e.g. "[1;3;ma.TwoKeyMap=void[0m").
+  # These are terminal control codes in bundled JS, not credentials.
+  # Approved: initial setup 2026-03-01
+  '''src-tauri/assets/plugins/com\.origin\.terminal/assets/.*\.js''',
+]

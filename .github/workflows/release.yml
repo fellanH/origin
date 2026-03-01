@@ -20,7 +20,22 @@ on:
     tags: ["v*"]
 
 jobs:
+  secret-scan-source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan repository for secrets
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: detect --source . --config .gitleaks.toml --verbose
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   create-release:
+    needs: secret-scan-source
     runs-on: ubuntu-latest
     outputs:
       release-id: ${{ steps.create-release.outputs.id }}
@@ -38,7 +53,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
   build:
-    needs: create-release
+    needs: [secret-scan-source, create-release]
     strategy:
       matrix:
         target: [aarch64-apple-darwin, x86_64-apple-darwin]
@@ -84,3 +99,21 @@ jobs:
           releaseId: ${{ needs.create-release.outputs.release-id }}
           args: --target ${{ matrix.target }}
           createUpdaterArtifacts: true
+
+      - name: Install gitleaks
+        run: brew install gitleaks
+
+      - name: Scan Vite build output for secrets
+        run: |
+          echo "Scanning Vite build output (renderer assets)..."
+          gitleaks detect --source dist/ --no-git --config .gitleaks.toml --verbose
+
+      - name: Scan Tauri release bundle for secrets
+        run: |
+          echo "Scanning Tauri release bundle..."
+          APP_DIR=$(find src-tauri/target/${{ matrix.target }}/release/bundle/macos -name "*.app" -type d | head -1)
+          if [ -n "$APP_DIR" ]; then
+            gitleaks detect --source "$APP_DIR" --no-git --config .gitleaks.toml --verbose
+          else
+            echo "Warning: No .app bundle found — skipping .app scan"
+          fi

@@ -1,0 +1,15 @@
+# Gitleaks ignore file
+#
+# Add fingerprints of known-safe findings below. Each line is a gitleaks
+# "fingerprint" hash. To obtain a fingerprint, run:
+#
+#   gitleaks detect --report-format json --report-path report.json
+#
+# Then copy the "Fingerprint" field from the finding you want to suppress.
+#
+# IMPORTANT: Every entry MUST have a comment explaining why the finding is
+# safe and who approved the override. Entries without justification will be
+# removed during security reviews.
+#
+# Format:
+#   <fingerprint>  # <reason> — approved by <name> on <date>
