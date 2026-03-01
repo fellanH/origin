@@ -44,3 +44,9 @@ Release       → release.md
 | `add-plugin.md`        | 4-step plugin workflow                                   |
 | `add-tauri-command.md` | 4-step Tauri command workflow                            |
 | `release.md`           | Versioning, build, distribution, GitHub release          |
+
+## Security
+
+| File                                                                       | What it covers                                                          |
+| -------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| [`../security/webview-guardrails.md`](../security/webview-guardrails.md)   | L1 plugin iframe hardening: allow/deny rules, threat model, assertions  |
