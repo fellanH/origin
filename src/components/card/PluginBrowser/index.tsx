@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import {
@@ -8,6 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { filterPlugins, collectTags, buildInstalledSet } from "@/lib/pluginSearch";
 import type { Registry, RegistryPlugin } from "./types";
 import type { PluginManifest } from "@/types/plugin";
 
@@ -65,18 +66,26 @@ export default function PluginBrowser({ open: controlledOpen, onOpenChange }: Pl
 
   const [tab, setTab] = useState<Tab>("discover");
   const [fetchState, setFetchState] = useState<FetchState>({ status: "idle" });
+  const [installedIds, setInstalledIds] = useState<Set<string>>(new Set());
 
-  // Fetch registry each time the dialog opens
+  // Fetch registry and installed plugins each time the dialog opens
   useEffect(() => {
     if (!open) return;
     setFetchState({ status: "loading" });
-    fetch(REGISTRY_URL)
+
+    const registryPromise = fetch(REGISTRY_URL)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json() as Promise<Registry>;
       })
       .then((data) => setFetchState({ status: "ok", plugins: data.plugins }))
       .catch(() => setFetchState({ status: "error" }));
+
+    const installedPromise = invoke<PluginManifest[]>("list_installed_plugins")
+      .then((manifests) => setInstalledIds(buildInstalledSet(manifests.map((m) => m.id))))
+      .catch(() => setInstalledIds(new Set()));
+
+    void Promise.all([registryPromise, installedPromise]);
   }, [open]);
 
   return (
@@ -117,7 +126,7 @@ export default function PluginBrowser({ open: controlledOpen, onOpenChange }: Pl
         {/* Scrollable content area */}
         <div className="h-[420px] overflow-y-auto px-6 py-4">
           {tab === "discover" ? (
-            <DiscoverTab fetchState={fetchState} />
+            <DiscoverTab fetchState={fetchState} installedIds={installedIds} />
           ) : (
             <CreateTab />
           )}
@@ -129,7 +138,14 @@ export default function PluginBrowser({ open: controlledOpen, onOpenChange }: Pl
 
 // ─── Discover tab ─────────────────────────────────────────────────────────────
 
-function DiscoverTab({ fetchState }: { fetchState: FetchState }) {
+type DiscoverTabProps = {
+  fetchState: FetchState;
+  installedIds: Set<string>;
+};
+
+function DiscoverTab({ fetchState, installedIds }: DiscoverTabProps) {
+  const [query, setQuery] = useState("");
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [installStates, setInstallStates] = useState<
     Record<string, InstallState>
   >({});
@@ -139,6 +155,13 @@ function DiscoverTab({ fetchState }: { fetchState: FetchState }) {
     | { type: "error"; message: string }
     | null
   >(null);
+
+  const allPlugins = fetchState.status === "ok" ? fetchState.plugins : [];
+  const tags = useMemo(() => collectTags(allPlugins), [allPlugins]);
+  const filtered = useMemo(
+    () => filterPlugins(allPlugins, query, selectedTag),
+    [allPlugins, query, selectedTag],
+  );
 
   async function handleInstall(plugin: RegistryPlugin) {
     if (!plugin.bundle_url) {
@@ -190,6 +213,47 @@ function DiscoverTab({ fetchState }: { fetchState: FetchState }) {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Search + tag filter — only shown when registry loaded */}
+      {fetchState.status === "ok" && (
+        <div className="flex flex-col gap-2">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search plugins…"
+            className="w-full rounded-md border border-border bg-transparent px-3 py-1.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {selectedTag && (
+                <button
+                  onClick={() => setSelectedTag(null)}
+                  className="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground transition-colors hover:bg-muted"
+                >
+                  All
+                </button>
+              )}
+              {tags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() =>
+                    setSelectedTag(selectedTag === tag ? null : tag)
+                  }
+                  className={cn(
+                    "rounded-full border px-2 py-0.5 text-xs transition-colors",
+                    selectedTag === tag
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border text-muted-foreground hover:bg-muted",
+                  )}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Registry plugins list */}
       <div>
         {(fetchState.status === "idle" || fetchState.status === "loading") && (
@@ -206,19 +270,26 @@ function DiscoverTab({ fetchState }: { fetchState: FetchState }) {
           </div>
         )}
 
-        {fetchState.status === "ok" && fetchState.plugins.length === 0 && (
+        {fetchState.status === "ok" && allPlugins.length === 0 && (
           <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
             No plugins yet — be the first to publish one.
           </div>
         )}
 
-        {fetchState.status === "ok" && fetchState.plugins.length > 0 && (
+        {fetchState.status === "ok" && allPlugins.length > 0 && filtered.length === 0 && (
+          <div className="flex h-24 items-center justify-center text-sm text-muted-foreground">
+            No plugins match your search.
+          </div>
+        )}
+
+        {fetchState.status === "ok" && filtered.length > 0 && (
           <div className="space-y-2">
-            {fetchState.plugins.map((plugin) => (
+            {filtered.map((plugin) => (
               <PluginCard
                 key={plugin.id}
                 plugin={plugin}
                 installState={installStates[plugin.id] ?? "idle"}
+                isInstalled={installedIds.has(plugin.id)}
                 onInstall={handleInstall}
               />
             ))}
@@ -263,13 +334,16 @@ function DiscoverTab({ fetchState }: { fetchState: FetchState }) {
   );
 }
 
+// ─── Plugin card ──────────────────────────────────────────────────────────────
+
 interface PluginCardProps {
   plugin: RegistryPlugin;
   installState: InstallState;
+  isInstalled: boolean;
   onInstall: (plugin: RegistryPlugin) => void;
 }
 
-function PluginCard({ plugin, installState, onInstall }: PluginCardProps) {
+function PluginCard({ plugin, installState, isInstalled, onInstall }: PluginCardProps) {
   const isInstalling = installState === "installing";
   const isSuccess = installState === "success";
   const isError = installState === "error";
@@ -283,6 +357,11 @@ function PluginCard({ plugin, installState, onInstall }: PluginCardProps) {
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-baseline gap-1.5">
           <span className="text-sm font-medium">{plugin.name}</span>
+          {plugin.featured && (
+            <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+              Featured
+            </span>
+          )}
           <span className="text-xs text-muted-foreground">
             v{plugin.version}
           </span>
@@ -293,6 +372,18 @@ function PluginCard({ plugin, installState, onInstall }: PluginCardProps) {
         <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
           {plugin.description}
         </p>
+        {plugin.tags && plugin.tags.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {plugin.tags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-1.5">
@@ -307,27 +398,33 @@ function PluginCard({ plugin, installState, onInstall }: PluginCardProps) {
               GitHub
             </a>
           )}
-          <button
-            onClick={() => onInstall(plugin)}
-            disabled={isInstalling || isSuccess}
-            className={cn(
-              "rounded-md px-3 py-1 text-xs transition-colors",
-              isSuccess
-                ? "bg-green-600 text-white opacity-80"
-                : isError
-                  ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  : "bg-primary text-primary-foreground hover:bg-primary/90",
-              (isInstalling || isSuccess) && "cursor-not-allowed",
-            )}
-          >
-            {isInstalling
-              ? "Installing…"
-              : isSuccess
-                ? "✓ Installed"
-                : isError
-                  ? "Retry"
-                  : "Install"}
-          </button>
+          {isInstalled && !isSuccess ? (
+            <span className="rounded-md border border-border px-3 py-1 text-xs text-muted-foreground">
+              Installed
+            </span>
+          ) : (
+            <button
+              onClick={() => onInstall(plugin)}
+              disabled={isInstalling || isSuccess}
+              className={cn(
+                "rounded-md px-3 py-1 text-xs transition-colors",
+                isSuccess
+                  ? "bg-green-600 text-white opacity-80"
+                  : isError
+                    ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90",
+                (isInstalling || isSuccess) && "cursor-not-allowed",
+              )}
+            >
+              {isInstalling
+                ? "Installing…"
+                : isSuccess
+                  ? "✓ Installed"
+                  : isError
+                    ? "Retry"
+                    : "Install"}
+            </button>
+          )}
         </div>
         {isSuccess && (
           <span className="text-xs text-muted-foreground">

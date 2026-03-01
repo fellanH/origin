@@ -17,6 +17,12 @@ export interface RegistryPlugin {
    * @example ["fs:read", "shell:execute"]
    */
   requiredCapabilities?: string[];
+  /** Freeform tags for search and filtering. */
+  tags?: string[];
+  /** Broad category for tab-level grouping. */
+  category?: string;
+  /** Curated flag — featured plugins appear first in the Discover tab. */
+  featured?: boolean;
 }
 
 export interface Registry {
