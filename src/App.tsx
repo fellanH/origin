@@ -6,6 +6,8 @@ import {
 } from "@/store/workspaceStore";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useResolvedTheme } from "@/hooks/useResolvedTheme";
+import { useMotion } from "@/hooks/useMotion";
+import { getMotionCSSProperties } from "@/lib/motion";
 import CardLayout from "@/components/workspace/CardLayout";
 import TabBar from "@/components/workspace/TabBar";
 import WorkspaceOverlay from "@/components/workspace/WorkspaceOverlay";
@@ -22,6 +24,7 @@ function App() {
 
   // Resolved effective theme — single source of truth for shell + plugins.
   const resolvedTheme = useResolvedTheme();
+  const motion = useMotion();
 
   useKeyboardShortcuts({ onToggleSettings: () => setShowSettings((p) => !p) });
 
@@ -45,6 +48,15 @@ function App() {
     // render in the correct mode.
     root.style.colorScheme = resolvedTheme;
   }, [resolvedTheme]);
+
+  // Sync motion tokens to :root CSS custom properties.
+  useEffect(() => {
+    const root = document.documentElement;
+    const props = getMotionCSSProperties(motion);
+    for (const [key, value] of Object.entries(props)) {
+      root.style.setProperty(key, value);
+    }
+  }, [motion]);
 
   // CMD+Opt+G — toggle workspace overview HUD
   useEffect(() => {

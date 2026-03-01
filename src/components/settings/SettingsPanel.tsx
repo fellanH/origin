@@ -1,6 +1,9 @@
 import { useEffect, useRef } from "react";
 import { useWorkspaceStore } from "@/store/workspaceStore";
 import type { ThemePreference } from "@/store/workspaceStore";
+import { ANIMATION_SPEED_OPTIONS } from "@/lib/motion";
+import type { AnimationSpeed } from "@/lib/motion";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import UpdateSettings from "@/components/settings/UpdateSettings";
@@ -117,6 +120,23 @@ function ThemeSelector({ value, onChange }: ThemeSelectorProps) {
   );
 }
 
+// ─── AnimationSpeedSelector ──────────────────────────────────────────────────
+
+type AnimationSpeedSelectorProps = { value: AnimationSpeed; onChange: (v: AnimationSpeed) => void; disabled?: boolean };
+
+function AnimationSpeedSelector({ value, onChange, disabled = false }: AnimationSpeedSelectorProps) {
+  return (
+    <div className={cn("flex overflow-hidden rounded-md border border-border", disabled && "opacity-50")}>
+      {ANIMATION_SPEED_OPTIONS.map((opt) => (
+        <button key={opt.value} disabled={disabled} onClick={() => onChange(opt.value)}
+          className={cn("px-3 py-1 text-xs transition-colors", value === opt.value ? "bg-foreground text-background" : "bg-transparent text-muted-foreground hover:text-foreground", disabled && "pointer-events-none")}>
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ─── SettingsPanel ────────────────────────────────────────────────────────────
 
 type SettingsPanelProps = {
@@ -129,6 +149,9 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
   const setSplitAutoLaunch = useWorkspaceStore((s) => s.setSplitAutoLaunch);
   const themePreference = useWorkspaceStore((s) => s.themePreference);
   const setThemePreference = useWorkspaceStore((s) => s.setThemePreference);
+  const animationSpeed = useWorkspaceStore((s) => s.animationSpeed);
+  const setAnimationSpeed = useWorkspaceStore((s) => s.setAnimationSpeed);
+  const prefersReducedMotion = useReducedMotion();
 
   // Close on Escape
   const panelRef = useRef<HTMLDivElement>(null);
@@ -163,7 +186,7 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
         aria-label="Settings"
         className={cn(
           "fixed right-0 top-0 z-50 flex h-screen w-[320px] flex-col border-l border-border bg-background shadow-xl",
-          "transition-transform duration-200 ease-in-out",
+          "transition-transform",
           open ? "translate-x-0" : "translate-x-full",
         )}
       >
@@ -186,10 +209,10 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
           {/* Appearance */}
           <Section title="Appearance">
             <Row label="Theme" description="Controls the colour scheme">
-              <ThemeSelector
-                value={themePreference}
-                onChange={setThemePreference}
-              />
+              <ThemeSelector value={themePreference} onChange={setThemePreference} />
+            </Row>
+            <Row label="Animation speed" description={prefersReducedMotion ? "Disabled \u2014 OS reduced motion is active" : "Controls transition timing across the UI"}>
+              <AnimationSpeedSelector value={prefersReducedMotion ? "off" : animationSpeed} onChange={setAnimationSpeed} disabled={prefersReducedMotion} />
             </Row>
           </Section>
 

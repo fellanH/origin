@@ -12,6 +12,7 @@ import type {
 } from "@/types/workspace";
 import type { PluginBus } from "@/types/plugin";
 import type { UpdateChannel } from "@/types/updater";
+import type { AnimationSpeed } from "@/lib/motion";
 import { createPluginBus } from "@/lib/pluginBus";
 import { panelRefs } from "@/lib/panelRefs";
 
@@ -60,6 +61,7 @@ type WorkspaceState = {
   themePreference: ThemePreference;
   /** Selected update channel. Persisted so it survives restarts. */
   updateChannel: UpdateChannel;
+  animationSpeed: AnimationSpeed;
 };
 
 type WorkspaceActions = {
@@ -101,6 +103,7 @@ type WorkspaceActions = {
   setThemePreference: (preference: ThemePreference) => void;
   /** Persist the user's update channel preference. */
   setUpdateChannel: (channel: UpdateChannel) => void;
+  setAnimationSpeed: (speed: AnimationSpeed) => void;
   // ── Canvas actions ───────────────────────────────────────────────────────
   /** Toggle between tiling and canvas view mode for the active workspace. */
   setViewMode: (mode: ViewMode) => void;
@@ -174,6 +177,7 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
       zoomedNodeId: null,
       themePreference: "system",
       updateChannel: "stable",
+      animationSpeed: "standard" as AnimationSpeed,
       buses: { [INITIAL_ID]: createPluginBus() },
 
       // ── Tab actions ──────────────────────────────────────────────────────
@@ -627,6 +631,11 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
           draft.updateChannel = channel;
         }),
 
+      setAnimationSpeed: (speed) =>
+        set((draft) => {
+          draft.animationSpeed = speed;
+        }),
+
       setPluginConfig: (cardId, patch) =>
         set((draft) => {
           const ws = getActiveWs(draft);
@@ -740,6 +749,7 @@ export const tauriHandler = createTauriStore(
       "themePreference",
       "updateChannel",
       "splitAutoLaunch",
+      "animationSpeed",
     ],
     filterKeysStrategy: "pick",
     saveOnChange: true,

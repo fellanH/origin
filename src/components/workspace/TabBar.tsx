@@ -56,8 +56,9 @@ export default function TabBar({ onOpenSettings }: TabBarProps) {
         return (
           <div
             key={ws.id}
+            style={{ transitionDuration: "var(--motion-duration-fast)", transitionTimingFunction: "var(--motion-easing-default)" }}
             className={cn(
-              "flex h-full cursor-pointer select-none items-center gap-1 px-3 text-sm",
+              "flex h-full cursor-pointer select-none items-center gap-1 px-3 text-sm transition-colors",
               isActive
                 ? "border-b-2 border-foreground/80 bg-muted/60"
                 : "hover:bg-muted/40",
