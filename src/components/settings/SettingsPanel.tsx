@@ -3,6 +3,7 @@ import { useWorkspaceStore } from "@/store/workspaceStore";
 import type { ThemePreference } from "@/store/workspaceStore";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import UpdateSettings from "@/components/settings/UpdateSettings";
 
 // ─── Section ─────────────────────────────────────────────────────────────────
 
@@ -206,6 +207,13 @@ export default function SettingsPanel({ open, onClose }: SettingsPanelProps) {
                 label="Auto-open launcher on split"
               />
             </Row>
+          </Section>
+
+          <div className="border-t border-border" />
+
+          {/* Updates */}
+          <Section title="Updates">
+            <UpdateSettings />
           </Section>
 
           <div className="border-t border-border" />
