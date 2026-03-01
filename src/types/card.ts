@@ -7,6 +7,14 @@ export type CardLeaf = {
   pluginId: string | null;
   /** Per-instance plugin configuration. Shallow-merged by setPluginConfig. */
   config?: Record<string, unknown>;
+  /**
+   * Canvas-mode position and size. Ignored in tiling mode.
+   * When undefined in canvas mode, defaults are assigned by the store.
+   */
+  canvasX?: number;
+  canvasY?: number;
+  canvasWidth?: number;
+  canvasHeight?: number;
 };
 
 export type CardSplit = {

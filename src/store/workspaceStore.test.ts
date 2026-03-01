@@ -44,7 +44,16 @@ function get() {
 }
 
 function setWorkspace(
-  patch: Partial<Pick<Workspace, "rootId" | "nodes" | "focusedCardId">>,
+  patch: Partial<
+    Pick<
+      Workspace,
+      | "rootId"
+      | "nodes"
+      | "focusedCardId"
+      | "viewMode"
+      | "canvasViewport"
+    >
+  >,
 ) {
   useWorkspaceStore.setState((state) => ({
     workspaces: state.workspaces.map((w) =>
@@ -58,7 +67,26 @@ function setWorkspace(
 // ---------------------------------------------------------------------------
 
 beforeEach(() => {
-  setWorkspace({ rootId: null, nodes: {}, focusedCardId: null });
+  // Full reset: ensure single workspace with known state (including canvas fields)
+  const id = "default";
+  useWorkspaceStore.setState({
+    workspaces: [
+      {
+        id,
+        name: "Workspace 1",
+        rootId: null,
+        nodes: {},
+        focusedCardId: null,
+        zoomedCardId: null,
+        viewMode: "tiling",
+        canvasViewport: { offsetX: 0, offsetY: 0, scale: 1 },
+      },
+    ],
+    activeWorkspaceId: id,
+    lastWorkspaceId: null,
+    savedConfigs: [],
+    zoomedNodeId: null,
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1703,5 +1731,173 @@ describe("swapPanel", () => {
         expect(nodes[node.parentId!]).toBeDefined();
       }
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Canvas view mode (spike #190)
+// ---------------------------------------------------------------------------
+
+describe("setViewMode", () => {
+  it("toggles the active workspace to canvas mode", () => {
+    expect(get().viewMode).toBe("tiling");
+    get().setViewMode("canvas");
+    expect(get().viewMode).toBe("canvas");
+  });
+
+  it("auto-assigns canvas coordinates to existing leaves when switching to canvas", () => {
+    const leafA = makeLeaf("leafA");
+    const leafB = makeLeaf("leafB");
+    setWorkspace({
+      rootId: "leafA",
+      nodes: { leafA, leafB },
+    });
+
+    get().setViewMode("canvas");
+
+    const { nodes } = get();
+    const a = nodes["leafA"] as CardLeaf;
+    const b = nodes["leafB"] as CardLeaf;
+    expect(a.canvasX).toBeDefined();
+    expect(a.canvasY).toBeDefined();
+    expect(a.canvasWidth).toBe(400);
+    expect(a.canvasHeight).toBe(300);
+    // Each leaf gets a different x position
+    expect(a.canvasX).not.toBe(b.canvasX);
+  });
+
+  it("does not overwrite existing canvas coordinates when switching to canvas", () => {
+    const leaf: CardLeaf = {
+      ...makeLeaf("leafA"),
+      canvasX: 100,
+      canvasY: 200,
+      canvasWidth: 500,
+      canvasHeight: 400,
+    };
+    setWorkspace({
+      rootId: "leafA",
+      nodes: { leafA: leaf },
+    });
+
+    get().setViewMode("canvas");
+
+    const a = get().nodes["leafA"] as CardLeaf;
+    expect(a.canvasX).toBe(100);
+    expect(a.canvasY).toBe(200);
+    expect(a.canvasWidth).toBe(500);
+    expect(a.canvasHeight).toBe(400);
+  });
+});
+
+describe("setCanvasViewport", () => {
+  it("updates viewport offset and scale", () => {
+    get().setCanvasViewport({ offsetX: 100, offsetY: -50, scale: 1.5 });
+
+    const ws = get();
+    expect(ws.canvasViewport.offsetX).toBe(100);
+    expect(ws.canvasViewport.offsetY).toBe(-50);
+    expect(ws.canvasViewport.scale).toBe(1.5);
+  });
+
+  it("partial updates leave other fields unchanged", () => {
+    get().setCanvasViewport({ offsetX: 42 });
+
+    const ws = get();
+    expect(ws.canvasViewport.offsetX).toBe(42);
+    expect(ws.canvasViewport.offsetY).toBe(0); // default
+    expect(ws.canvasViewport.scale).toBe(1); // default
+  });
+});
+
+describe("moveCanvasCard", () => {
+  it("updates the canvas position of a leaf node", () => {
+    const leaf: CardLeaf = {
+      ...makeLeaf("leafA"),
+      canvasX: 0,
+      canvasY: 0,
+      canvasWidth: 400,
+      canvasHeight: 300,
+    };
+    setWorkspace({ rootId: "leafA", nodes: { leafA: leaf } });
+
+    get().moveCanvasCard("leafA", 150, 250);
+
+    const a = get().nodes["leafA"] as CardLeaf;
+    expect(a.canvasX).toBe(150);
+    expect(a.canvasY).toBe(250);
+  });
+
+  it("is a no-op for non-existent cards", () => {
+    get().moveCanvasCard("ghost", 100, 100);
+    // No throw
+  });
+});
+
+describe("resizeCanvasCard", () => {
+  it("updates the canvas dimensions of a leaf node", () => {
+    const leaf: CardLeaf = {
+      ...makeLeaf("leafA"),
+      canvasX: 0,
+      canvasY: 0,
+      canvasWidth: 400,
+      canvasHeight: 300,
+    };
+    setWorkspace({ rootId: "leafA", nodes: { leafA: leaf } });
+
+    get().resizeCanvasCard("leafA", 600, 500);
+
+    const a = get().nodes["leafA"] as CardLeaf;
+    expect(a.canvasWidth).toBe(600);
+    expect(a.canvasHeight).toBe(500);
+  });
+
+  it("enforces minimum dimensions", () => {
+    const leaf: CardLeaf = {
+      ...makeLeaf("leafA"),
+      canvasX: 0,
+      canvasY: 0,
+      canvasWidth: 400,
+      canvasHeight: 300,
+    };
+    setWorkspace({ rootId: "leafA", nodes: { leafA: leaf } });
+
+    get().resizeCanvasCard("leafA", 50, 30);
+
+    const a = get().nodes["leafA"] as CardLeaf;
+    expect(a.canvasWidth).toBe(200); // minimum
+    expect(a.canvasHeight).toBe(150); // minimum
+  });
+});
+
+describe("addCanvasCard", () => {
+  it("adds a new leaf at the specified canvas position", () => {
+    get().addCanvasCard(300, 200);
+
+    const { nodes, focusedCardId } = get();
+    const leaves = Object.values(nodes).filter((n) => n.type === "leaf");
+    expect(leaves).toHaveLength(1);
+
+    const leaf = leaves[0] as CardLeaf;
+    expect(leaf.canvasX).toBe(300);
+    expect(leaf.canvasY).toBe(200);
+    expect(leaf.canvasWidth).toBe(400);
+    expect(leaf.canvasHeight).toBe(300);
+    expect(leaf.pluginId).toBeNull();
+    expect(focusedCardId).toBe(leaf.id);
+  });
+
+  it("sets rootId if workspace was empty", () => {
+    expect(get().rootId).toBeNull();
+    get().addCanvasCard(0, 0);
+    expect(get().rootId).not.toBeNull();
+  });
+
+  it("accepts an optional pluginId", () => {
+    get().addCanvasCard(100, 100, "com.origin.hello");
+
+    const leaves = Object.values(get().nodes).filter(
+      (n) => n.type === "leaf",
+    ) as CardLeaf[];
+    expect(leaves[0]!.pluginId).toBe("com.origin.hello");
   });
 });

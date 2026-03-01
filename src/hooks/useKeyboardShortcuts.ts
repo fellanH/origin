@@ -126,6 +126,13 @@ export function useKeyboardShortcuts({
           state.setZoomedNodeId(
             current === focusedCardId ? null : focusedCardId,
           );
+        } else if (e.code === "KeyC") {
+          // CMD+Opt+C : toggle canvas/tiling view mode
+          e.preventDefault();
+          const state = useWorkspaceStore.getState();
+          const ws = selectActiveWorkspace(state);
+          if (!ws) return;
+          state.setViewMode(ws.viewMode === "canvas" ? "tiling" : "canvas");
         }
         return;
       }
