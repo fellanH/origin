@@ -54,6 +54,10 @@ pub fn run() {
             pty::pty_write,
             pty::pty_resize,
             pty::pty_destroy,
+            commands::updater::create_rollback_snapshot,
+            commands::updater::get_rollback_info,
+            commands::updater::apply_rollback,
+            commands::updater::clear_rollback,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
