@@ -22,6 +22,7 @@
 | [`capabilities-config.md`](capabilities-config.md)                       | Complete `src-tauri/capabilities/` JSON for all v1 plugins (fs, zustand, core)                |
 | [`vite-config.md`](vite-config.md)                                       | Complete `vite.config.ts` — workspace aliases, `optimizeDeps`, Tauri dev server settings      |
 | [`roadmap-research.md`](roadmap-research.md)                             | Long-term roadmap: runtime plugin loading, sync, auto-update, marketplace, inter-plugin comms |
+| [`nova-borrow-matrix.md`](nova-borrow-matrix.md)                         | Nova architecture borrow matrix — adopt, adapt, avoid decisions with linked implementation issues |
 
 ---
 
